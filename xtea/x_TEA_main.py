@@ -376,7 +376,7 @@ if __name__ == '__main__':
         sf_ref=args.ref ###reference genome "-ref"
         b_force=args.force #force to run from the very beginning
         # YW 2020/08/01 github update b_mosaic
-        b_mosaic=args.mosaic #this is for mosaic calling from normal tissue
+        b_mosaic=False #this is for mosaic calling from normal tissue # YW 2021/03/18 set this to False
         #i_iniclip=args.iniclip#
         if b_force == True:
             global_values.set_force_clean()
@@ -440,8 +440,8 @@ if __name__ == '__main__':
         sf_out = args.output
         sf_ref = args.ref  ###reference genome, some cram file require this file to open
         peak_window = global_values.PEAK_WINDOW_DEFAULT # YW 2020/07/03 note: max distance between two clipped positions for them to be considered as from one insertion/cluster
-        if args.postFmosaic or args.somatic:#for mosaic events
-            peak_window = global_values.PEAK_WINDOW_MOS_SOM
+        # if args.postFmosaic or args.somatic:#for mosaic events
+        #     peak_window = global_values.PEAK_WINDOW_MOS_SOM
         # YW 2020/08/04 modified github update: originally will rerun if b_resume==False, now added extra if/elif cases
         if b_resume == True and os.path.isfile(sf_out)==True:
             print("{0} exists, skipping \"disc\" step".format(sf_out))
