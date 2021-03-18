@@ -1093,8 +1093,9 @@ class ClipReadInfo():
                         i_right_clip = int(fields[2])
                         if i_left_clip < cutoff_left_clip and i_right_clip < cutoff_right_clip:
                             continue
-                        if (i_left_clip+i_right_clip) > max_cov_cutoff:
-                            continue
+                        # YW 2021/03/18 disable the following filtering by coverage
+                        # if (i_left_clip+i_right_clip) > max_cov_cutoff:
+                        #     continue
                         if pos in m_realign_pos:
                             fout_clip_pos.write(chrm + "\t")
                             fout_clip_pos.write(line.rstrip() + "\t")
