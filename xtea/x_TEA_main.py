@@ -142,221 +142,239 @@ from x_orphan_transduction import * # new
 def parse_arguments():
     parser = argparse.ArgumentParser("Main script of xTea_ML")
     parser.add_argument("-P", "--preprocess",
-                      action="store_true", dest="preprocess", default=False,
-                      help="Preprocessing stpes")
+                        action="store_true", dest="preprocess", default=False,
+                        help="Preprocessing stpes")
     parser.add_argument("-Q","--collectclip",
-                      action="store_true", dest="collect_clip", default=False,
-                      help="Call clipped reads from alignment")
+                        action="store_true", dest="collect_clip", default=False,
+                        help="Call clipped reads from alignment")
     parser.add_argument("-C", "--clip",
-                      action="store_true", dest="clip", default=False,
-                      help="Call candidate TEI sites from clipped reads")
+                        action="store_true", dest="clip", default=False,
+                        help="Call candidate TEI sites from clipped reads")
     parser.add_argument("-S", "--single",
-                      action="store_true", dest="single", default=False,
-                      help="Call clip positions from single-end reads")
+                        action="store_true", dest="single", default=False,
+                        help="Call clip positions from single-end reads")
     parser.add_argument("-D", "--discordant",
-                      action="store_true", dest="discordant", default=False,
-                      help="Filter with discordant paired end reads")
+                        action="store_true", dest="discordant", default=False,
+                        help="Filter with discordant paired end reads")
     parser.add_argument("-N", "--filter_csn",
-                      action="store_true", dest="filter_csn", default=False,
-                      help="Filter out candidate sites from map position on consensus")
+                        action="store_true", dest="filter_csn", default=False,
+                        help="Filter out candidate sites from map position on consensus")
     parser.add_argument("--resume",
-                      action="store_true", dest="resume", default=False,
-                      help="Resume the running, which will skip the step if output file already exists!")
+                        action="store_true", dest="resume", default=False,
+                        help="Resume the running, which will skip the step if output file already exists!")
     #transduction
     parser.add_argument("--transduction",
-                      action="store_true", dest="transduction", default=False,
-                      help="Call transduction for sites")
+                        action="store_true", dest="transduction", default=False,
+                        help="Call transduction for sites")
     parser.add_argument("--sibling",
-                      action="store_true", dest="sibling", default=False,
-                      help="Call sibling transduction for sites")
+                        action="store_true", dest="sibling", default=False,
+                        help="Call sibling transduction for sites")
     parser.add_argument("--spectrum",
-                      action="store_true", dest="spectrum", default=False,
-                      help="Spectrum analysis by tumor type")
+                        action="store_true", dest="spectrum", default=False,
+                        help="Spectrum analysis by tumor type")
     parser.add_argument("-B", "--barcode",
-                      action="store_true", dest="barcode", default=False,
-                      help="Indicate the input is 10X bam")
+                        action="store_true", dest="barcode", default=False,
+                        help="Indicate the input is 10X bam")
     parser.add_argument("-E", "--collect",
-                      action="store_true", dest="collect", default=False,
-                      help="Collect reads for candidate sites")
+                        action="store_true", dest="collect", default=False,
+                        help="Collect reads for candidate sites")
     parser.add_argument("-I", "--mutation",
-                      action="store_true", dest="mutation", default=False,
-                      help="Call internal mutation")
+                        action="store_true", dest="mutation", default=False,
+                        help="Call internal mutation")
     parser.add_argument("-U", "--collect_Illumina",
-                      action="store_true", dest="collect_illumina", default=False,
-                      help="Collect reads for candidate sites from normal illumina alignment")
+                        action="store_true", dest="collect_illumina", default=False,
+                        help="Collect reads for candidate sites from normal illumina alignment")
     parser.add_argument("-F", "--filter_asm",
-                      action="store_true", dest="filter_asm", default=False,
-                      help="Filter out candidate sites from assembly")
+                        action="store_true", dest="filter_asm", default=False,
+                        help="Filter out candidate sites from assembly")
     parser.add_argument("-G", "--contig_realign",
-                      action="store_true", dest="contig_realign", default=False,
-                      help="Filter out candidate sites from assembly")
+                        action="store_true", dest="contig_realign", default=False,
+                        help="Filter out candidate sites from assembly")
     parser.add_argument("-T", "--trace",
-                      action="store_true", dest="trace", default=False,
-                      help="Trace the sources of TEIs")
+                        action="store_true", dest="trace", default=False,
+                        help="Trace the sources of TEIs")
     parser.add_argument("-A", "--assembly",
-                      action="store_true", dest="assembly", default=False,
-                      help="Do local assembly for collected reads")
+                        action="store_true", dest="assembly", default=False,
+                        help="Do local assembly for collected reads")
     parser.add_argument("-L", "--local",
-                      action="store_true", dest="local", default=False,
-                      help="Assemble the TEIs on local machine")
+                        action="store_true", dest="local", default=False,
+                        help="Assemble the TEIs on local machine")
     parser.add_argument("-M", "--map",
-                      action="store_true", dest="map", default=False,
-                      help="map flank regions to the assembled contigs")
+                        action="store_true", dest="map", default=False,
+                        help="map flank regions to the assembled contigs")
     parser.add_argument("-V", "--visualization",
-                      action="store_true", dest="visualization", default=False,
-                      help="Show the heatmap figure of the selected regions")
+                        action="store_true", dest="visualization", default=False,
+                        help="Show the heatmap figure of the selected regions")
     parser.add_argument("-K", "--withflank",
-                      action="store_true", dest="withflank", default=False,
-                      help="Keep the flank regions with the repeat copies")
+                        action="store_true", dest="withflank", default=False,
+                        help="Keep the flank regions with the repeat copies")
     parser.add_argument("-J", "--joint",
-                      action="store_true", dest="joint", default=False,
-                      help="Joint calling")
+                        action="store_true", dest="joint", default=False,
+                        help="Joint calling")
     parser.add_argument("--mit",
-                      action="store_true", dest="mit", default=False,
-                      help="Indicate call mitochondrion insertion")
+                        action="store_true", dest="mit", default=False,
+                        help="Indicate call mitochondrion insertion")
     parser.add_argument("--dna",
-                      action="store_true", dest="dna", default=False,
-                      help="Not RNA mediated insertion (no polyA)")
+                        action="store_true", dest="dna", default=False,
+                        help="Not RNA mediated insertion (no polyA)")
     parser.add_argument("--cbs",
-                      action="store_true", dest="cbs", default=False,
-                      help="check by sample")#whether check by sample
+                        action="store_true", dest="cbs", default=False,
+                        help="check by sample")#whether check by sample
     parser.add_argument("--sva",
-                      action="store_true", dest="sva", default=False,
-                      help="For SVA insertion calling")
+                        action="store_true", dest="sva", default=False,
+                        help="For SVA insertion calling")
     # YW 2020/08/16 added this option
     parser.add_argument("--l1",
-                      action="store_true", dest="l1", default=False,
-                      help="For L1 insertion calling, L1 specific function in clip-disc filtering")
+                        action="store_true", dest="l1", default=False,
+                        help="For L1 insertion calling, L1 specific function in clip-disc filtering")
     parser.add_argument("--gntp_feature",
-                      action="store_true", dest="gntp_feature", default=False,
-                      help="Collect genotyping features from bam")
+                        action="store_true", dest="gntp_feature", default=False,
+                        help="Collect genotyping features from bam")
     parser.add_argument("--postF",
-                      action="store_true", dest="postF", default=False,
-                      help="Post filtering module")
+                        action="store_true", dest="postF", default=False,
+                        help="Post filtering module")
     parser.add_argument("--gntp_classify",
-                      action="store_true", dest="gntp_classify", default=False,
-                      help="Train/predict genotpe classifier")
+                        action="store_true", dest="gntp_classify", default=False,
+                        help="Train/predict genotpe classifier")
     parser.add_argument("--train_gntp",
-                      action="store_true", dest="train_gntp", default=False,
-                      help="Train the genotype classifer")
+                        action="store_true", dest="train_gntp", default=False,
+                        help="Train the genotype classifer")
     parser.add_argument("--postFmosaic",
-                      action="store_true", dest="postFmosaic", default=False,
-                      help="Post filtering module for mosaic events")
+                        action="store_true", dest="postFmosaic", default=False,
+                        help="Post filtering module for mosaic events")
     parser.add_argument("--igv",
-                      action="store_true", dest="igv", default=False,
-                      help="Prepare screenshot command for given sites")
+                        action="store_true", dest="igv", default=False,
+                        help="Prepare screenshot command for given sites")
     parser.add_argument("--force",
-                      action="store_true", dest="force", default=False,
-                      help="Force to start from the very beginning")
+                        action="store_true", dest="force", default=False,
+                        help="Force to start from the very beginning")
     parser.add_argument("--case_control",
-                      action="store_true", dest="case_control", default=False,
-                      help="case control mode")
+                        action="store_true", dest="case_control", default=False,
+                        help="case control mode")
     parser.add_argument("--tumor",
-                      action="store_true", dest="tumor", default=False,
-                      help="Working on tumor samples")
+                        action="store_true", dest="tumor", default=False,
+                        help="Working on tumor samples")
     #convert to gVCF
     parser.add_argument("--gVCF",
-                      action="store_true", dest="gVCF", default=False,
-                      help="Generate the gVCF from xTEA raw output")
+                        action="store_true", dest="gVCF", default=False,
+                        help="Generate the gVCF from xTEA raw output")
 ####
     parser.add_argument("--bed",
-                      action="store_true", dest="bed", default=False,
-                      help="Input annotation in bed format")
+                        action="store_true", dest="bed", default=False,
+                        help="Input annotation in bed format")
     parser.add_argument("--mosaic",
-                      action="store_true", dest="mosaic", default=False,
-                      help="Call mosaic events")
+                        action="store_true", dest="mosaic", default=False,
+                        help="Call mosaic events")
     parser.add_argument("--flk_map",
-                      action="store_true", dest="flk_map", default=False,
-                      help="Map flanks to contigs")
+                        action="store_true", dest="flk_map", default=False,
+                        help="Map flanks to contigs")
     parser.add_argument("--analysis",
-                      action="store_true", dest="analysis", default=False,
-                      help="Result analysis")
+                        action="store_true", dest="analysis", default=False,
+                        help="Result analysis")
     parser.add_argument("--flank", dest="flank", default=False,
-                      help="flank regions")
+                        help="flank regions")
     parser.add_argument("--sv",
-                      action="store_true", dest="sv", default=False,
-                      help="Call promoted SVs")
+                        action="store_true", dest="sv", default=False,
+                        help="Call promoted SVs")
     parser.add_argument("--gene",
-                      action="store_true", dest="gene", default=False,
-                      help="Check whether the insertion falls in genes")
+                        action="store_true", dest="gene", default=False,
+                        help="Check whether the insertion falls in genes")
     parser.add_argument("--somatic",
-                      action="store_true", dest="somatic", default=False,
-                      help="Only call somatic events from high coverage normal samples")
+                        action="store_true", dest="somatic", default=False,
+                        help="Only call somatic events from high coverage normal samples")
     parser.add_argument("--somatic_hc",
-                      action="store_true", dest="somatic_hc", default=False,
-                      help="Get high confident somatic events")
+                        action="store_true", dest="somatic_hc", default=False,
+                        help="Get high confident somatic events")
     parser.add_argument("--user",
-                      action="store_true", dest="user_specific", default=False,
-                      help="User specific parameters, by default automatically calc the parameters")
+                        action="store_true", dest="user_specific", default=False,
+                        help="User specific parameters, by default automatically calc the parameters")
     parser.add_argument("--single_sample",
-                      action="store_true", dest="single_sample", default=False,
-                      help="For single sample (like igv screenshot)")
+                        action="store_true", dest="single_sample", default=False,
+                        help="For single sample (like igv screenshot)")
     parser.add_argument("-i", "--input", dest="input", default="",
-                      help="input file ", metavar="FILE")
+                        help="input file ", metavar="FILE")
     parser.add_argument("--input2", dest="input2", default="",
-                      help="input file2 ", metavar="FILE")
-    parser.add_argument("-r", "--reference", dest="reference",
-                      help="The reference file ", metavar="FILE")
-    parser.add_argument("-a", "--annotation", dest="annotation",
-                      help="The annotation file ", metavar="FILE")
+                        help="input file2 ", metavar="FILE")
+    # parser.add_argument("-r", "--reference", dest="reference",
+    #                     help="The list of files with repeat copies with flanking regions", metavar="FILE")
+    parser.add_argument("--Alu-reference", dest="Alu_reference",
+                        help="The file with Alu copies with flanking regions", metavar="FILE")
+    parser.add_argument("--L1-reference", dest="L1_reference",
+                        help="The file with L1 copies with flanking regions", metavar="FILE")
+    parser.add_argument("--SVA-reference", dest="SVA_reference",
+                        help="The file with SVA copies with flanking regions", metavar="FILE")
+    # parser.add_argument("-a", "--annotation", dest="annotation",
+    #                     help="The list of files with RepeatMasker annotations", metavar="FILE")
+    parser.add_argument("--Alu-annotation", dest="Alu_annotation",
+                        help="The file with Alu RepeatMasker annotations", metavar="FILE")
+    parser.add_argument("--L1-annotation", dest="L1_annotation",
+                        help="The file with L1 RepeatMasker annotations", metavar="FILE")
+    parser.add_argument("--SVA-annotation", dest="SVA_annotation",
+                        help="The file with SVA RepeatMasker annotations", metavar="FILE")
     # parser.add_argument("-c", "--copies", dest="copies",
     #                   help="Repeat copies ", metavar="FILE")
     parser.add_argument("-b", "--bam", dest="bam",
-                      help="Input bam file", metavar="FILE")
+                        help="Input bam file", metavar="FILE")
     parser.add_argument("-d", "--barcode_bam", dest="barcode_bam",
-                      help="Input barcode indexed bam file", metavar="FILE")
+                        help="Input barcode indexed bam file", metavar="FILE")
     parser.add_argument("-o", "--output", dest="output",
-                      help="The output file", metavar="FILE")
+                        help="The output file", metavar="FILE")
     parser.add_argument("-p", "--path", dest="wfolder", type="string", default="./",
-                      help="Working folder")
+                        help="Working folder")
     parser.add_argument("--cp", dest="cwfolder", type="string",
-                      help="Working folder for shared clipped reads")
+                        help="Working folder for shared clipped reads")
     parser.add_argument("-n", "--cores", dest="cores", type="int", default=1,
-                      help="number of cores")
+                        help="number of cores")
     parser.add_argument("-e", "--extend", dest="extend", type="int", default=0,
-                      help="extend length")
+                        help="extend length")
     parser.add_argument("-u", "--dup", dest="duplication",
-                      help="duplication files", metavar="FILE")
+                        help="duplication files", metavar="FILE")
     parser.add_argument("--fflank", dest="fflank",
-                      help="flank region file", metavar="FILE")
+                        help="flank region file", metavar="FILE")
     parser.add_argument("--flklen", dest="flklen", type="int",
-                      help="flank region file")
+                        help="flank region file")
     parser.add_argument("--purity", dest="purity", type="float", default=0.45,#by default tumor purity set to 45%
-                      help="Tumor purity")
+                        help="Tumor purity")
     parser.add_argument("--ref", dest="ref",
-                      help="repeat consensus/copies", metavar="FILE")
-    parser.add_argument("--cns", dest="cns",
-                      help="repeat consensus", metavar="FILE")
+                        help="genome reference", metavar="FILE")
+    # parser.add_argument("--cns", dest="cns",
+    #                     help="list of files with repeat consensus", metavar="FILE") # YW need to change
+    parser.add_argument("--Alu-cns", dest="Alu_cns",
+                        help="Alu consensus file", metavar="FILE")
+    parser.add_argument("--L1-cns", dest="L1_cns",
+                        help="L1 consensus file", metavar="FILE")
+    parser.add_argument("--SVA-cns", dest="SVA_cns",
+                        help="SVA consensus file", metavar="FILE")
     parser.add_argument("--sc", dest="siteclip", type="int", default=2,
-                      help="cutoff of minimum # of clipped reads at the exact position, use larger value for 10X")
+                        help="cutoff of minimum # of clipped reads at the exact position, use larger value for 10X")
     parser.add_argument("--lc", dest="lclip", type="int", default=3,
-                      help="cutoff of minimum # of left clipped reads")
+                        help="cutoff of minimum # of left clipped reads")
     parser.add_argument("--rc", dest="rclip", type="int", default=3,
-                      help="cutoff of minimum # of right clipped reads")
+                        help="cutoff of minimum # of right clipped reads")
     parser.add_argument("--cr", dest="cliprep", type="int", default=1,
-                      help="cutoff of minimum # of clipped parts fall in repeats")
+                        help="cutoff of minimum # of clipped parts fall in repeats")
     parser.add_argument("--nd", dest="ndisc", type="int", default=5,
-                      help="cutoff of minimum # of discordant pair")
+                        help="cutoff of minimum # of discordant pair")
     parser.add_argument("--nb", dest="nbarcode", type="int", default=500,
-                      help="cutoff of maximum # of molecure coverage")
+                        help="cutoff of maximum # of molecure coverage")
     parser.add_argument("--teilen", dest="teilen", type="int",
-                      help="minimum length of the insertion for future analysis")
+                        help="minimum length of the insertion for future analysis")
     parser.add_argument("--cov", dest="cov", type="float", default=30.0,
-                      help="approximate read depth")
+                        help="approximate read depth")
     parser.add_argument("--iniclip", dest="iniclip", type="int", default=2,
-                      help="initial minimum clip cutoff")
+                        help="initial minimum clip cutoff")
     parser.add_argument("--af1", dest="af1", type="float", default=0.005,
-                      help="minimal allel fraction")
+                        help="minimal allel fraction")
     parser.add_argument("--af2", dest="af2", type="float", default=0.45,
-                      help="minimal allel fraction")
+                        help="minimal allel fraction")
     parser.add_argument("--rmsk_extnd", dest="rmsk_extnd", type="int", default=100,
-                      help="Length of the left extended region when loading the repeatmasker output")
+                        help="Length of the left extended region when loading the repeatmasker output")
     parser.add_argument("--rtype", dest="rep_type", type="int", default=1,
-                      help="type of repeats: 1-L1, 2-Alu, 4-SVA, 8-HERV, 16-MIT, 32-MSTA")
+                        help="type of repeats: 1-L1, 2-Alu, 4-SVA, 8-HERV, 16-MIT, 32-MSTA")
     parser.add_argument("--blacklist", dest="blacklist", default="null",
-                      help="Reference panel database for filtering, or a blacklist region", metavar="FILE")
+                        help="Reference panel database for filtering, or a blacklist region", metavar="FILE")
     parser.add_argument("--model", dest="model", default="null",
-                      help="Already trained model (.pkl file) for genotype classification", metavar="FILE")
+                        help="Already trained model (.pkl file) for genotype classification", metavar="FILE")
     args = parser.parse_args()
     return args
 ####
@@ -483,9 +501,16 @@ if __name__ == '__main__':
         sf_bam_list = args.input
         s_working_folder = args.wfolder
         n_jobs = args.cores
-        sf_rep_cns=args.cns
-        sf_rep = args.reference  ####repeat copies "-r"
-        sf_annotation = args.annotation
+        sf_rep_cns_Alu =args.Alu_cns
+        sf_rep_cns_L1 =args.L1_cns
+        sf_rep_cns_SVA =args.SVA_cns
+        sf_rep_Alu = args.Alu_reference  ####repeat copies "-r"
+        sf_rep_L1 = args.L1_reference
+        sf_rep_SVA = args.SVA_reference
+        sf_annotation_Alu = args.Alu_annotation
+        sf_annotation_L1 = args.L1_annotation
+        sf_annotation_SVA = args.SVA_annotation
+        
         sf_out = args.output
         b_se = args.single  ##single end reads or not, default is not
         sf_ref=args.ref ###reference genome "-ref"
@@ -536,7 +561,10 @@ if __name__ == '__main__':
             ##2. require >=2 clip reads (actually depending on user input), whose clipped part is aligned to repeat copies (depending on --cr)
         
             # YW 2020/08/01 added b_mosaic input (github update), and updated in the function too, but this hasn't been used
-            tem_locator.call_TEI_candidate_sites_from_multiple_alignmts(sf_annotation, sf_rep_cns, sf_rep, b_se, cutoff_left_clip,
+            tem_locator.call_TEI_candidate_sites_from_multiple_alignmts(sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
+                                                                        sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
+                                                                        sf_rep_Alu, sf_rep_L1, sf_rep_SVA,
+                                                                        b_se, cutoff_left_clip,
                                                                         cutoff_right_clip, cutoff_clip_mate_in_rep, b_mosaic,
                                                                         wfolder_pub_clip, b_force, max_cov_cutoff, sf_out)
 ####
@@ -545,7 +573,9 @@ if __name__ == '__main__':
         sf_bam_list = args.bam  ###read in a bam list file
         s_working_folder = args.wfolder
         n_jobs = args.cores
-        sf_annotation = args.annotation
+        sf_annotation_Alu = args.Alu_annotation
+        sf_annotation_L1 = args.L1_annotation
+        sf_annotation_SVA = args.SVA_annotation
         sf_candidate_list = args.input
         sf_out = args.output
         sf_ref = args.ref  ###reference genome, some cram file require this file to open
@@ -596,7 +626,8 @@ if __name__ == '__main__':
             tem_locator = TE_Multi_Locator(sf_bam_list, s_working_folder, n_jobs, sf_ref)
             # YW 2020/08/03 github update: added 2 arguments sf_raw_disc, b_tumor
             tem_locator.filter_candidate_sites_by_discordant_pairs_multi_alignmts(m_sites_clip_peak, iextend, i_is, f_dev,
-                                                                                  n_disc_cutoff, sf_annotation, sf_tmp, sf_raw_disc, b_tumor)
+                                                                                  n_disc_cutoff, sf_annotation_Alu, sf_annotation_L1,
+                                                                                  sf_annotation_SVA, sf_tmp, sf_raw_disc, b_tumor)
             # YW 2020/04/23 added the if statement to alert in advance the problem of unable to merge_clip_disc
             if os.stat(sf_tmp).st_size == 0:
                 print("{0} is EMPTY! It will be impossible to merge clip disc in the next step. Set all counts of left and right discordant reads to 0. Discordant cutoff {1} is too high.\n".format(sf_tmp, n_disc_cutoff))
@@ -618,9 +649,10 @@ if __name__ == '__main__':
         # YW 2020/07/05 changed the following from 400 to 200 (shorter read length in ancient samples)
         iextnd = global_values.F_CNS_EXTEND ###for each site, re-collect reads in range [-iextnd, iextnd], this around ins +- 3*deviation
         bin_size = global_values.BIN_SIZE  # block size for parallelization
-        sf_cns = args.reference  ####repeat copies/cns here
+        sf_rep_cns_Alu =args.Alu_cns
+        sf_rep_cns_L1 =args.L1_cns
+        sf_rep_cns_SVA =args.SVA_cns
         bmapped_cutoff = global_values.MIN_CLIP_MAPPED_RATIO # minimal ratio of aligned bases in clipped part to be qualified (in both alignment of clipped part in clipped and in discordant to repeat cns)
-        sf_annotation = args.annotation
         i_concord_dist = 550  # this should be the mean_is+3*is_std_deviation, used to cluster disc reads on the consensus YW: --> global_values? (too large?) YW 2020/07/19 clarified this comment
         f_concord_ratio = global_values.DISC_CONCORD_RATIO # YW 2020/07/21: to check whether discordant reads are clustered on cns, currently disabled
         sf_output = args.output
@@ -666,7 +698,9 @@ if __name__ == '__main__':
             print("Filter (on cns) cutoff: number of clipped: {0} and number of discordant reads: {1} are used!!!\n".format(n_clip_cutoff, n_disc_cutoff))
 
             x_cd_filter = XClipDiscFilter(sf_bam_list, s_working_folder, n_jobs, sf_ref)
-            x_cd_filter.call_MEIs_consensus(sf_candidate_list, sf_raw_disc, iextnd, bin_size, sf_cns, sf_flank, i_flank_lenth,
+            x_cd_filter.call_MEIs_consensus(sf_candidate_list, sf_raw_disc, iextnd, bin_size,
+                                            sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
+                                            sf_flank, i_flank_lenth,
                                             bmapped_cutoff, i_concord_dist, f_concord_ratio, n_clip_cutoff, n_disc_cutoff,
                                             sf_output)
     ####
