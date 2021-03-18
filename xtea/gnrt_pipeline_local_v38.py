@@ -6,7 +6,7 @@
 
 import os
 from subprocess import *
-from optparse import OptionParser
+import argparse
 import ntpath
 import global_values
 ILLUMINA="illumina"
@@ -801,14 +801,14 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_mosaic, b_use
             l_libs = load_par_config(sf_config)
             s_libs = gnrt_parameters(l_libs)
             ##
-            iclip_c = options.nclip
-            iclip_rp = options.cliprep
-            idisc_c = options.ndisc
-            iflt_clip = options.nfilterclip
-            iflt_disc = options.nfilterdisc
-            iflk_len = options.flklen
-            itei_len = options.teilen
-            iflag = options.flag
+            iclip_c = args.nclip
+            iclip_rp = args.cliprep
+            idisc_c = args.ndisc
+            iflt_clip = args.nfilterclip
+            iflt_disc = args.nfilterdisc
+            iflk_len = args.flklen
+            itei_len = args.teilen
+            iflag = args.flag
 
             s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, iflt_clip, iflt_disc, ncores, iflk_len,
                                                  itei_len, iflag, b_mosaic, b_user_par, b_force, b_tumor, b_resume, f_purity, i_rep_type, sf_pub_clip)
@@ -1020,117 +1020,117 @@ def prepare_case_control_bam(sf_ori_bam, sf_sprt_bam, sf_control_bam):
             fout_ctrl.write("\n")
 
 ####
-def parse_option():
-    parser = OptionParser()
-    parser.add_option("-D", "--decompress",
+def parse_arguments():
+    parser = argparse.ArgumentParser("Generates xTEA sbatch scripts for hg38 to be run locally")
+    parser.add_argument("-D", "--decompress",
                       action="store_true", dest="decompress", default=False,
                       help="Decompress the rep lib and reference file")
-    parser.add_option("-M", "--mosaic",
+    parser.add_argument("-M", "--mosaic",
                       action="store_true", dest="mosaic", default=False,
                       help="Calling mosaic events from high coverage data")
-    parser.add_option("-C", "--case_control",
+    parser.add_argument("-C", "--case_control",
                       action="store_true", dest="case_control", default=False,
                       help="Run in case control mode")
-    parser.add_option("-U", "--user",
+    parser.add_argument("-U", "--user",
                       action="store_true", dest="user", default=False,
                       help="Use user specific parameters instead of automatically calculated ones")
-    parser.add_option("--force",
+    parser.add_argument("--force",
                       action="store_true", dest="force", default=False,
                       help="Force to start from the very beginning")
-    parser.add_option("--tumor",
+    parser.add_argument("--tumor",
                       action="store_true", dest="tumor", default=False,
                       help="Working on tumor samples")
-    parser.add_option("--purity", dest="purity", type="float", default=0.45,  # by default tumor purity set to 45%
+    parser.add_argument("--purity", dest="purity", type="float", default=0.45,  # by default tumor purity set to 45%
                       help="Tumor purity")
-    parser.add_option("--lsf",
+    parser.add_argument("--lsf",
                       action="store_true", dest="lsf", default=False,
                       help="Indiates submit to LSF system")
-    parser.add_option("--slurm",
+    parser.add_argument("--slurm",
                       action="store_true", dest="slurm", default=False,
                       help="Indiates submit to slurm system")
-    parser.add_option("--resume",
+    parser.add_argument("--resume",
                       action="store_true", dest="resume", default=False,
                       help="Resume the running, which will skip the step if output file already exists!")
-    parser.add_option("-V", "--version",
+    parser.add_argument("-V", "--version",
                       action="store_true", dest="version", default=False,
                       help="Print xTea version")
-    parser.add_option("-i", "--id", dest="id",
+    parser.add_argument("-i", "--id", dest="id",
                       help="sample id list file ", metavar="FILE")
-    parser.add_option("-a", "--par", dest="parameters",
+    parser.add_argument("-a", "--par", dest="parameters",
                       help="parameter file ", metavar="FILE")
-    parser.add_option("-l", "--lib", dest="lib",
+    parser.add_argument("-l", "--lib", dest="lib",
                       help="TE lib config file ", metavar="FILE")
-    parser.add_option("-b", "--bam", dest="bam",
+    parser.add_argument("-b", "--bam", dest="bam",
                       help="Input bam file", metavar="FILE")
-    parser.add_option("-x", "--x10", dest="x10",
+    parser.add_argument("-x", "--x10", dest="x10",
                       help="Input 10X bam file", metavar="FILE")
-    parser.add_option("-n", "--cores", dest="cores", type="int", default=8,
+    parser.add_argument("-n", "--cores", dest="cores", type="int", default=8,
                       help="number of cores")
-    parser.add_option("-m", "--memory", dest="memory", type="int", default=20,
+    parser.add_argument("-m", "--memory", dest="memory", type="int", default=20,
                       help="Memory limit in GB")
-    parser.add_option("-q", "--partition", dest="partition", type="string",
+    parser.add_argument("-q", "--partition", dest="partition", type="string",
                       help="Which queue to run the job")
-    parser.add_option("-t", "--time", dest="time", type="string",
+    parser.add_argument("-t", "--time", dest="time", type="string",
                       help="Time limit")
 
-    parser.add_option("-p", "--path", dest="wfolder", type="string", default="",
+    parser.add_argument("-p", "--path", dest="wfolder", type="string", default="",
                       help="Working folder")
-    parser.add_option("-r", "--ref", dest="ref", type="string",
+    parser.add_argument("-r", "--ref", dest="ref", type="string",
                       help="reference genome")
-    parser.add_option("-g", "--gene", dest="gene", type="string", default="gene.aff3",
+    parser.add_argument("-g", "--gene", dest="gene", type="string", default="gene.aff3",
                       help="Gene annotation file")
-    parser.add_option("--xtea", dest="xtea", type="string",
+    parser.add_argument("--xtea", dest="xtea", type="string",
                       help="xTEA folder")
 
-    parser.add_option("-f", "--flag", dest="flag", type="int",
+    parser.add_argument("-f", "--flag", dest="flag", type="int",
                       help="Flag indicates which step to run (1-clip, 2-disc, 4-barcode, 8-xfilter, 16-filter, 32-asm)")
 
-    parser.add_option("-y", "--reptype", dest="rep_type", type="int", default=1,
+    parser.add_argument("-y", "--reptype", dest="rep_type", type="int", default=1,
                       help="Type of repeats working on: 1-L1, 2-Alu, 4-SVA, 8-HERV, 16-Mitochondrial")
 
-    parser.add_option("--flklen", dest="flklen", type="int", default=3000,
+    parser.add_argument("--flklen", dest="flklen", type="int", default=3000,
                       help="flank region file")
-    parser.add_option("--nclip", dest="nclip", type="int", default=3,
+    parser.add_argument("--nclip", dest="nclip", type="int", default=3,
                       help="cutoff of minimum # of clipped reads")
-    parser.add_option("--cr", dest="cliprep", type="int", default=1,
+    parser.add_argument("--cr", dest="cliprep", type="int", default=1,
                       help="cutoff of minimum # of clipped reads whose mates map in repetitive regions")
-    parser.add_option("--nd", dest="ndisc", type="int", default=5,
+    parser.add_argument("--nd", dest="ndisc", type="int", default=5,
                       help="cutoff of minimum # of discordant pair")
-    parser.add_option("--nfclip", dest="nfilterclip", type="int", default=3,
+    parser.add_argument("--nfclip", dest="nfilterclip", type="int", default=3,
                       help="cutoff of minimum # of clipped reads in filtering step")
-    parser.add_option("--nfdisc", dest="nfilterdisc", type="int", default=5,
+    parser.add_argument("--nfdisc", dest="nfilterdisc", type="int", default=5,
                       help="cutoff of minimum # of discordant pair of each sample in filtering step")
-    parser.add_option("--teilen", dest="teilen", type="int", default=50,
+    parser.add_argument("--teilen", dest="teilen", type="int", default=50,
                       help="minimum length of the insertion for future analysis")
 
-    parser.add_option("-o", "--output", dest="output", default="submit_calling_jobs_for_samples.sh",
+    parser.add_argument("-o", "--output", dest="output", default="submit_calling_jobs_for_samples.sh",
                       help="The output file", metavar="FILE")
-    parser.add_option("--blacklist", dest="blacklist", default="null",
+    parser.add_argument("--blacklist", dest="blacklist", default="null",
                       help="Reference panel database for filtering, or a blacklist region", metavar="FILE")
-    (options, args) = parser.parse_args()
-    return (options, args)
+    args = parser.parse_args()
+    return args
 
 ####
 if __name__ == '__main__':
-    (options, args) = parse_option()
-    b_version=options.version
+    args = parse_arguments()
+    b_version=args.version
     if b_version==True:
         print(("xTea %s for short and linked reads on hg38\n" % S_VERSION))
     else:
-        sf_id = options.id
-        sf_bams = options.bam ###input is a bam file
-        sf_bams_10X = options.x10
-        sf_sbatch_sh = options.output  # this is the shell for submitting the jobs
-        s_wfolder = options.wfolder
-        b_mosaic = options.mosaic
-        b_user_par = options.user
-        b_force = options.force
-        b_case_control=options.case_control #whether case control mode
-        b_tumor = options.tumor
-        f_purity = options.purity
-        b_lsf=options.lsf
-        b_slurm=options.slurm ####
-        b_resume = options.resume
+        sf_id = args.id
+        sf_bams = args.bam ###input is a bam file
+        sf_bams_10X = args.x10
+        sf_sbatch_sh = args.output  # this is the shell for submitting the jobs
+        s_wfolder = args.wfolder
+        b_mosaic = args.mosaic
+        b_user_par = args.user
+        b_force = args.force
+        b_case_control=args.case_control #whether case control mode
+        b_tumor = args.tumor
+        f_purity = args.purity
+        b_lsf=args.lsf
+        b_slurm=args.slurm ####
+        b_resume = args.resume
     ####
 
         if s_wfolder[-1]!="/":
@@ -1144,25 +1144,25 @@ if __name__ == '__main__':
         if os.path.isfile(sf_bams_10X) == False:
             sf_bams_10X = "null"
     ####
-        spartition = options.partition
-        stime = options.time
-        smemory = options.memory
-        ncores = options.cores
-        sf_folder_rep1 = options.lib  ##this is the lib folder path
-        sf_ref1=options.ref ####reference genome
-        sf_folder_xtea=options.xtea#
+        spartition = args.partition
+        stime = args.time
+        smemory = args.memory
+        ncores = args.cores
+        sf_folder_rep1 = args.lib  ##this is the lib folder path
+        sf_ref1=args.ref ####reference genome
+        sf_folder_xtea=args.xtea#
 
         sf_folder_rep=sf_folder_rep1
         sf_ref=sf_ref1
-        if options.decompress==True:
+        if args.decompress==True:
             decompress(sf_folder_rep1, s_wfolder)
             decompress(sf_ref1, s_wfolder)
             sf_folder_rep = s_wfolder+"rep_lib_annotation/" #trim tar.gz
             sf_ref=s_wfolder+"genome.fa"
-        sf_gene=options.gene
-        sf_black_list = options.blacklist
+        sf_gene=args.gene
+        sf_black_list = args.blacklist
 
-        i_rep_type=options.rep_type
+        i_rep_type=args.rep_type
         l_rep_type = []
         if i_rep_type & 1 != 0:
             l_rep_type.append(REP_TYPE_L1)

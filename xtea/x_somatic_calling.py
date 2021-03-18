@@ -5,7 +5,7 @@
 #this module is designed for cancer (case-control) genomes
 
 import os
-from optparse import OptionParser
+import argparse
 from x_clip_disc_filter import *
 from x_genotype_feature import *
 from x_transduction import *
@@ -811,30 +811,30 @@ class SomaticMEICaller():#
         m_all_case = self.load_sites(sf_case)
 
 #####
-# def parse_option():
-#     parser = OptionParser()
-#     parser.add_option("-i", "--input", dest="input",
+# def parse_arguments():
+#     args = parse_arguments()
+#     parser.add_argument("-i", "--input", dest="input",
 #                       help="input file ", metavar="FILE")
-#     parser.add_option("--case", dest="case",
+#     parser.add_argument("--case", dest="case",
 #                       help="case results list", metavar="FILE")
-#     parser.add_option("--control", dest="control",
+#     parser.add_argument("--control", dest="control",
 #                       help="control results list", metavar="FILE")
-#     parser.add_option("-p", "--wfolder", dest="wfolder", type="string",
+#     parser.add_argument("-p", "--wfolder", dest="wfolder", type="string",
 #                       help="Working folder")
-#     parser.add_option("-e", "--slack", dest="slack", type="int",
+#     parser.add_argument("-e", "--slack", dest="slack", type="int",
 #                       help="slack value for comparing two positions")
-#     (options, args) = parser.parse_args()
-#     return (options, args)
+#     args = parser.parse_args()
+    # return args
 #
 # ####
 # ####
 # if __name__ == '__main__':
-#     (options, args) = parse_option()
-#     sf_vs_ids=options.input
-#     sf_case_list=options.case
-#     sf_control_list=options.control
-#     s_wfolder=options.wfolder
-#     i_slack=options.slack
+#     args = parse_arguments()
+#     sf_vs_ids=args.input
+#     sf_case_list=args.case
+#     sf_control_list=args.control
+#     s_wfolder=args.wfolder
+#     i_slack=args.slack
 #
 #     case_control_mode=CaseControlMode(s_wfolder)
 #     case_control_mode.call_somatic_cases(sf_vs_ids, sf_case_list, sf_control_list, i_slack)

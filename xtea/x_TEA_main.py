@@ -121,7 +121,7 @@ from x_reference import *
 from x_clip_disc_filter import *
 from x_somatic_calling import *
 # from x_analysis import *
-from optparse import OptionParser
+import argparse
 from x_reads_collection import *
 from x_mutation import *
 from x_sv import *
@@ -139,226 +139,226 @@ from x_orphan_transduction import * # new
 
 ####
 ##parse the options
-def parse_option():
-    parser = OptionParser()
-    parser.add_option("-P", "--preprocess",
+def parse_arguments():
+    parser = argparse.ArgumentParser("Main script of xTea_ML")
+    parser.add_argument("-P", "--preprocess",
                       action="store_true", dest="preprocess", default=False,
                       help="Preprocessing stpes")
-    parser.add_option("-Q","--collectclip",
+    parser.add_argument("-Q","--collectclip",
                       action="store_true", dest="collect_clip", default=False,
                       help="Call clipped reads from alignment")
-    parser.add_option("-C", "--clip",
+    parser.add_argument("-C", "--clip",
                       action="store_true", dest="clip", default=False,
                       help="Call candidate TEI sites from clipped reads")
-    parser.add_option("-S", "--single",
+    parser.add_argument("-S", "--single",
                       action="store_true", dest="single", default=False,
                       help="Call clip positions from single-end reads")
-    parser.add_option("-D", "--discordant",
+    parser.add_argument("-D", "--discordant",
                       action="store_true", dest="discordant", default=False,
                       help="Filter with discordant paired end reads")
-    parser.add_option("-N", "--filter_csn",
+    parser.add_argument("-N", "--filter_csn",
                       action="store_true", dest="filter_csn", default=False,
                       help="Filter out candidate sites from map position on consensus")
-    parser.add_option("--resume",
+    parser.add_argument("--resume",
                       action="store_true", dest="resume", default=False,
                       help="Resume the running, which will skip the step if output file already exists!")
     #transduction
-    parser.add_option("--transduction",
+    parser.add_argument("--transduction",
                       action="store_true", dest="transduction", default=False,
                       help="Call transduction for sites")
-    parser.add_option("--sibling",
+    parser.add_argument("--sibling",
                       action="store_true", dest="sibling", default=False,
                       help="Call sibling transduction for sites")
-    parser.add_option("--spectrum",
+    parser.add_argument("--spectrum",
                       action="store_true", dest="spectrum", default=False,
                       help="Spectrum analysis by tumor type")
-    parser.add_option("-B", "--barcode",
+    parser.add_argument("-B", "--barcode",
                       action="store_true", dest="barcode", default=False,
                       help="Indicate the input is 10X bam")
-    parser.add_option("-E", "--collect",
+    parser.add_argument("-E", "--collect",
                       action="store_true", dest="collect", default=False,
                       help="Collect reads for candidate sites")
-    parser.add_option("-I", "--mutation",
+    parser.add_argument("-I", "--mutation",
                       action="store_true", dest="mutation", default=False,
                       help="Call internal mutation")
-    parser.add_option("-U", "--collect_Illumina",
+    parser.add_argument("-U", "--collect_Illumina",
                       action="store_true", dest="collect_illumina", default=False,
                       help="Collect reads for candidate sites from normal illumina alignment")
-    parser.add_option("-F", "--filter_asm",
+    parser.add_argument("-F", "--filter_asm",
                       action="store_true", dest="filter_asm", default=False,
                       help="Filter out candidate sites from assembly")
-    parser.add_option("-G", "--contig_realign",
+    parser.add_argument("-G", "--contig_realign",
                       action="store_true", dest="contig_realign", default=False,
                       help="Filter out candidate sites from assembly")
-    parser.add_option("-T", "--trace",
+    parser.add_argument("-T", "--trace",
                       action="store_true", dest="trace", default=False,
                       help="Trace the sources of TEIs")
-    parser.add_option("-A", "--assembly",
+    parser.add_argument("-A", "--assembly",
                       action="store_true", dest="assembly", default=False,
                       help="Do local assembly for collected reads")
-    parser.add_option("-L", "--local",
+    parser.add_argument("-L", "--local",
                       action="store_true", dest="local", default=False,
                       help="Assemble the TEIs on local machine")
-    parser.add_option("-M", "--map",
+    parser.add_argument("-M", "--map",
                       action="store_true", dest="map", default=False,
                       help="map flank regions to the assembled contigs")
-    parser.add_option("-V", "--visualization",
+    parser.add_argument("-V", "--visualization",
                       action="store_true", dest="visualization", default=False,
                       help="Show the heatmap figure of the selected regions")
-    parser.add_option("-K", "--withflank",
+    parser.add_argument("-K", "--withflank",
                       action="store_true", dest="withflank", default=False,
                       help="Keep the flank regions with the repeat copies")
-    parser.add_option("-J", "--joint",
+    parser.add_argument("-J", "--joint",
                       action="store_true", dest="joint", default=False,
                       help="Joint calling")
-    parser.add_option("--mit",
+    parser.add_argument("--mit",
                       action="store_true", dest="mit", default=False,
                       help="Indicate call mitochondrion insertion")
-    parser.add_option("--dna",
+    parser.add_argument("--dna",
                       action="store_true", dest="dna", default=False,
                       help="Not RNA mediated insertion (no polyA)")
-    parser.add_option("--cbs",
+    parser.add_argument("--cbs",
                       action="store_true", dest="cbs", default=False,
                       help="check by sample")#whether check by sample
-    parser.add_option("--sva",
+    parser.add_argument("--sva",
                       action="store_true", dest="sva", default=False,
                       help="For SVA insertion calling")
     # YW 2020/08/16 added this option
-    parser.add_option("--l1",
+    parser.add_argument("--l1",
                       action="store_true", dest="l1", default=False,
                       help="For L1 insertion calling, L1 specific function in clip-disc filtering")
-    parser.add_option("--gntp_feature",
+    parser.add_argument("--gntp_feature",
                       action="store_true", dest="gntp_feature", default=False,
                       help="Collect genotyping features from bam")
-    parser.add_option("--postF",
+    parser.add_argument("--postF",
                       action="store_true", dest="postF", default=False,
                       help="Post filtering module")
-    parser.add_option("--gntp_classify",
+    parser.add_argument("--gntp_classify",
                       action="store_true", dest="gntp_classify", default=False,
                       help="Train/predict genotpe classifier")
-    parser.add_option("--train_gntp",
+    parser.add_argument("--train_gntp",
                       action="store_true", dest="train_gntp", default=False,
                       help="Train the genotype classifer")
-    parser.add_option("--postFmosaic",
+    parser.add_argument("--postFmosaic",
                       action="store_true", dest="postFmosaic", default=False,
                       help="Post filtering module for mosaic events")
-    parser.add_option("--igv",
+    parser.add_argument("--igv",
                       action="store_true", dest="igv", default=False,
                       help="Prepare screenshot command for given sites")
-    parser.add_option("--force",
+    parser.add_argument("--force",
                       action="store_true", dest="force", default=False,
                       help="Force to start from the very beginning")
-    parser.add_option("--case_control",
+    parser.add_argument("--case_control",
                       action="store_true", dest="case_control", default=False,
                       help="case control mode")
-    parser.add_option("--tumor",
+    parser.add_argument("--tumor",
                       action="store_true", dest="tumor", default=False,
                       help="Working on tumor samples")
     #convert to gVCF
-    parser.add_option("--gVCF",
+    parser.add_argument("--gVCF",
                       action="store_true", dest="gVCF", default=False,
                       help="Generate the gVCF from xTEA raw output")
 ####
-    parser.add_option("--bed",
+    parser.add_argument("--bed",
                       action="store_true", dest="bed", default=False,
                       help="Input annotation in bed format")
-    parser.add_option("--mosaic",
+    parser.add_argument("--mosaic",
                       action="store_true", dest="mosaic", default=False,
                       help="Call mosaic events")
-    parser.add_option("--flk_map",
+    parser.add_argument("--flk_map",
                       action="store_true", dest="flk_map", default=False,
                       help="Map flanks to contigs")
-    parser.add_option("--analysis",
+    parser.add_argument("--analysis",
                       action="store_true", dest="analysis", default=False,
                       help="Result analysis")
-    parser.add_option("--flank", dest="flank", default=False,
+    parser.add_argument("--flank", dest="flank", default=False,
                       help="flank regions")
-    parser.add_option("--sv",
+    parser.add_argument("--sv",
                       action="store_true", dest="sv", default=False,
                       help="Call promoted SVs")
-    parser.add_option("--gene",
+    parser.add_argument("--gene",
                       action="store_true", dest="gene", default=False,
                       help="Check whether the insertion falls in genes")
-    parser.add_option("--somatic",
+    parser.add_argument("--somatic",
                       action="store_true", dest="somatic", default=False,
                       help="Only call somatic events from high coverage normal samples")
-    parser.add_option("--somatic_hc",
+    parser.add_argument("--somatic_hc",
                       action="store_true", dest="somatic_hc", default=False,
                       help="Get high confident somatic events")
-    parser.add_option("--user",
+    parser.add_argument("--user",
                       action="store_true", dest="user_specific", default=False,
                       help="User specific parameters, by default automatically calc the parameters")
-    parser.add_option("--single_sample",
+    parser.add_argument("--single_sample",
                       action="store_true", dest="single_sample", default=False,
                       help="For single sample (like igv screenshot)")
-    parser.add_option("-i", "--input", dest="input", default="",
+    parser.add_argument("-i", "--input", dest="input", default="",
                       help="input file ", metavar="FILE")
-    parser.add_option("--input2", dest="input2", default="",
+    parser.add_argument("--input2", dest="input2", default="",
                       help="input file2 ", metavar="FILE")
-    parser.add_option("-r", "--reference", dest="reference",
+    parser.add_argument("-r", "--reference", dest="reference",
                       help="The reference file ", metavar="FILE")
-    parser.add_option("-a", "--annotation", dest="annotation",
+    parser.add_argument("-a", "--annotation", dest="annotation",
                       help="The annotation file ", metavar="FILE")
-    # parser.add_option("-c", "--copies", dest="copies",
+    # parser.add_argument("-c", "--copies", dest="copies",
     #                   help="Repeat copies ", metavar="FILE")
-    parser.add_option("-b", "--bam", dest="bam",
+    parser.add_argument("-b", "--bam", dest="bam",
                       help="Input bam file", metavar="FILE")
-    parser.add_option("-d", "--barcode_bam", dest="barcode_bam",
+    parser.add_argument("-d", "--barcode_bam", dest="barcode_bam",
                       help="Input barcode indexed bam file", metavar="FILE")
-    parser.add_option("-o", "--output", dest="output",
+    parser.add_argument("-o", "--output", dest="output",
                       help="The output file", metavar="FILE")
-    parser.add_option("-p", "--path", dest="wfolder", type="string", default="./",
+    parser.add_argument("-p", "--path", dest="wfolder", type="string", default="./",
                       help="Working folder")
-    parser.add_option("--cp", dest="cwfolder", type="string",
+    parser.add_argument("--cp", dest="cwfolder", type="string",
                       help="Working folder for shared clipped reads")
-    parser.add_option("-n", "--cores", dest="cores", type="int", default=1,
+    parser.add_argument("-n", "--cores", dest="cores", type="int", default=1,
                       help="number of cores")
-    parser.add_option("-e", "--extend", dest="extend", type="int", default=0,
+    parser.add_argument("-e", "--extend", dest="extend", type="int", default=0,
                       help="extend length")
-    parser.add_option("-u", "--dup", dest="duplication",
+    parser.add_argument("-u", "--dup", dest="duplication",
                       help="duplication files", metavar="FILE")
-    parser.add_option("--fflank", dest="fflank",
+    parser.add_argument("--fflank", dest="fflank",
                       help="flank region file", metavar="FILE")
-    parser.add_option("--flklen", dest="flklen", type="int",
+    parser.add_argument("--flklen", dest="flklen", type="int",
                       help="flank region file")
-    parser.add_option("--purity", dest="purity", type="float", default=0.45,#by default tumor purity set to 45%
+    parser.add_argument("--purity", dest="purity", type="float", default=0.45,#by default tumor purity set to 45%
                       help="Tumor purity")
-    parser.add_option("--ref", dest="ref",
+    parser.add_argument("--ref", dest="ref",
                       help="repeat consensus/copies", metavar="FILE")
-    parser.add_option("--cns", dest="cns",
+    parser.add_argument("--cns", dest="cns",
                       help="repeat consensus", metavar="FILE")
-    parser.add_option("--sc", dest="siteclip", type="int", default=2,
+    parser.add_argument("--sc", dest="siteclip", type="int", default=2,
                       help="cutoff of minimum # of clipped reads at the exact position, use larger value for 10X")
-    parser.add_option("--lc", dest="lclip", type="int", default=3,
+    parser.add_argument("--lc", dest="lclip", type="int", default=3,
                       help="cutoff of minimum # of left clipped reads")
-    parser.add_option("--rc", dest="rclip", type="int", default=3,
+    parser.add_argument("--rc", dest="rclip", type="int", default=3,
                       help="cutoff of minimum # of right clipped reads")
-    parser.add_option("--cr", dest="cliprep", type="int", default=1,
+    parser.add_argument("--cr", dest="cliprep", type="int", default=1,
                       help="cutoff of minimum # of clipped parts fall in repeats")
-    parser.add_option("--nd", dest="ndisc", type="int", default=5,
+    parser.add_argument("--nd", dest="ndisc", type="int", default=5,
                       help="cutoff of minimum # of discordant pair")
-    parser.add_option("--nb", dest="nbarcode", type="int", default=500,
+    parser.add_argument("--nb", dest="nbarcode", type="int", default=500,
                       help="cutoff of maximum # of molecure coverage")
-    parser.add_option("--teilen", dest="teilen", type="int",
+    parser.add_argument("--teilen", dest="teilen", type="int",
                       help="minimum length of the insertion for future analysis")
-    parser.add_option("--cov", dest="cov", type="float", default=30.0,
+    parser.add_argument("--cov", dest="cov", type="float", default=30.0,
                       help="approximate read depth")
-    parser.add_option("--iniclip", dest="iniclip", type="int", default=2,
+    parser.add_argument("--iniclip", dest="iniclip", type="int", default=2,
                       help="initial minimum clip cutoff")
-    parser.add_option("--af1", dest="af1", type="float", default=0.005,
+    parser.add_argument("--af1", dest="af1", type="float", default=0.005,
                       help="minimal allel fraction")
-    parser.add_option("--af2", dest="af2", type="float", default=0.45,
+    parser.add_argument("--af2", dest="af2", type="float", default=0.45,
                       help="minimal allel fraction")
-    parser.add_option("--rmsk_extnd", dest="rmsk_extnd", type="int", default=100,
+    parser.add_argument("--rmsk_extnd", dest="rmsk_extnd", type="int", default=100,
                       help="Length of the left extended region when loading the repeatmasker output")
-    parser.add_option("--rtype", dest="rep_type", type="int", default=1,
+    parser.add_argument("--rtype", dest="rep_type", type="int", default=1,
                       help="type of repeats: 1-L1, 2-Alu, 4-SVA, 8-HERV, 16-MIT, 32-MSTA")
-    parser.add_option("--blacklist", dest="blacklist", default="null",
+    parser.add_argument("--blacklist", dest="blacklist", default="null",
                       help="Reference panel database for filtering, or a blacklist region", metavar="FILE")
-    parser.add_option("--model", dest="model", default="null",
+    parser.add_argument("--model", dest="model", default="null",
                       help="Already trained model (.pkl file) for genotype classification", metavar="FILE")
-    (options, args) = parser.parse_args()
-    return (options, args)
+    args = parser.parse_args()
+    return args
 ####
 ####
 # YW 2020/08/01 github update: add the last 2 arguments
@@ -414,39 +414,39 @@ def adjust_cutoff_tumor(ncutoff=-1, i_adjust=1):
 ####
 ##main function
 if __name__ == '__main__':
-    (options, args) = parse_option()
+    args = parse_arguments()
 
-    if options.mit:#if this to call mitochondrial insertion, then will not filter out chrM in "x_intermediate_sites.py"
+    if args.mit:#if this to call mitochondrial insertion, then will not filter out chrM in "x_intermediate_sites.py"
         global_values.turn_on_mit()
 
-    if options.dna:
+    if args.dna:
         global_values.turn_off_rna_mediated()
-    if options.cbs:
+    if args.cbs:
         global_values.turn_on_check_by_sample()
-    if options.sva:
+    if args.sva:
         global_values.turn_on_sva()
     # YW 2020/08/16 added this
-    if options.l1:
+    if args.l1:
         global_values.turn_on_l1()
 
     b_automatic=True
-    if options.user_specific:
+    if args.user_specific:
         b_automatic=False
     # YW 2020/08/01 github update the following 3
-    b_tumor=options.tumor #whether this is tumor sample
-    f_purity=options.purity#tumor purity, by default 0.45
-    b_resume=options.resume#resume the running, which will skip the step if output file already exist
+    b_tumor=args.tumor #whether this is tumor sample
+    f_purity=args.purity#tumor purity, by default 0.45
+    b_resume=args.resume#resume the running, which will skip the step if output file already exist
 
-    if options.preprocess:  #preprocess steps
-        s_working_folder = options.wfolder
-        sf_ref = options.reference
-        sf_annotation = options.annotation
-        sf_out_fa = options.output
-        flank_lth = options.extend
-        b_with_flank = options.withflank  # if not set then no flank region
-        b_bed_fmt=options.bed
+    if args.preprocess:  #preprocess steps
+        s_working_folder = args.wfolder
+        sf_ref = args.reference
+        sf_annotation = args.annotation
+        sf_out_fa = args.output
+        flank_lth = args.extend
+        b_with_flank = args.withflank  # if not set then no flank region
+        b_bed_fmt=args.bed
         x_annotation = XAnnotation(sf_annotation)
-        i_lextnd=options.rmsk_extnd
+        i_lextnd=args.rmsk_extnd
         global_values.set_load_rmsk_left_extnd(i_lextnd)
         if b_bed_fmt==True:
             x_annotation.collect_seqs_of_TE_from_ref_bed_fmt(sf_ref, sf_out_fa, flank_lth)
@@ -457,16 +457,16 @@ if __name__ == '__main__':
             # x_annotation.collect_flank_regions_of_TE_from_ref(sf_ref, flank_lth, sf_out_fa) #only get the flank regions
             x_annotation.collect_seqs_of_TE_from_ref(sf_ref, flank_lth, b_with_flank, sf_out_fa)
             x_annotation.bwa_index_TE_seqs(sf_out_fa)
-    elif options.flank:#preprocess the flank regions steps
-        s_working_folder = options.wfolder
-        sf_ref = options.reference
-        sf_annotation = options.annotation
-        sf_out_fa = options.output
-        flank_lth = options.extend
+    elif args.flank:#preprocess the flank regions steps
+        s_working_folder = args.wfolder
+        sf_ref = args.reference
+        sf_annotation = args.annotation
+        sf_out_fa = args.output
+        flank_lth = args.extend
         x_annotation = XAnnotation(sf_annotation)
         b_with_chr = x_annotation.is_ref_chrm_with_chr(sf_ref)
         x_annotation.set_with_chr(b_with_chr)  # if chrm in reference has "chr", then True, otherwise False
-        b_bed_fmt = options.bed
+        b_bed_fmt = args.bed
         if b_bed_fmt==True:
             print("load from bed")
             x_annotation.load_annotation_no_extnd_from_bed()
@@ -478,31 +478,31 @@ if __name__ == '__main__':
 
 
 ####
-    elif options.clip:  ###take in the normal illumina reads (10x will be viewed as normal illumina)
+    elif args.clip:  ###take in the normal illumina reads (10x will be viewed as normal illumina)
         print("Working on \"clip\" step!")
-        sf_bam_list = options.input
-        s_working_folder = options.wfolder
-        n_jobs = options.cores
-        sf_rep_cns=options.cns
-        sf_rep = options.reference  ####repeat copies "-r"
-        sf_annotation = options.annotation
-        sf_out = options.output
-        b_se = options.single  ##single end reads or not, default is not
-        sf_ref=options.ref ###reference genome "-ref"
-        b_force=options.force #force to run from the very beginning
+        sf_bam_list = args.input
+        s_working_folder = args.wfolder
+        n_jobs = args.cores
+        sf_rep_cns=args.cns
+        sf_rep = args.reference  ####repeat copies "-r"
+        sf_annotation = args.annotation
+        sf_out = args.output
+        b_se = args.single  ##single end reads or not, default is not
+        sf_ref=args.ref ###reference genome "-ref"
+        b_force=args.force #force to run from the very beginning
         # YW 2020/08/01 github update b_mosaic
-        b_mosaic=options.mosaic #this is for mosaic calling from normal tissue
-        #i_iniclip=options.iniclip#
+        b_mosaic=args.mosaic #this is for mosaic calling from normal tissue
+        #i_iniclip=args.iniclip#
         if b_force == True:
             global_values.set_force_clean()
-        site_clip_cutoff=options.siteclip #this is the cutoff for the exact position, use larger value for 10X
+        site_clip_cutoff=args.siteclip #this is the cutoff for the exact position, use larger value for 10X
         global_values.set_initial_min_clip_cutoff(site_clip_cutoff)
 
         # merge the list from different bams of the same individual
         # Here when do the filtering, nearby regions are already considered!
-        cutoff_left_clip = options.lclip
-        cutoff_right_clip = options.rclip
-        cutoff_clip_mate_in_rep = options.cliprep
+        cutoff_left_clip = args.lclip
+        cutoff_right_clip = args.rclip
+        cutoff_clip_mate_in_rep = args.cliprep
         
         # YW 2020/08/01 github update: if statement and b_resume
         # YW 2020/08/04 modified github update: originally will rerun if b_resume==False, now added extra if/elif cases
@@ -526,8 +526,8 @@ if __name__ == '__main__':
             tem_locator = TE_Multi_Locator(sf_bam_list, s_working_folder, n_jobs, sf_ref)
 
             ####by default, if number of clipped reads is larger than this value, then discard
-            max_cov_cutoff=int(15*options.cov) #by default, this value is 600
-            wfolder_pub_clip = options.cwfolder #public clip folder
+            max_cov_cutoff=int(15*args.cov) #by default, this value is 600
+            wfolder_pub_clip = args.cwfolder #public clip folder
             
             # YW 2020/08/09 clarified the comment
             ##Hard code inside:
@@ -540,17 +540,17 @@ if __name__ == '__main__':
                                                                         cutoff_right_clip, cutoff_clip_mate_in_rep, b_mosaic,
                                                                         wfolder_pub_clip, b_force, max_cov_cutoff, sf_out)
 ####
-    elif options.discordant:  # this views all the alignments as normal illumina reads
+    elif args.discordant:  # this views all the alignments as normal illumina reads
         print("Working on \"disc\" step!")
-        sf_bam_list = options.bam  ###read in a bam list file
-        s_working_folder = options.wfolder
-        n_jobs = options.cores
-        sf_annotation = options.annotation
-        sf_candidate_list = options.input
-        sf_out = options.output
-        sf_ref = options.ref  ###reference genome, some cram file require this file to open
+        sf_bam_list = args.bam  ###read in a bam list file
+        s_working_folder = args.wfolder
+        n_jobs = args.cores
+        sf_annotation = args.annotation
+        sf_candidate_list = args.input
+        sf_out = args.output
+        sf_ref = args.ref  ###reference genome, some cram file require this file to open
         peak_window = global_values.PEAK_WINDOW_DEFAULT # YW 2020/07/03 note: max distance between two clipped positions for them to be considered as from one insertion/cluster
-        if options.postFmosaic or options.somatic:#for mosaic events
+        if args.postFmosaic or args.somatic:#for mosaic events
             peak_window = global_values.PEAK_WINDOW_MOS_SOM
         # YW 2020/08/04 modified github update: originally will rerun if b_resume==False, now added extra if/elif cases
         if b_resume == True and os.path.isfile(sf_out)==True:
@@ -583,7 +583,7 @@ if __name__ == '__main__':
 
             # this is the cutoff for  "left discordant" and "right discordant"
             # Either of them is larger than this cutoff, the site will be reported
-            n_disc_cutoff = options.ndisc
+            n_disc_cutoff = args.ndisc
             if b_automatic==True:
                 n_disc_cutoff=rcd[1]
                 # if b_tumor==True:
@@ -605,27 +605,27 @@ if __name__ == '__main__':
 ####
 ####
     ####
-    elif options.filter_csn:  #filter out the FP by the pattern in the consensus repeat
+    elif args.filter_csn:  #filter out the FP by the pattern in the consensus repeat
         print("Working on \"clip-disc-filtering\" step!")
-        sf_bam_list = options.bam  ###read in a bam list file
-        s_working_folder = options.wfolder
+        sf_bam_list = args.bam  ###read in a bam list file
+        s_working_folder = args.wfolder
         print("Current working folder is: {0}\n".format(s_working_folder))
-        n_jobs = options.cores
-        sf_ref = options.ref  ###reference genome, some cram file require this file to open
+        n_jobs = args.cores
+        sf_ref = args.ref  ###reference genome, some cram file require this file to open
 
-        sf_candidate_list = options.input
-        sf_raw_disc=options.input2#this is the raw disc file
+        sf_candidate_list = args.input
+        sf_raw_disc=args.input2#this is the raw disc file
         # YW 2020/07/05 changed the following from 400 to 200 (shorter read length in ancient samples)
         iextnd = global_values.F_CNS_EXTEND ###for each site, re-collect reads in range [-iextnd, iextnd], this around ins +- 3*deviation
         bin_size = global_values.BIN_SIZE  # block size for parallelization
-        sf_cns = options.reference  ####repeat copies/cns here
+        sf_cns = args.reference  ####repeat copies/cns here
         bmapped_cutoff = global_values.MIN_CLIP_MAPPED_RATIO # minimal ratio of aligned bases in clipped part to be qualified (in both alignment of clipped part in clipped and in discordant to repeat cns)
-        sf_annotation = options.annotation
+        sf_annotation = args.annotation
         i_concord_dist = 550  # this should be the mean_is+3*is_std_deviation, used to cluster disc reads on the consensus YW: --> global_values? (too large?) YW 2020/07/19 clarified this comment
         f_concord_ratio = global_values.DISC_CONCORD_RATIO # YW 2020/07/21: to check whether discordant reads are clustered on cns, currently disabled
-        sf_output = options.output
-        sf_flank=options.fflank
-        i_flank_lenth = options.flklen
+        sf_output = args.output
+        sf_flank=args.fflank
+        i_flank_lenth = args.flklen
         
         # YW 2020/08/04 modified github update: originally will rerun if b_resume==False, now added extra if/elif cases
         if b_resume == True and os.path.isfile(sf_output)==True:
@@ -655,8 +655,8 @@ if __name__ == '__main__':
             print("Maximum insert size is: {0}\n".format(max_is))
             print("Average coverage is: {0}\n".format(ave_cov))
 
-            n_clip_cutoff = options.cliprep #this is the sum of left and right clipped reads
-            n_disc_cutoff = options.ndisc  #each sample should have at least this number of discordant reads
+            n_clip_cutoff = args.cliprep #this is the sum of left and right clipped reads
+            n_disc_cutoff = args.ndisc  #each sample should have at least this number of discordant reads
             if b_automatic==True:
                 n_clip_cutoff=rcd[0]
                 n_disc_cutoff=rcd[1]
@@ -675,23 +675,23 @@ if __name__ == '__main__':
     #1. we need to collect clip and disc reads for all the candidates (filter out some existing and not qualified ones)
     #2. The old module doesn't work well!
     #3. we need to select the candidate
-    elif options.transduction:#
+    elif args.transduction:#
         #need to re-collect all the clip, disc reads
-        sf_bam_list = options.bam  ###read in a bam list file
-        sf_candidate_list = options.input #this is the output from the "cns" step.
-        sf_raw_disc = options.input2  # this is the raw disc file
+        sf_bam_list = args.bam  ###read in a bam list file
+        sf_candidate_list = args.input #this is the output from the "cns" step.
+        sf_raw_disc = args.input2  # this is the raw disc file
         iextnd = 400  ###for each site, re-collect reads in range [-iextnd, iextnd], this around ins +- 3*derivation
         bin_size = 50000000  # block size for parallelization
-        sf_cns = options.reference  ####repeat copies/cns here
-        s_working_folder = options.wfolder
+        sf_cns = args.reference  ####repeat copies/cns here
+        s_working_folder = args.wfolder
         print("Current working folder is: {0}\n".format(s_working_folder))
-        n_jobs = options.cores
-        sf_reference = options.ref  ###reference genome, some cram file require this file to open
-        sf_flank = options.fflank  # this is the flanking region
-        i_flank_lenth = options.flklen
-        sf_output = options.output
-        sf_rmsk = options.annotation
-        i_rep_type = options.rep_type
+        n_jobs = args.cores
+        sf_reference = args.ref  ###reference genome, some cram file require this file to open
+        sf_flank = args.fflank  # this is the flanking region
+        i_flank_lenth = args.flklen
+        sf_output = args.output
+        sf_rmsk = args.annotation
+        i_rep_type = args.rep_type
 ####
         if b_resume == False or os.path.isfile(sf_output) == False:
             if os.path.isfile(sf_flank)==True:#for Alu and many others, there is no transduction
@@ -714,8 +714,8 @@ if __name__ == '__main__':
                 global_values.set_read_length(rlth)
                 global_values.set_insert_size(max_is)
                 global_values.set_average_cov(ave_cov)
-                n_clip_cutoff = options.cliprep  # this is the sum of left and right clipped reads
-                n_disc_cutoff = options.ndisc  # each sample should have at least this number of discordant reads
+                n_clip_cutoff = args.cliprep  # this is the sum of left and right clipped reads
+                n_disc_cutoff = args.ndisc  # each sample should have at least this number of discordant reads
                 if b_automatic == True:
                     n_clip_cutoff = rcd[0]
                     n_disc_cutoff = rcd[1]
@@ -766,29 +766,29 @@ if __name__ == '__main__':
                 copyfile(sf_ori_hc, sf_new_hc)
 
 ####
-    elif options.sibling:#sibling orphan transduction
+    elif args.sibling:#sibling orphan transduction
         '''
         Todo: 09-29-2019: Add filtering modules:
         1. using background low mapq reads (multiple mapped reads) for filtering
         2. Set a upper-bound cutoff for discordant reads
         3. using blacklist for filtering
         '''
-        sf_bam_list = options.bam  ###read in a bam list file
-        sf_pre_step_out = options.input  # this is the output from the "cns" step.
-        sf_raw_disc = options.input2  # this is the raw disc file
+        sf_bam_list = args.bam  ###read in a bam list file
+        sf_pre_step_out = args.input  # this is the output from the "cns" step.
+        sf_raw_disc = args.input2  # this is the raw disc file
         iextnd = 400  ###for each site, re-collect reads in range [-iextnd, iextnd], this around ins +- 3*derivation
         bin_size = 50000000  # block size for parallelization
-        sf_cns = options.reference  ####repeat copies/cns here
-        s_working_folder = options.wfolder
+        sf_cns = args.reference  ####repeat copies/cns here
+        s_working_folder = args.wfolder
         print("Current working folder is: {0}\n".format(s_working_folder))
-        n_jobs = options.cores
-        sf_reference = options.ref  ###reference genome, some cram file require this file to open
-        sf_flank = options.fflank  # this is the flanking region
-        i_flank_lenth = options.flklen
-        sf_output = options.output
-        sf_rmsk = options.annotation
-        i_rep_type = options.rep_type
-        sf_black_list = options.blacklist
+        n_jobs = args.cores
+        sf_reference = args.ref  ###reference genome, some cram file require this file to open
+        sf_flank = args.fflank  # this is the flanking region
+        i_flank_lenth = args.flklen
+        sf_output = args.output
+        sf_rmsk = args.annotation
+        i_rep_type = args.rep_type
+        sf_black_list = args.blacklist
 
         if os.path.isfile(sf_flank) == True:  #for Alu and many others, there is no transduction
             b_force = False
@@ -810,8 +810,8 @@ if __name__ == '__main__':
             global_values.set_insert_size(mean_is) #here set mean inset size
             global_values.set_average_cov(ave_cov)
 
-            n_clip_cutoff = options.cliprep  # this is the sum of left and right clipped reads
-            n_disc_cutoff = options.ndisc  # each sample should have at least this number of discordant reads
+            n_clip_cutoff = args.cliprep  # this is the sum of left and right clipped reads
+            n_disc_cutoff = args.ndisc  # each sample should have at least this number of discordant reads
             if b_automatic == True:
                 n_clip_cutoff = rcd[0]
                 n_disc_cutoff = rcd[1]
@@ -864,8 +864,8 @@ if __name__ == '__main__':
                 global_values.set_read_length(rlth)
                 global_values.set_insert_size(mean_is)  # here set mean inset size
                 global_values.set_average_cov(ave_cov)
-                n_clip_cutoff = options.cliprep  # this is the sum of left and right clipped reads
-                n_disc_cutoff = options.ndisc  # each sample should have at least this number of discordant reads
+                n_clip_cutoff = args.cliprep  # this is the sum of left and right clipped reads
+                n_disc_cutoff = args.ndisc  # each sample should have at least this number of discordant reads
                 if b_automatic == True:
                     n_clip_cutoff = rcd[0]
                     n_disc_cutoff = rcd[1]
@@ -879,20 +879,20 @@ if __name__ == '__main__':
 ####
     ####this module for: 1) tumor case-control files;
     ####2) trio or quads to call de novo insertion
-    elif options.case_control:#case-control mode to call somatic events
-        b_somatic_hc = options.somatic_hc
-        sf_candidate_list = options.input  # this is the list called from case
-        sf_output = options.output
-        s_working_folder = options.wfolder
+    elif args.case_control:#case-control mode to call somatic events
+        b_somatic_hc = args.somatic_hc
+        sf_candidate_list = args.input  # this is the list called from case
+        sf_output = args.output
+        s_working_folder = args.wfolder
         if b_somatic_hc==False:#this is for all the raw call set
-            sf_bam_list = options.bam  # this is the control bam file list
-            sf_ref = options.ref  # reference genome
-            n_jobs = options.cores
-            nclip_cutoff = options.cliprep  # this is the sum of left and right clipped reads
-            ndisc_cutoff = options.ndisc  # each sample should have at least this number of discordant reads
-            sf_rep_cns = options.reference  ####repeat copies/cns here
-            sf_flank = options.fflank  # this is the flanking region
-            i_flk_len = options.flklen
+            sf_bam_list = args.bam  # this is the control bam file list
+            sf_ref = args.ref  # reference genome
+            n_jobs = args.cores
+            nclip_cutoff = args.cliprep  # this is the sum of left and right clipped reads
+            ndisc_cutoff = args.ndisc  # each sample should have at least this number of discordant reads
+            sf_rep_cns = args.reference  ####repeat copies/cns here
+            sf_flank = args.fflank  # this is the flanking region
+            i_flk_len = args.flklen
             b_force=True
             rcd=None
             basic_rcd=None
@@ -916,36 +916,36 @@ if __name__ == '__main__':
                                           n_polyA_cutoff, sf_rep_cns, sf_flank, i_flk_len, bin_size, sf_output, b_tumor)
     ####
         else:#This is to parse out the high confident somatic ones, assume already have the raw somatic callset
-            sf_raw_somatic=options.input2
+            sf_raw_somatic=args.input2
             sf_ref=""
             n_jobs=1
             ccm = CaseControlMode(sf_ref, s_working_folder, n_jobs)
             ccm.parse_high_confident_somatic(sf_candidate_list, sf_raw_somatic, sf_output)
 
 ####
-    elif options.mosaic:  # this is only for normal illumina data
+    elif args.mosaic:  # this is only for normal illumina data
         #for mosaic events, when check clip information, we will check the polyA information
         print("Working on mosaic \"clip\" step!")
-        sf_bam_list = options.input
-        s_working_folder = options.wfolder
-        n_jobs = options.cores
-        sf_rep_cns = options.cns
-        sf_rep = options.reference  ####repeat copies "-r"
-        sf_annotation = options.annotation
-        sf_out = options.output
-        b_se = options.single  ##single end reads or not, default is not
-        sf_ref = options.ref  ###reference genome "-ref"
-        b_force = options.force  # force to run from the very beginning
+        sf_bam_list = args.input
+        s_working_folder = args.wfolder
+        n_jobs = args.cores
+        sf_rep_cns = args.cns
+        sf_rep = args.reference  ####repeat copies "-r"
+        sf_annotation = args.annotation
+        sf_out = args.output
+        b_se = args.single  ##single end reads or not, default is not
+        sf_ref = args.ref  ###reference genome "-ref"
+        b_force = args.force  # force to run from the very beginning
         if b_force == True:
             global_values.set_force_clean()
-        site_clip_cutoff = options.siteclip  # this is the cutoff for the exact position, use larger value for 10X
+        site_clip_cutoff = args.siteclip  # this is the cutoff for the exact position, use larger value for 10X
         global_values.set_initial_min_clip_cutoff(site_clip_cutoff)
 
         # merge the list from different bams of the same individual
         # Here when do the filtering, nearby regions are already considered!
-        cutoff_left_clip = options.lclip
-        cutoff_right_clip = options.rclip
-        cutoff_clip_mate_in_rep = options.cliprep
+        cutoff_left_clip = args.lclip
+        cutoff_right_clip = args.rclip
+        cutoff_clip_mate_in_rep = args.cliprep
         cutoff_polyA=1
 
         if b_automatic == True:
@@ -958,8 +958,8 @@ if __name__ == '__main__':
         tem_locator = TE_Multi_Locator(sf_bam_list, s_working_folder, n_jobs, sf_ref)
 
         ####by default, if number of clipped reads is larger than this value, then discard
-        max_cov_cutoff = int(0.5 * options.cov)  # at most half of coverage of clipped reads
-        wfolder_pub_clip = options.cwfolder  # public clip folder
+        max_cov_cutoff = int(0.5 * args.cov)  # at most half of coverage of clipped reads
+        wfolder_pub_clip = args.cwfolder  # public clip folder
         ##Hard code inside:
         # 1. call_TEI_candidate_sites_from_clip_reads_v2 --> run_cnt_clip_part_aligned_to_rep_by_chrm_sort_version
         # here if half of the seq is mapped, then consider it as aligned work.
@@ -970,16 +970,16 @@ if __name__ == '__main__':
                                                                     cutoff_polyA, wfolder_pub_clip,
                                                                     b_force, max_cov_cutoff, sf_out)
 ####
-    elif options.barcode:  # this is only for 10X alignmt
-        sf_ori_bam = options.bam  # pos indexted bam
-        b_barcode = options.barcode
-        sf_barcode_bam = options.barcode_bam  # barcode indexed bam
-        s_working_folder = options.wfolder
-        n_jobs = options.cores
-        sf_annotation = options.annotation
-        sf_candidate_list = options.input
-        sf_out = options.output
-        sf_ref = options.ref  ###reference genome, some cram file require this file to open
+    elif args.barcode:  # this is only for 10X alignmt
+        sf_ori_bam = args.bam  # pos indexted bam
+        b_barcode = args.barcode
+        sf_barcode_bam = args.barcode_bam  # barcode indexed bam
+        s_working_folder = args.wfolder
+        n_jobs = args.cores
+        sf_annotation = args.annotation
+        sf_candidate_list = args.input
+        sf_out = args.output
+        sf_ref = args.ref  ###reference genome, some cram file require this file to open
 
         xfilter = XIntemediateSites()
         m_input_sites = xfilter.load_in_candidate_list(sf_candidate_list)
@@ -987,7 +987,7 @@ if __name__ == '__main__':
         iextend = 2500
         i_cov_cutoff=automatic_set_molecule_cutoff_for_10X_bam(sf_ori_bam, sf_ref, s_working_folder, n_jobs)
         print("Using molecule coverage cutoff: {0}".format(i_cov_cutoff)) 
-        #i_cov_cutoff = options.nbarcode ####here use an automatic one
+        #i_cov_cutoff = args.nbarcode ####here use an automatic one
 
         if s_working_folder[-1] != "/":
             s_working_folder += "/"
@@ -1003,18 +1003,18 @@ if __name__ == '__main__':
         xfilter.combine_closing_sites(sf_tmp2, window_size, sf_out)
 
 ####
-    elif options.postF:#post filtering step
-        s_working_folder = options.wfolder
-        n_jobs = options.cores
-        sf_xtea_rslt = options.input
-        sf_rmsk = options.annotation
-        #sf_rmsk_all=options.annotation2
-        sf_new_out = options.output
-        i_rep_type=options.rep_type
-        sf_black_list=options.blacklist
+    elif args.postF:#post filtering step
+        s_working_folder = args.wfolder
+        n_jobs = args.cores
+        sf_xtea_rslt = args.input
+        sf_rmsk = args.annotation
+        #sf_rmsk_all=args.annotation2
+        sf_new_out = args.output
+        i_rep_type=args.rep_type
+        sf_black_list=args.blacklist
 
         i_min_copy_len=225 #when check whether fall in repeat region, require the minimum copy length
-        b_pf_mosaic=options.postFmosaic
+        b_pf_mosaic=args.postFmosaic
         if b_pf_mosaic is True:#for mosaic events
             xpf_mosic = MosaicCaller(s_working_folder, n_jobs)
             xpf_mosic.run_call_mosaic(sf_xtea_rslt, sf_rmsk, i_min_copy_len, i_rep_type, sf_black_list, sf_new_out)
@@ -1027,21 +1027,21 @@ if __name__ == '__main__':
                                             sf_new_out, b_tumor)
 ####
     ####
-    elif options.gntp_feature:#generate the genotype features
-        sf_bam_list = options.bam
-        sf_ref = options.ref
-        sf_candidate_list = options.input
-        n_jobs = options.cores
-        s_working_folder = options.wfolder
-        sf_output = options.output
+    elif args.gntp_feature:#generate the genotype features
+        sf_bam_list = args.bam
+        sf_ref = args.ref
+        sf_candidate_list = args.input
+        n_jobs = args.cores
+        s_working_folder = args.wfolder
+        sf_output = args.output
 
         x_gntper = XGenotyper(sf_ref, s_working_folder, n_jobs)
         extnd = 450
         x_gntper.call_genotype(sf_bam_list, sf_candidate_list, extnd, sf_output)
 
-    elif options.gntp_classify:
-        b_train = options.train_gntp
-        sf_model=options.model
+    elif args.gntp_classify:
+        b_train = args.train_gntp
+        sf_model=args.model
         if b_train==True:#train a new model
             sf_00_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_00.list"
             sf_01_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_01.list"
@@ -1052,20 +1052,20 @@ if __name__ == '__main__':
             gc.train_model(sf_arff, sf_model, f_ratio=0.01)
         else:#predict the genotype
             #sf_model = "./genotyping/trained_model_ssc_py2_random_forest_two_category.pkl"
-            sf_xTEA = options.input #input raw results before calling genotype
-            sf_new = options.output
+            sf_xTEA = args.input #input raw results before calling genotype
+            sf_new = args.output
             gc = GntpClassifier()
             pkl_model = gc.load_model_from_file(sf_model)
             sf_arff = sf_xTEA + ".arff"
             gc.predict_for_site(pkl_model, sf_xTEA, sf_new)
 
 ####
-    elif options.gVCF:
-        sf_ref = options.ref
-        sf_bam_list = options.bam  ###read in a bam list file
-        sf_raw_rslt = options.input
-        i_rep_type=options.rep_type##
-        sf_prefix=options.output
+    elif args.gVCF:
+        sf_ref = args.ref
+        sf_bam_list = args.bam  ###read in a bam list file
+        sf_raw_rslt = args.input
+        i_rep_type=args.rep_type##
+        sf_prefix=args.output
         sf_bam=""
         s_sample_id="null"
 
@@ -1093,40 +1093,40 @@ if __name__ == '__main__':
         else:
             print("Wrong bam file: {0}".format(sf_bam))
 ####
-    elif options.joint:
-        s_working_folder = options.wfolder
-        n_jobs = options.cores
-        sf_rslt_list = options.input
-        sf_out=options.output
+    elif args.joint:
+        s_working_folder = args.wfolder
+        n_jobs = args.cores
+        sf_rslt_list = args.input
+        sf_out=args.output
         islack=50
-        if options.postFmosaic==True:
+        if args.postFmosaic==True:
             mzc_joint=MosaicJointCalling(s_working_folder, n_jobs)
             mzc_joint.call_mosaic_from_multi_samples(sf_rslt_list, islack, sf_out)
 ####
-    elif options.igv:#prepare the igv screenshot script for multiple bams and sites
-        sf_sites = options.input #site list
-        sf_bam_list=options.bam #bam list
-        s_screenshot_folder = options.wfolder
-        sf_out = options.output #output file
-        sf_gnm=options.ref #"hg19" or "hg38"
-        i_extnd = options.extend #"-e", "--extend"
-        b_single_sample=options.single_sample
+    elif args.igv:#prepare the igv screenshot script for multiple bams and sites
+        sf_sites = args.input #site list
+        sf_bam_list=args.bam #bam list
+        s_screenshot_folder = args.wfolder
+        sf_out = args.output #output file
+        sf_gnm=args.ref #"hg19" or "hg38"
+        i_extnd = args.extend #"-e", "--extend"
+        b_single_sample=args.single_sample
         x_igv = XIGV()
         if b_single_sample==True:
             sf_sites=x_igv.gnrt_sites_single_sample(sf_sites, sf_bam_list)
         x_igv.prepare_igv_scripts_multi_bams(sf_sites, sf_bam_list, s_screenshot_folder, i_extnd, sf_gnm, sf_out)
 
 ####
-    elif options.collect:  # collect the reads for each candidate site
-        sf_ori_bam = options.bam
-        sf_barcode_bam = options.barcode_bam
-        s_working_folder = options.wfolder
-        n_jobs = options.cores
-        sf_candidate_list = options.input
-        i_cov_cutoff = options.nbarcode
-        sf_annotation = options.annotation
-        i_flank_lenth = options.flklen #extend the boundary of each annotated repeat
-        sf_ref = options.ref  ###reference genome, some cram file require this file to open
+    elif args.collect:  # collect the reads for each candidate site
+        sf_ori_bam = args.bam
+        sf_barcode_bam = args.barcode_bam
+        s_working_folder = args.wfolder
+        n_jobs = args.cores
+        sf_candidate_list = args.input
+        i_cov_cutoff = args.nbarcode
+        sf_annotation = args.annotation
+        i_flank_lenth = args.flklen #extend the boundary of each annotated repeat
+        sf_ref = args.ref  ###reference genome, some cram file require this file to open
 
         # collect reads for all the sites
         i_extend = 1500 #by default, collect barcode in [-1500, 1500] region
@@ -1134,22 +1134,22 @@ if __name__ == '__main__':
         xread_collection.collect_phased_reads_all_TEIs(sf_ori_bam, sf_barcode_bam, sf_candidate_list, i_extend,
                                                        i_cov_cutoff, sf_annotation, i_flank_lenth, n_jobs)
 ####
-    elif options.mutation:#call out the internal mutations by aligning the reads
-        s_working_folder = options.wfolder
-        n_jobs = options.cores
-        sf_cns = options.reference  ####repeat copies/cns here
-        sf_sites=options.input
-        sf_merged_vcf=options.output
-        n_len_cutoff=options.teilen
+    elif args.mutation:#call out the internal mutations by aligning the reads
+        s_working_folder = args.wfolder
+        n_jobs = args.cores
+        sf_cns = args.reference  ####repeat copies/cns here
+        sf_sites=args.input
+        sf_merged_vcf=args.output
+        n_len_cutoff=args.teilen
         xmutation=XMutation(s_working_folder)
         xmutation.call_mutations_from_reads_algnmt(sf_sites, sf_cns, n_len_cutoff, n_jobs, sf_merged_vcf)
 
 ####
-    elif options.gene:#
+    elif args.gene:#
         #To run: --gene -a -i -o
-        sf_gene_annotation=options.annotation
-        sf_input=options.input
-        sf_output=options.output
+        sf_gene_annotation=args.annotation
+        sf_input=args.input
+        sf_output=args.output
         gff=GFF3(sf_gene_annotation)
         iextnd=global_values.UP_DOWN_GENE
         gff.load_gene_annotation_with_extnd(iextnd)
@@ -1157,18 +1157,18 @@ if __name__ == '__main__':
         gff.annotate_results(sf_input, sf_output)
 
     # this step needs to retrieve the seqs of mate reads
-    elif options.collect_illumina:  # this is only for normal illumina data
-        sf_ori_bam = options.bam
-        sf_candidate_list = options.input
-        n_jobs = options.cores
-        s_working_folder = options.wfolder
+    elif args.collect_illumina:  # this is only for normal illumina data
+        sf_ori_bam = args.bam
+        sf_candidate_list = args.input
+        n_jobs = args.cores
+        s_working_folder = args.wfolder
 
-    elif options.assembly:  # assemble the reads for all the sites
-        b_local = options.local
-        s_working_folder = options.wfolder
-        n_jobs = options.cores
-        sf_candidate_list = options.input
-        sf_ref = options.ref  ###reference genome, some cram file require this file to open
+    elif args.assembly:  # assemble the reads for all the sites
+        b_local = args.local
+        s_working_folder = args.wfolder
+        n_jobs = args.cores
+        sf_candidate_list = args.input
+        sf_ref = args.ref  ###reference genome, some cram file require this file to open
 
         xlasm = XLocalAssembly(s_working_folder, sf_ref)
         if b_local == True:
@@ -1178,24 +1178,24 @@ if __name__ == '__main__':
             # xlasm.assemble_all_TEIs_slurm_cluster(sf_candidate_list)
             xlasm.assemble_all_phased_TEIs_slurm_cluster(sf_candidate_list)
 ####
-    elif options.map:####align the asm to reference genome
-        sf_ref = options.reference#
-        s_working_folder = options.wfolder
-        n_jobs = int(options.cores)
-        sf_sites = options.input
-        sf_cns=options.ref####repeat consensus
-        sf_final_list=options.output
+    elif args.map:####align the asm to reference genome
+        sf_ref = args.reference#
+        s_working_folder = args.wfolder
+        n_jobs = int(args.cores)
+        sf_sites = args.input
+        sf_cns=args.ref####repeat consensus
+        sf_final_list=args.output
         sf_final_seqs=sf_final_list+".fa"
 
         xctg = XTEContig(s_working_folder, n_jobs)
         xctg.align_asm_contigs_to_reference(sf_sites, sf_ref, s_working_folder)
         xctg.call_MEIs_from_all_group_contigs(sf_sites, sf_ref, sf_cns, s_working_folder, sf_final_list, sf_final_seqs)
 
-    elif options.flk_map:  #gnrt the flank regions and align the regions to the contigs 
-        sf_ref = options.ref
-        s_working_folder = options.wfolder
-        n_jobs = int(options.cores)
-        sf_sites = options.input
+    elif args.flk_map:  #gnrt the flank regions and align the regions to the contigs 
+        sf_ref = args.ref
+        s_working_folder = args.wfolder
+        n_jobs = int(args.cores)
+        sf_sites = args.input
 
         i_extend = 500
         xref = XReference()
@@ -1203,12 +1203,12 @@ if __name__ == '__main__':
         xctg = XTEContig(s_working_folder, n_jobs)
         xctg.align_flanks_to_phased_contig(sf_sites)
 ####
-    elif options.filter_asm:
-        s_working_folder = options.wfolder
-        n_jobs = int(options.cores)
-        sf_sites = options.input
-        sf_keep_sites = options.output
-        sf_repeat_copies = options.reference  ####repeat copies here
+    elif args.filter_asm:
+        s_working_folder = args.wfolder
+        n_jobs = int(args.cores)
+        sf_sites = args.input
+        sf_keep_sites = args.output
+        sf_repeat_copies = args.reference  ####repeat copies here
 
         # xctg.filter_out_non_TE_from_asm(sf_sites, flank_length, f_map_cutoff, i_slack, sf_keep_sites)
         flank_length = 500
@@ -1217,29 +1217,29 @@ if __name__ == '__main__':
         xctg = XTEContig(s_working_folder, n_jobs)
         xctg.validate_TEI_from_phased_asm_algnmt(sf_sites, flank_length, f_map_cutoff, i_slack, sf_repeat_copies,
                                                  sf_keep_sites)
-    elif options.sv:
-        sf_sites = options.input
-        sf_dels=options.output
+    elif args.sv:
+        sf_sites = args.input
+        sf_dels=args.output
         te_del=TEDeletion()
         m_del=te_del.call_del_matched_brkpnts(sf_sites)
         te_del.output_del(m_del, sf_dels)
 
-    elif options.collect_clip:#collect the clipped reads for the sample
-        sf_bam_list = options.input
-        s_working_folder = options.wfolder ##this is the folder to save all the clipped reads of the sample
-        n_jobs = options.cores
-        b_se = options.single  ##single end reads or not, default is not
-        sf_ref = options.ref  ###reference genome "-ref"
-        sf_annotation = options.annotation
+    elif args.collect_clip:#collect the clipped reads for the sample
+        sf_bam_list = args.input
+        s_working_folder = args.wfolder ##this is the folder to save all the clipped reads of the sample
+        n_jobs = args.cores
+        b_se = args.single  ##single end reads or not, default is not
+        sf_ref = args.ref  ###reference genome "-ref"
+        sf_annotation = args.annotation
 
         tem_locator = TE_Multi_Locator(sf_bam_list, s_working_folder, n_jobs, sf_ref)
         s_clip_wfolder=s_working_folder
-        wfolder_pub_clip = options.cwfolder  # public clip folder
+        wfolder_pub_clip = args.cwfolder  # public clip folder
         # collect the clipped reads only
         tem_locator.collect_all_clipped_from_multiple_alignmts(sf_annotation, b_se, s_clip_wfolder, wfolder_pub_clip)
 
-    elif options.visualization:  ##show the shared barcode heatmap between the TEI site and source region
-        sf_matrix = options.input
+    elif args.visualization:  ##show the shared barcode heatmap between the TEI site and source region
+        sf_matrix = args.input
         ####classify the TE insertions to normal ones and complex ones:
         # for insertion with deletion: the other clipped part will not be aligned to a repeat region, but the other breakpoint
         # while for normal ones, the other clipped part will be aligned to a repeat region
