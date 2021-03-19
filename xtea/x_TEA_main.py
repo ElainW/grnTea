@@ -229,19 +229,19 @@ def parse_arguments():
                         help="Input barcode indexed bam file", metavar="FILE")
     parser.add_argument("-o", "--output", dest="output",
                         help="The output file", metavar="FILE")
-    parser.add_argument("-p", "--path", dest="wfolder", type="string", default="./",
+    parser.add_argument("-p", "--path", dest="wfolder", type=str, default="./",
                         help="Working folder")
-    parser.add_argument("--cp", dest="cwfolder", type="string",
+    parser.add_argument("--cp", dest="cwfolder", type=str,
                         help="Working folder for shared clipped reads")
-    parser.add_argument("-n", "--cores", dest="cores", type="int", default=1,
+    parser.add_argument("-n", "--cores", dest="cores", type=int, default=1,
                         help="number of cores")
-    parser.add_argument("-e", "--extend", dest="extend", type="int", default=0,
+    parser.add_argument("-e", "--extend", dest="extend", type=int, default=0,
                         help="extend length")
     parser.add_argument("--fflank", dest="fflank",
                         help="flank region file", metavar="FILE")
-    parser.add_argument("--flklen", dest="flklen", type="int",
+    parser.add_argument("--flklen", dest="flklen", type=int,
                         help="flank region file")
-    parser.add_argument("--purity", dest="purity", type="float", default=0.45,#by default tumor purity set to 45%
+    parser.add_argument("--purity", dest="purity", type=float, default=0.45,#by default tumor purity set to 45%
                         help="Tumor purity")
     parser.add_argument("--ref", dest="ref",
                         help="genome reference", metavar="FILE")
@@ -253,23 +253,23 @@ def parse_arguments():
                         help="L1 consensus file", metavar="FILE")
     parser.add_argument("--SVA-cns", dest="SVA_cns",
                         help="SVA consensus file", metavar="FILE")
-    parser.add_argument("--sc", dest="siteclip", type="int", default=2,
+    parser.add_argument("--sc", dest="siteclip", type=int, default=2,
                         help="cutoff of minimum # of clipped reads at the exact position, use larger value for 10X")
-    parser.add_argument("--lc", dest="lclip", type="int", default=3,
+    parser.add_argument("--lc", dest="lclip", type=int, default=3,
                         help="cutoff of minimum # of left clipped reads")
-    parser.add_argument("--rc", dest="rclip", type="int", default=3,
+    parser.add_argument("--rc", dest="rclip", type=int, default=3,
                         help="cutoff of minimum # of right clipped reads")
-    parser.add_argument("--cr", dest="cliprep", type="int", default=1,
+    parser.add_argument("--cr", dest="cliprep", type=int, default=1,
                         help="cutoff of minimum # of clipped parts fall in repeats")
-    parser.add_argument("--nd", dest="ndisc", type="int", default=5,
+    parser.add_argument("--nd", dest="ndisc", type=int, default=5,
                         help="cutoff of minimum # of discordant pair")
-    parser.add_argument("--cov", dest="cov", type="float", default=30.0,
+    parser.add_argument("--cov", dest="cov", type=float, default=30.0,
                         help="approximate read depth")
-    parser.add_argument("--iniclip", dest="iniclip", type="int", default=2,
+    parser.add_argument("--iniclip", dest="iniclip", type=int, default=2,
                         help="initial minimum clip cutoff")
-    parser.add_argument("--rmsk_extnd", dest="rmsk_extnd", type="int", default=100,
+    parser.add_argument("--rmsk_extnd", dest="rmsk_extnd", type=int, default=100,
                         help="Length of the left extended region when loading the repeatmasker output")
-    parser.add_argument("--rtype", dest="rep_type", type="int", default=1,
+    parser.add_argument("--rtype", dest="rep_type", type=int, default=1,
                         help="type of repeats: 1-L1, 2-Alu, 4-SVA, 8-HERV, 16-MIT, 32-MSTA")
     parser.add_argument("--blacklist", dest="blacklist", default="null",
                         help="Reference panel database for filtering, or a blacklist region", metavar="FILE")

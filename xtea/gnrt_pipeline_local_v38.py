@@ -1040,7 +1040,7 @@ def parse_arguments():
     parser.add_argument("--tumor",
                       action="store_true", dest="tumor", default=False,
                       help="Working on tumor samples")
-    parser.add_argument("--purity", dest="purity", type="float", default=0.45,  # by default tumor purity set to 45%
+    parser.add_argument("--purity", dest="purity", type=float, default=0.45,  # by default tumor purity set to 45%
                       help="Tumor purity")
     parser.add_argument("--lsf",
                       action="store_true", dest="lsf", default=False,
@@ -1064,43 +1064,43 @@ def parse_arguments():
                       help="Input bam file", metavar="FILE")
     parser.add_argument("-x", "--x10", dest="x10",
                       help="Input 10X bam file", metavar="FILE")
-    parser.add_argument("-n", "--cores", dest="cores", type="int", default=8,
+    parser.add_argument("-n", "--cores", dest="cores", type=int, default=8,
                       help="number of cores")
-    parser.add_argument("-m", "--memory", dest="memory", type="int", default=20,
+    parser.add_argument("-m", "--memory", dest="memory", type=int, default=20,
                       help="Memory limit in GB")
-    parser.add_argument("-q", "--partition", dest="partition", type="string",
+    parser.add_argument("-q", "--partition", dest="partition", type=str,
                       help="Which queue to run the job")
-    parser.add_argument("-t", "--time", dest="time", type="string",
+    parser.add_argument("-t", "--time", dest="time", type=str,
                       help="Time limit")
 
-    parser.add_argument("-p", "--path", dest="wfolder", type="string", default="",
+    parser.add_argument("-p", "--path", dest="wfolder", type=str, default="",
                       help="Working folder")
-    parser.add_argument("-r", "--ref", dest="ref", type="string",
+    parser.add_argument("-r", "--ref", dest="ref", type=str,
                       help="reference genome")
-    parser.add_argument("-g", "--gene", dest="gene", type="string", default="gene.aff3",
+    parser.add_argument("-g", "--gene", dest="gene", type=str, default="gene.aff3",
                       help="Gene annotation file")
-    parser.add_argument("--xtea", dest="xtea", type="string",
+    parser.add_argument("--xtea", dest="xtea", type=str,
                       help="xTEA folder")
 
-    parser.add_argument("-f", "--flag", dest="flag", type="int",
+    parser.add_argument("-f", "--flag", dest="flag", type=int,
                       help="Flag indicates which step to run (1-clip, 2-disc, 4-barcode, 8-xfilter, 16-filter, 32-asm)")
 
-    parser.add_argument("-y", "--reptype", dest="rep_type", type="int", default=1,
+    parser.add_argument("-y", "--reptype", dest="rep_type", type=int, default=1,
                       help="Type of repeats working on: 1-L1, 2-Alu, 4-SVA, 8-HERV, 16-Mitochondrial")
 
-    parser.add_argument("--flklen", dest="flklen", type="int", default=3000,
+    parser.add_argument("--flklen", dest="flklen", type=int, default=3000,
                       help="flank region file")
-    parser.add_argument("--nclip", dest="nclip", type="int", default=3,
+    parser.add_argument("--nclip", dest="nclip", type=int, default=3,
                       help="cutoff of minimum # of clipped reads")
-    parser.add_argument("--cr", dest="cliprep", type="int", default=1,
+    parser.add_argument("--cr", dest="cliprep", type=int, default=1,
                       help="cutoff of minimum # of clipped reads whose mates map in repetitive regions")
-    parser.add_argument("--nd", dest="ndisc", type="int", default=5,
+    parser.add_argument("--nd", dest="ndisc", type=int, default=5,
                       help="cutoff of minimum # of discordant pair")
-    parser.add_argument("--nfclip", dest="nfilterclip", type="int", default=3,
+    parser.add_argument("--nfclip", dest="nfilterclip", type=int, default=3,
                       help="cutoff of minimum # of clipped reads in filtering step")
-    parser.add_argument("--nfdisc", dest="nfilterdisc", type="int", default=5,
+    parser.add_argument("--nfdisc", dest="nfilterdisc", type=int, default=5,
                       help="cutoff of minimum # of discordant pair of each sample in filtering step")
-    # parser.add_argument("--teilen", dest="teilen", type="int", default=50,
+    # parser.add_argument("--teilen", dest="teilen", type=int, default=50,
     #                   help="minimum length of the insertion for future analysis")
 
     parser.add_argument("-o", "--output", dest="output", default="submit_calling_jobs_for_samples.sh",
