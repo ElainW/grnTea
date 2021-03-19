@@ -888,7 +888,7 @@ class ClipReadInfo():
                             m_sites_chrm[ori_mpos].extend([0, 0, 1, 0, 0, 0])
                         else:
                             m_sites_chrm[ori_mpos].extend([0, 0, 0, 1, 0, 0])
-                    elif rep_type == "SVA"
+                    elif rep_type == "SVA":
                         if b_left == True:
                             m_sites_chrm[ori_mpos].extend([0, 0, 0, 0, 1, 0])
                         else:
