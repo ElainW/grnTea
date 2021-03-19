@@ -146,18 +146,18 @@ class ClipReadInfo():
                 if l_cigar[0][0] == 4:  # soft-clip
                     clipped_seq = query_seq[:l_cigar[0][1]]
                     clipped_qulity = self._cvt_to_Ascii_quality(query_quality[:l_cigar[0][1]])
-                    clipped_rname = query_name + global_values.SEPERATOR + mate_chrm + \
-                                    global_values.SEPERATOR + str(mate_pos) + global_values.SEPERATOR
-                    s_tmp = "{0}{1}{2}{3}{4}{5}2".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
+                    clipped_rname = query_name + global_values.SEPARATOR + mate_chrm + \
+                                    global_values.SEPARATOR + str(mate_pos) + global_values.SEPARATOR
+                    s_tmp = "{0}{1}{2}{3}{4}{5}2".format(chrm, global_values.SEPARATOR, map_pos, global_values.SEPARATOR,
                                                          global_values.FLAG_LEFT_CLIP,
-                                                         global_values.SEPERATOR)
+                                                         global_values.SEPARATOR)
                     clipped_rname += s_tmp
                     if b_first:
-                        clipped_rname = query_name + global_values.SEPERATOR + mate_chrm + global_values.SEPERATOR + \
-                                        str(mate_pos) + global_values.SEPERATOR
-                        s_tmp = "{0}{1}{2}{3}{4}{5}1".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
+                        clipped_rname = query_name + global_values.SEPARATOR + mate_chrm + global_values.SEPARATOR + \
+                                        str(mate_pos) + global_values.SEPARATOR
+                        s_tmp = "{0}{1}{2}{3}{4}{5}1".format(chrm, global_values.SEPARATOR, map_pos, global_values.SEPARATOR,
                                                              global_values.FLAG_LEFT_CLIP,
-                                                             global_values.SEPERATOR)
+                                                             global_values.SEPARATOR)
                         clipped_rname += s_tmp
 
                     f_clip_fq.write("@" + clipped_rname + "\n")
@@ -188,19 +188,19 @@ class ClipReadInfo():
                 if algnmt.is_supplementary or algnmt.is_secondary:  ###secondary and supplementary are not considered
                     continue
                 if l_cigar[-1][0] == 4:  # soft-clip
-                    clipped_rname = query_name + global_values.SEPERATOR + mate_chrm + global_values.SEPERATOR + \
-                                    str(mate_pos) + global_values.SEPERATOR
-                    s_tmp = "{0}{1}{2}{3}{4}{5}2".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
-                                                         global_values.FLAG_RIGHT_CLIP, global_values.SEPERATOR)
+                    clipped_rname = query_name + global_values.SEPARATOR + mate_chrm + global_values.SEPARATOR + \
+                                    str(mate_pos) + global_values.SEPARATOR
+                    s_tmp = "{0}{1}{2}{3}{4}{5}2".format(chrm, global_values.SEPARATOR, map_pos, global_values.SEPARATOR,
+                                                         global_values.FLAG_RIGHT_CLIP, global_values.SEPARATOR)
                     clipped_rname += s_tmp
                     start_pos = -1 * l_cigar[-1][1]
                     clipped_seq = query_seq[start_pos:]
                     clipped_qulity = self._cvt_to_Ascii_quality(query_quality[start_pos:])
                     if b_first:
-                        clipped_rname = query_name + global_values.SEPERATOR + mate_chrm + global_values.SEPERATOR + \
-                                        str(mate_pos) + global_values.SEPERATOR
-                        s_tmp = "{0}{1}{2}{3}{4}{5}1".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
-                                                             global_values.FLAG_RIGHT_CLIP, global_values.SEPERATOR)
+                        clipped_rname = query_name + global_values.SEPARATOR + mate_chrm + global_values.SEPARATOR + \
+                                        str(mate_pos) + global_values.SEPARATOR
+                        s_tmp = "{0}{1}{2}{3}{4}{5}1".format(chrm, global_values.SEPARATOR, map_pos, global_values.SEPARATOR,
+                                                             global_values.FLAG_RIGHT_CLIP, global_values.SEPARATOR)
                         clipped_rname += s_tmp
 
                     f_clip_fq.write("@" + clipped_rname + "\n")
@@ -304,11 +304,11 @@ class ClipReadInfo():
         i_clip_cutoff = int(record[7])
         b_se = record[8] #whether this is single end reads
 ####
-        xannotation_Alu = XAnnotation(sf_annotation)
+        xannotation_Alu = XAnnotation(sf_annotation_Alu)
         xannotation_Alu.set_with_chr(b_with_chr)
-        xannotation_L1 = XAnnotation(sf_annotation)
+        xannotation_L1 = XAnnotation(sf_annotation_L1)
         xannotation_L1.set_with_chr(b_with_chr)
-        xannotation_SVA = XAnnotation(sf_annotation)
+        xannotation_SVA = XAnnotation(sf_annotation_SVA)
         xannotation_SVA.set_with_chr(b_with_chr)
         #xannotation.load_rmsk_annotation()
         i_min_copy_len=0
@@ -544,13 +544,13 @@ class ClipReadInfo():
                         continue
                     clipped_qulity = self._cvt_to_Ascii_quality(query_quality[:l_cigar[0][1]])
                     clipped_rname = global_values.SEPARATOR.join([query_name, mate_chrm, str(mate_pos), ""])
-                    s_tmp = "{0}{1}{2}{3}{4}{5}2".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
-                                                         global_values.FLAG_LEFT_CLIP, global_values.SEPERATOR)
+                    s_tmp = "{0}{1}{2}{3}{4}{5}2".format(chrm, global_values.SEPARATOR, map_pos, global_values.SEPARATOR,
+                                                         global_values.FLAG_LEFT_CLIP, global_values.SEPARATOR)
                     clipped_rname += s_tmp
                     if b_first:
                         clipped_rname = global_values.SEPARATOR.join([query_name, mate_chrm, str(mate_pos), ""])
-                        s_tmp = "{0}{1}{2}{3}{4}{5}1".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
-                                                             global_values.FLAG_LEFT_CLIP, global_values.SEPERATOR)
+                        s_tmp = "{0}{1}{2}{3}{4}{5}1".format(chrm, global_values.SEPARATOR, map_pos, global_values.SEPARATOR,
+                                                             global_values.FLAG_LEFT_CLIP, global_values.SEPARATOR)
                         clipped_rname += s_tmp
 
                     f_clip_fq.write("".join(["@", clipped_rname, "\n"]))
@@ -567,8 +567,8 @@ class ClipReadInfo():
 
                 if map_pos in m_pos:  # soft-clip
                     clipped_rname = global_values.SEPARATOR.join([query_name, mate_chrm, str(mate_pos), ""])
-                    s_tmp = "{0}{1}{2}{3}{4}{5}2".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
-                                                         global_values.FLAG_RIGHT_CLIP, global_values.SEPERATOR)
+                    s_tmp = "{0}{1}{2}{3}{4}{5}2".format(chrm, global_values.SEPARATOR, map_pos, global_values.SEPARATOR,
+                                                         global_values.FLAG_RIGHT_CLIP, global_values.SEPARATOR)
                     clipped_rname += s_tmp
                     start_pos = -1 * l_cigar[-1][1]
                     clipped_seq = query_seq[start_pos:]
@@ -593,8 +593,8 @@ class ClipReadInfo():
                     clipped_qulity = self._cvt_to_Ascii_quality(query_quality[start_pos:])
                     if b_first:
                         clipped_rname = global_values.SEPARATOR.join([query_name, mate_chrm, str(mate_pos), ""])
-                        s_tmp = "{0}{1}{2}{3}{4}{5}1".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
-                                                             global_values.FLAG_RIGHT_CLIP, global_values.SEPERATOR)
+                        s_tmp = "{0}{1}{2}{3}{4}{5}1".format(chrm, global_values.SEPARATOR, map_pos, global_values.SEPARATOR,
+                                                             global_values.FLAG_RIGHT_CLIP, global_values.SEPARATOR)
                         clipped_rname += s_tmp
 
                     f_clip_fq.write("".join(["@", clipped_rname, "\n"]))
@@ -679,7 +679,7 @@ class ClipReadInfo():
                 if b_within_rep == False:
                     b_fake = True
                 if b_fake == True:
-                    qname_fields = qname.split(global_values.SEPERATOR)
+                    qname_fields = qname.split(global_values.SEPARATOR)
                     # chrm, map_pos, global_values.FLAG_LEFT_CLIP, first_read
                     ori_chrm = qname_fields[-4]
                     ori_mpos = int(qname_fields[-3])
@@ -716,7 +716,7 @@ class ClipReadInfo():
                     continue
 
                 qname = algnmt.query_name
-                qname_fields = qname.split(global_values.SEPERATOR)
+                qname_fields = qname.split(global_values.SEPARATOR)
                 # chrm, map_pos, global_values.FLAG_LEFT_CLIP, first_read
                 ori_chrm = qname_fields[-4]  #############check reverse-complementary consistent here ??????????????
                 ori_mpos = int(qname_fields[-3])
@@ -824,7 +824,7 @@ class ClipReadInfo():
                     continue
     
                 qname = algnmt.query_name
-                qname_fields = qname.split(global_values.SEPERATOR)
+                qname_fields = qname.split(global_values.SEPARATOR)
                 # chrm, map_pos, global_values.FLAG_LEFT_CLIP, first_read
                 ori_chrm = qname_fields[-4]  #############check reverse-complementary consistent here ??????????????
                 ori_mpos = int(qname_fields[-3])
@@ -970,7 +970,7 @@ class ClipReadInfo():
                 continue
 
             qname = algnmt.query_name
-            qname_fields = qname.split(global_values.SEPERATOR)
+            qname_fields = qname.split(global_values.SEPARATOR)
             # chrm, map_pos, global_values.FLAG_LEFT_CLIP, first_read
             ori_chrm = qname_fields[-4]  #############check reverse-complementary consistent here ??????????????
             ori_mpos = int(qname_fields[-3])
@@ -1275,7 +1275,7 @@ class LContigClipReadInfo():
 
                     l_clip_lenth=l_cigar[0][1]
                     clip_seq=query_seq[:l_clip_lenth]
-                    shead=chrm+global_values.SEPERATOR+str(hit_site)+global_values.SEPERATOR+query_name+"L"
+                    shead=chrm+global_values.SEPARATOR+str(hit_site)+global_values.SEPARATOR+query_name+"L"
                     fout_clip.write(">"+shead+"\n")
                     fout_clip.write(clip_seq+"\n")
                 if l_cigar[-1][0] == 4:  # right clipped
@@ -1297,7 +1297,7 @@ class LContigClipReadInfo():
 
                     r_clip_lenth = l_cigar[-1][1]
                     clip_seq = query_seq[-1 * r_clip_lenth:]
-                    shead = chrm + global_values.SEPERATOR + str(hit_site) + global_values.SEPERATOR + query_name + "R"
+                    shead = chrm + global_values.SEPARATOR + str(hit_site) + global_values.SEPARATOR + query_name + "R"
                     fout_clip.write(">" + shead + "\n")
                     fout_clip.write(clip_seq + "\n")
         bamfile.close()
@@ -1338,7 +1338,7 @@ class LContigClipReadInfo():
                         if brkpnt < clip_pos and brkpnt > (clip_pos - lclip_len):
                             #print "left-clip", algnmt.query_name
                             clip_seq = query_seq[:lclip_len]
-                            shead = chrm + global_values.SEPERATOR + str(ins_pos) + global_values.SEPERATOR + query_name + "L"
+                            shead = chrm + global_values.SEPARATOR + str(ins_pos) + global_values.SEPARATOR + query_name + "L"
                             fout_clip.write(">" + shead + "\n")
                             fout_clip.write(clip_seq + "\n")
 
@@ -1351,7 +1351,7 @@ class LContigClipReadInfo():
                     if brkpnt > clip_pos and brkpnt < (clip_pos + rclip_len):
                         #print "right-clip", algnmt.query_name
                         clip_seq = query_seq[-1 * rclip_len:]
-                        shead = chrm + global_values.SEPERATOR + str(ins_pos) + global_values.SEPERATOR + query_name + "R"
+                        shead = chrm + global_values.SEPARATOR + str(ins_pos) + global_values.SEPARATOR + query_name + "R"
                         fout_clip.write(">" + shead + "\n")
                         fout_clip.write(clip_seq + "\n")
 

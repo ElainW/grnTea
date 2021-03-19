@@ -60,7 +60,7 @@ CLIP_RE_ALIGN_POS_SUFFIX = ".clip_realign_pos"
 LCLIP_FA_SUFFIX = '.lr_clipped.fa'  # for long reads or contigs
 FLAG_LEFT_CLIP = "L"
 FLAG_RIGHT_CLIP = "R"
-SEPERATOR = '~'
+SEPARATOR = '~'
 ALL_DISC_SUFFIX = ".initial.all.disc"  # this is to save all the disc reads
 
 #only check polyA in a small region, not the whole clipped part
