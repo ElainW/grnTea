@@ -1022,15 +1022,15 @@ def prepare_case_control_bam(sf_ori_bam, sf_sprt_bam, sf_control_bam):
 ####
 def parse_arguments():
     parser = argparse.ArgumentParser("Generates xTEA sbatch scripts for hg38 to be run locally")
-    parser.add_argument("-D", "--decompress",
-                      action="store_true", dest="decompress", default=False,
-                      help="Decompress the rep lib and reference file")
-    parser.add_argument("-M", "--mosaic",
-                      action="store_true", dest="mosaic", default=False,
-                      help="Calling mosaic events from high coverage data")
-    parser.add_argument("-C", "--case_control",
-                      action="store_true", dest="case_control", default=False,
-                      help="Run in case control mode")
+    # parser.add_argument("-D", "--decompress",
+    #                   action="store_true", dest="decompress", default=False,
+    #                   help="Decompress the rep lib and reference file")
+    # parser.add_argument("-M", "--mosaic",
+    #                   action="store_true", dest="mosaic", default=False,
+    #                   help="Calling mosaic events from high coverage data")
+    # parser.add_argument("-C", "--case_control",
+    #                   action="store_true", dest="case_control", default=False,
+    #                   help="Run in case control mode")
     parser.add_argument("-U", "--user",
                       action="store_true", dest="user", default=False,
                       help="Use user specific parameters instead of automatically calculated ones")
@@ -1100,8 +1100,8 @@ def parse_arguments():
                       help="cutoff of minimum # of clipped reads in filtering step")
     parser.add_argument("--nfdisc", dest="nfilterdisc", type="int", default=5,
                       help="cutoff of minimum # of discordant pair of each sample in filtering step")
-    parser.add_argument("--teilen", dest="teilen", type="int", default=50,
-                      help="minimum length of the insertion for future analysis")
+    # parser.add_argument("--teilen", dest="teilen", type="int", default=50,
+    #                   help="minimum length of the insertion for future analysis")
 
     parser.add_argument("-o", "--output", dest="output", default="submit_calling_jobs_for_samples.sh",
                       help="The output file", metavar="FILE")

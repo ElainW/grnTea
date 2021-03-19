@@ -292,24 +292,36 @@ class ClipReadInfo():
 
     ####return two files:
     ####1. the clip_position
+    # YW 2021/03/18 add XAnnotation instances for Alu, L1, SVA
     def collect_clip_positions_by_chrm(self, record):
         chrm = record[0]
         sf_bam = record[1]
         working_folder = record[2]
-        sf_annotation = record[3]
-        b_with_chr = record[4]
-        i_clip_cutoff = int(record[5])
-        b_se = record[6] #whether this is single end reads
+        sf_annotation_Alu = record[3]
+        sf_annotation_L1 = record[4]
+        sf_annotation_SVA = record[5]
+        b_with_chr = record[6]
+        i_clip_cutoff = int(record[7])
+        b_se = record[8] #whether this is single end reads
 ####
-        xannotation = XAnnotation(sf_annotation)
-        xannotation.set_with_chr(b_with_chr)
+        xannotation_Alu = XAnnotation(sf_annotation)
+        xannotation_Alu.set_with_chr(b_with_chr)
+        xannotation_L1 = XAnnotation(sf_annotation)
+        xannotation_L1.set_with_chr(b_with_chr)
+        xannotation_SVA = XAnnotation(sf_annotation)
+        xannotation_SVA.set_with_chr(b_with_chr)
         #xannotation.load_rmsk_annotation()
         i_min_copy_len=0
         i_boundary_extnd=0
-        if global_values.IS_CALL_SVA==True:
-            i_boundary_extnd=global_values.SVA_ANNOTATION_EXTND
-        xannotation.load_rmsk_annotation_with_extnd_with_lenth_cutoff(i_boundary_extnd, i_min_copy_len)
-        xannotation.index_rmsk_annotation_interval_tree()
+        # if global_values.IS_CALL_SVA==True:
+        #     i_boundary_extnd=global_values.SVA_ANNOTATION_EXTND
+        xannotation_Alu.load_rmsk_annotation_with_extnd_with_lenth_cutoff(i_boundary_extnd, i_min_copy_len)
+        xannotation_Alu.index_rmsk_annotation_interval_tree()
+        xannotation_L1.load_rmsk_annotation_with_extnd_with_lenth_cutoff(i_boundary_extnd, i_min_copy_len)
+        xannotation_L1.index_rmsk_annotation_interval_tree()
+        xannotation_SVA.load_rmsk_annotation_with_extnd_with_lenth_cutoff(global_values.SVA_ANNOTATION_EXTND, i_min_copy_len)
+        xannotation_SVA.index_rmsk_annotation_interval_tree()
+        
 
         samfile = pysam.AlignmentFile(sf_bam, "rb", reference_filename=self.sf_reference)
         m_clip_pos = {}
@@ -343,11 +355,13 @@ class ClipReadInfo():
                 mate_chrm = algnmt.next_reference_name
                 mate_pos = algnmt.next_reference_start
             # print mate_chrm, mate_pos ################################################################################
-            b_mate_in_rep = False
-            rep_start_pos = 0
+            b_mate_in_rep_Alu, b_mate_in_rep_L1, b_mate_in_rep_SVA = False, False, False
+            rep_start_pos_Alu, rep_start_pos_L1, rep_start_pos_SVA = 0, 0, 0
             #b_mate_in_rep, rep_start_pos = xannotation.is_within_repeat_region(mate_chrm, mate_pos)
             if b_se == False:
-                b_mate_in_rep, rep_start_pos = xannotation.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
+                b_mate_in_rep_Alu, rep_start_pos_Alu = xannotation_Alu.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
+                b_mate_in_rep_L1, rep_start_pos_L1 = xannotation_L1.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
+                b_mate_in_rep_SVA, rep_start_pos_SVA = xannotation_SVA.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
 
             # print b_mate_in_rep, rep_start_pos #######################################################################
             if l_cigar[0][0] == 4 or l_cigar[0][0] == 5:  # left clipped
@@ -355,14 +369,26 @@ class ClipReadInfo():
                     m_clip_pos[map_pos] = []
                     m_clip_pos[map_pos].append(1)  ##record # of left clip
                     m_clip_pos[map_pos].append(0)  ##record # of right clip
-                    if b_mate_in_rep:
-                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within repeat region
+                    if b_mate_in_rep_Alu:
+                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within Alu region
+                    else:
+                        m_clip_pos[map_pos].append(0)
+                    if b_mate_in_rep_L1:
+                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within L1 region
+                    else:
+                        m_clip_pos[map_pos].append(0)
+                    if b_mate_in_rep_SVA:
+                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within SVA region
                     else:
                         m_clip_pos[map_pos].append(0)
                 else:
                     m_clip_pos[map_pos][0] += 1
-                    if b_mate_in_rep:
+                    if b_mate_in_rep_Alu:
                         m_clip_pos[map_pos][2] += 1
+                    if b_mate_in_rep_L1:
+                        m_clip_pos[map_pos][3] += 1
+                    if b_mate_in_rep_SVA:
+                        m_clip_pos[map_pos][4] += 1
 
                 if algnmt.is_supplementary or algnmt.is_secondary:  ###secondary and supplementary are not considered
                     continue
@@ -379,29 +405,40 @@ class ClipReadInfo():
                     m_clip_pos[map_pos] = []
                     m_clip_pos[map_pos].append(0)
                     m_clip_pos[map_pos].append(1)
-                    if b_mate_in_rep:
-                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within repeat region
+                    if b_mate_in_rep_Alu:
+                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within Alu region
+                    else:
+                        m_clip_pos[map_pos].append(0)
+                    if b_mate_in_rep_L1:
+                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within L1 region
+                    else:
+                        m_clip_pos[map_pos].append(0)
+                    if b_mate_in_rep_SVA:
+                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within SVA region
                     else:
                         m_clip_pos[map_pos].append(0)
                 else:
                     m_clip_pos[map_pos][1] += 1
-                    if b_mate_in_rep:
+                    if b_mate_in_rep_Alu:
                         m_clip_pos[map_pos][2] += 1
+                    if b_mate_in_rep_L1:
+                        m_clip_pos[map_pos][3] += 1
+                    if b_mate_in_rep_SVA:
+                        m_clip_pos[map_pos][4] += 1
 
         sf_clip_pos = working_folder + chrm + global_values.CLIP_POS_SUFFIX
         with open(sf_clip_pos, "w") as fout_clip_pos:
             for pos in m_clip_pos:
                 i_all_clip = m_clip_pos[pos][0] + m_clip_pos[pos][1]
                 if i_all_clip >= i_clip_cutoff:  ####set a cutoff for the total number of clipped ones
-                    fout_clip_pos.write(
-                        str(pos) + "\t" + str(m_clip_pos[pos][0]) + "\t" + str(m_clip_pos[pos][1]) + "\t" +
-                        str(m_clip_pos[pos][2]) + "\n")
+                    fout_clip_pos.write("\t".join([str(pos), str(m_clip_pos[pos][0]), str(m_clip_pos[pos][1]),
+                                                   str(m_clip_pos[pos][2]), str(m_clip_pos[pos][3]), str(m_clip_pos[pos][4])+"\n"]))
         samfile.close()
 ####
 
     ####This function return:
     ####1. dictionary of clip position, ##in format {chrm: {map_pos: (left_cnt, right_cnt)}}
-    def collect_clip_positions(self, sf_annotation, i_clip_cutoff, b_se, sf_pub_folder):
+    def collect_clip_positions(self, sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA, i_clip_cutoff, b_se, sf_pub_folder):
         bam_info = BamInfo(self.sf_bam, self.sf_reference)
         b_with_chr = bam_info.is_chrm_contain_chr()
         samfile = pysam.AlignmentFile(self.sf_bam, "rb", reference_filename=self.sf_reference)
@@ -411,8 +448,9 @@ class ClipReadInfo():
         for chrm in references:
             if xchrom.is_decoy_contig_chrms(chrm) == True:  ###decoy sequnces and contigs are not considered
                 continue
-            l_chrm_records.append((chrm, self.sf_bam, self.working_folder, sf_annotation, b_with_chr, i_clip_cutoff,
-                                   b_se))
+            l_chrm_records.append((chrm, self.sf_bam, self.working_folder,
+                                   sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
+                                   b_with_chr, i_clip_cutoff, b_se)) # YW 2021/03/18 update sf_annotation
         samfile.close()
 
         pool = Pool(self.n_jobs)
@@ -505,21 +543,19 @@ class ClipReadInfo():
                     if self._is_qualified_clip(l_quality_score)==False:
                         continue
                     clipped_qulity = self._cvt_to_Ascii_quality(query_quality[:l_cigar[0][1]])
-                    clipped_rname = query_name + global_values.SEPERATOR + mate_chrm + global_values.SEPERATOR + \
-                                    str(mate_pos) + global_values.SEPERATOR
+                    clipped_rname = global_values.SEPARATOR.join([query_name, mate_chrm, str(mate_pos), ""])
                     s_tmp = "{0}{1}{2}{3}{4}{5}2".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
                                                          global_values.FLAG_LEFT_CLIP, global_values.SEPERATOR)
                     clipped_rname += s_tmp
                     if b_first:
-                        clipped_rname = query_name + global_values.SEPERATOR + mate_chrm + global_values.SEPERATOR + \
-                                        str(mate_pos) + global_values.SEPERATOR
+                        clipped_rname = global_values.SEPARATOR.join([query_name, mate_chrm, str(mate_pos), ""])
                         s_tmp = "{0}{1}{2}{3}{4}{5}1".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
                                                              global_values.FLAG_LEFT_CLIP, global_values.SEPERATOR)
                         clipped_rname += s_tmp
 
-                    f_clip_fq.write("@" + clipped_rname + "\n")
-                    f_clip_fq.write(clipped_seq + "\n+\n")
-                    f_clip_fq.write(clipped_qulity + "\n")
+                    f_clip_fq.write("".join(["@", clipped_rname, "\n"]))
+                    f_clip_fq.write("".join([clipped_seq, "\n+\n"]))
+                    f_clip_fq.write("".join([clipped_qulity, "\n"]))
 
             if l_cigar[-1][0] == 4:  #right clipped
                 ##calculate the exact clip position
@@ -530,8 +566,7 @@ class ClipReadInfo():
                         map_pos += lenth
 
                 if map_pos in m_pos:  # soft-clip
-                    clipped_rname = query_name + global_values.SEPERATOR + mate_chrm + global_values.SEPERATOR + \
-                                    str(mate_pos) + global_values.SEPERATOR
+                    clipped_rname = global_values.SEPARATOR.join([query_name, mate_chrm, str(mate_pos), ""])
                     s_tmp = "{0}{1}{2}{3}{4}{5}2".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
                                                          global_values.FLAG_RIGHT_CLIP, global_values.SEPERATOR)
                     clipped_rname += s_tmp
@@ -557,20 +592,19 @@ class ClipReadInfo():
 
                     clipped_qulity = self._cvt_to_Ascii_quality(query_quality[start_pos:])
                     if b_first:
-                        clipped_rname = query_name + global_values.SEPERATOR + mate_chrm + global_values.SEPERATOR + \
-                                        str(mate_pos) + global_values.SEPERATOR
+                        clipped_rname = global_values.SEPARATOR.join([query_name, mate_chrm, str(mate_pos), ""])
                         s_tmp = "{0}{1}{2}{3}{4}{5}1".format(chrm, global_values.SEPERATOR, map_pos, global_values.SEPERATOR,
                                                              global_values.FLAG_RIGHT_CLIP, global_values.SEPERATOR)
                         clipped_rname += s_tmp
 
-                    f_clip_fq.write("@" + clipped_rname + "\n")
-                    f_clip_fq.write(clipped_seq + "\n+\n")
-                    f_clip_fq.write(clipped_qulity + "\n")
+                    f_clip_fq.write("".join(["@", clipped_rname, "\n"]))
+                    f_clip_fq.write("".join([clipped_seq, "\n+\n"]))
+                    f_clip_fq.write("".join([clipped_qulity, "\n"]))
         samfile.close()
         f_clip_fq.close()
 
     ####This function: YW 2020/07/19 updated the comments
-    ####1. given TE/tmp/clip/chr.clip_pos, format: pos, left_cnt, right_cnt, num_mate_in_rep
+    ####1. given TE/tmp/clip/chr.clip_pos, format: pos, left_cnt, right_cnt, num_mate_in_rep (now add Alu, L1, SVA separately)
     ####2. do some filtering
     ####3. write the clipped part into fastq files
     def collect_clipped_parts(self, sf_all_clip_fq):
@@ -763,8 +797,10 @@ class ClipReadInfo():
     ####
     def run_cnt_clip_part_aligned_to_rep_by_chrm(self, record):
         ref_chrm = record[0]
-        sf_sam = record[1]
-        working_folder = record[2]
+        sf_sam_Alu = record[1]
+        sf_sam_L1 = record[2]
+        sf_sam_SVA = record[3]
+        working_folder = record[4]
 
         ####clip positions for specific chrm
         # sf_clip_pos = working_folder + ref_chrm + global_values.CLIP_POS_SUFFIX
@@ -775,92 +811,121 @@ class ClipReadInfo():
         sf_out_clip_pos = working_folder + ref_chrm + global_values.CLIP_RE_ALIGN_POS_SUFFIX
 
         m_sites_chrm = {}
-        samfile = pysam.AlignmentFile(sf_sam, "r")
-        for algnmt in samfile.fetch():  ##fetch reads mapped to "chrm"
-            ##here need to skip the secondary and supplementary alignments?
-            if algnmt.is_secondary or algnmt.is_supplementary:
-                continue
-            # if algnmt.is_duplicate == True:  ##duplicate
-            #     continue
-            if algnmt.is_unmapped == True:
-                continue
-
-            qname = algnmt.query_name
-            qname_fields = qname.split(global_values.SEPERATOR)
-            # chrm, map_pos, global_values.FLAG_LEFT_CLIP, first_read
-            ori_chrm = qname_fields[-4]  #############check reverse-complementary consistent here ??????????????
-            ori_mpos = int(qname_fields[-3])
-
-            if ori_chrm != ref_chrm:  ###not the interesting chromosome
-                continue
-
-            l_cigar = algnmt.cigar
-            if len(l_cigar) < 1:  # wrong alignment
-                continue
-            if len(l_cigar) > 2:
-                ####check the cigar
-                ###if both clipped, and the clipped part is large, then skip
-                b_left_clip = False
-                i_left_clip_len = 0
-                if l_cigar[0][0] == 4 or l_cigar[0][0] == 5:  # left clipped
-                    b_left_clip = True
-                    i_left_clip_len = l_cigar[0][1]
-                b_right_clip = False
-                i_right_clip_len = 0
-                if l_cigar[-1][0] == 4 or l_cigar[-1][0] == 5:  # right clipped
-                    b_right_clip = True
-                    i_right_clip_len = l_cigar[-1][1]
-                
-                if b_left_clip == True and b_right_clip == True:
-                    if (i_left_clip_len > global_values.MAX_CLIP_CLIP_LEN) and (i_right_clip_len > global_values.MAX_CLIP_CLIP_LEN):
-                        continue
-
-            ####for the alignment (of the clipped read), if the mapped part is smaller than the clipped part,
-            ####then skip
-            n_total = 0
-            n_map = 0
-            for (type, lenth) in l_cigar:
-                if type == 0:
-                    n_map += lenth
-                if type != 2:  # deletion is not added to the total length data
-                    n_total += lenth
-            
-            # YW 2020/08/09 added this to account for mask 2
-            for ch in algnmt.query_sequence:
-                if ch=="N":
-                    n_total -= 1
+        def run_cnt_clip_part_aligned_to_rep_by_chrm_helper(sf_sam, rep_type): # YW 2021/03/18 added to avoid duplicating code
+            nonlocal m_sites_chrm # so we can change m_sites_chrm
+            samfile = pysam.AlignmentFile(sf_sam, "r")
+            for algnmt in samfile.fetch():  ##fetch reads mapped to "chrm"
+                ##here need to skip the secondary and supplementary alignments?
+                if algnmt.is_secondary or algnmt.is_supplementary:
+                    continue
+                # if algnmt.is_duplicate == True:  ##duplicate
+                #     continue
+                if algnmt.is_unmapped == True:
+                    continue
     
-            if n_map < (n_total * 3 / 4):  ########################require at least 3/4 of the seq is mapped !!!!!!!!!!!
-                continue
-
-            b_left = True
-            if qname_fields[-2] == global_values.FLAG_RIGHT_CLIP:
-                b_left = False
-
-            if (ori_mpos in m_sites_chrm) == False:
-                m_sites_chrm[ori_mpos] = []
-                if b_left == True:
-                    m_sites_chrm[ori_mpos].append(1)
-                    m_sites_chrm[ori_mpos].append(0)
+                qname = algnmt.query_name
+                qname_fields = qname.split(global_values.SEPERATOR)
+                # chrm, map_pos, global_values.FLAG_LEFT_CLIP, first_read
+                ori_chrm = qname_fields[-4]  #############check reverse-complementary consistent here ??????????????
+                ori_mpos = int(qname_fields[-3])
+    
+                if ori_chrm != ref_chrm:  ###not the interesting chromosome
+                    continue
+    
+                l_cigar = algnmt.cigar
+                if len(l_cigar) < 1:  # wrong alignment
+                    continue
+                if len(l_cigar) > 2:
+                    ####check the cigar
+                    ###if both clipped, and the clipped part is large, then skip
+                    b_left_clip = False
+                    i_left_clip_len = 0
+                    if l_cigar[0][0] == 4 or l_cigar[0][0] == 5:  # left clipped
+                        b_left_clip = True
+                        i_left_clip_len = l_cigar[0][1]
+                    b_right_clip = False
+                    i_right_clip_len = 0
+                    if l_cigar[-1][0] == 4 or l_cigar[-1][0] == 5:  # right clipped
+                        b_right_clip = True
+                        i_right_clip_len = l_cigar[-1][1]
+                    
+                    if b_left_clip == True and b_right_clip == True:
+                        if (i_left_clip_len > global_values.MAX_CLIP_CLIP_LEN) and (i_right_clip_len > global_values.MAX_CLIP_CLIP_LEN):
+                            continue
+    
+                ####for the alignment (of the clipped read), if the mapped part is smaller than the clipped part,
+                ####then skip
+                n_total = 0
+                n_map = 0
+                for (type, lenth) in l_cigar:
+                    if type == 0:
+                        n_map += lenth
+                    if type != 2:  # deletion is not added to the total length data
+                        n_total += lenth
+                
+                # YW 2020/08/09 added this to account for mask 2
+                for ch in algnmt.query_sequence:
+                    if ch=="N":
+                        n_total -= 1
+        
+                if n_map < (n_total * 3 / 4):  ########################require at least 3/4 of the seq is mapped !!!!!!!!!!!
+                    continue
+    
+                b_left = True
+                if qname_fields[-2] == global_values.FLAG_RIGHT_CLIP:
+                    b_left = False
+                
+                # merge counts from Alu, L1, SVA sam files
+                if (ori_mpos in m_sites_chrm) == False:
+                    m_sites_chrm[ori_mpos] = []
+                    if rep_type == "Alu":
+                        if b_left == True:
+                            m_sites_chrm[ori_mpos].extend([1, 0, 0, 0, 0, 0])
+                        else:
+                            m_sites_chrm[ori_mpos].extend([0, 1, 0, 0, 0, 0])
+                    elif rep_type == "L1":
+                        if b_left == True:
+                            m_sites_chrm[ori_mpos].extend([0, 0, 1, 0, 0, 0])
+                        else:
+                            m_sites_chrm[ori_mpos].extend([0, 0, 0, 1, 0, 0])
+                    elif rep_type == "SVA"
+                        if b_left == True:
+                            m_sites_chrm[ori_mpos].extend([0, 0, 0, 0, 1, 0])
+                        else:
+                            m_sites_chrm[ori_mpos].extend([0, 0, 0, 0, 0, 1])
                 else:
-                    m_sites_chrm[ori_mpos].append(0)
-                    m_sites_chrm[ori_mpos].append(1)
-            else:
-                if b_left == True:
-                    m_sites_chrm[ori_mpos][-2] += 1
-                else:
-                    m_sites_chrm[ori_mpos][-1] += 1
-
+                    if rep_type == "Alu":
+                        if b_left == True:
+                            m_sites_chrm[ori_mpos][0] += 1
+                        else:
+                            m_sites_chrm[ori_mpos][1] += 1
+                    elif rep_type == "L1":
+                        if b_left == True:
+                            m_sites_chrm[ori_mpos][2] += 1
+                        else:
+                            m_sites_chrm[ori_mpos][3] += 1
+                    elif rep_type == "SVA":
+                        if b_left == True:
+                            m_sites_chrm[ori_mpos][4] += 1
+                        else:
+                            m_sites_chrm[ori_mpos][5] += 1      
+            samfile.close()
+        run_cnt_clip_part_aligned_to_rep_by_chrm_helper(sf_sam_Alu, "Alu")
+        run_cnt_clip_part_aligned_to_rep_by_chrm_helper(sf_sam_L1, "L1")
+        run_cnt_clip_part_aligned_to_rep_by_chrm_helper(sf_sam_SVA, "SVA")
+        
+        
         with open(sf_out_clip_pos, "w") as fout_clip_pos:
             for pos in m_sites_chrm:
                 lth = len(m_sites_chrm[pos])
                 fout_clip_pos.write(str(pos) + "\t")
-                for i in range(lth):
-                    fout_clip_pos.write(str(m_sites_chrm[pos][i]) + "\t")
-                fout_clip_pos.write("\n")
+                fout_clip_pos.write("\t".join(m_sites_chrm[pos])+"\n")
+                # for i in range(lth):
+                #     fout_clip_pos.write(str(m_sites_chrm[pos][i]) + "\t")
+                # fout_clip_pos.write("\n")
 
     ####Input:1. the re-aligned clipped parts
-    def cnt_clip_part_aligned_to_rep(self, sf_clip_sam):
+    def cnt_clip_part_aligned_to_rep(self, sf_clip_sam_Alu, sf_clip_sam_L1, sf_clip_sam_SVA):
         samfile = pysam.AlignmentFile(self.sf_bam, "rb", reference_filename=self.sf_reference)
         references = samfile.references
         l_chrm_records = []
@@ -869,7 +934,7 @@ class ClipReadInfo():
         for chrm in references:
             if xchrom.is_decoy_contig_chrms(chrm) == True:  ###filter out decoy and other contigs
                 continue
-            l_chrm_records.append((chrm, sf_clip_sam, self.working_folder))
+            l_chrm_records.append((chrm, sf_clip_sam_Alu, sf_clip_sam_L1, sf_clip_sam_SVA, self.working_folder)) # YW 2021/03/18 need to change
         samfile.close()
 
         pool = Pool(self.n_jobs)
@@ -1093,9 +1158,8 @@ class ClipReadInfo():
                         i_right_clip = int(fields[2])
                         if i_left_clip < cutoff_left_clip and i_right_clip < cutoff_right_clip:
                             continue
-                        # YW 2021/03/18 disable the following filtering by coverage
-                        # if (i_left_clip+i_right_clip) > max_cov_cutoff:
-                        #     continue
+                        if (i_left_clip+i_right_clip) > max_cov_cutoff:
+                            continue
                         if pos in m_realign_pos:
                             fout_clip_pos.write(chrm + "\t")
                             fout_clip_pos.write(line.rstrip() + "\t")
@@ -1103,7 +1167,7 @@ class ClipReadInfo():
                         else:
                             fout_clip_pos.write(chrm + "\t")
                             fout_clip_pos.write(line.rstrip() + "\t")
-                            fout_clip_pos.write("0\t0\n")
+                            fout_clip_pos.write("\t".join([str(0)]*6) + "\n")
                 #os.remove(sf_clip_pos)
         samfile.close()
 

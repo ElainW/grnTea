@@ -59,7 +59,10 @@ class TE_Multi_Locator():
 
     ####
     # YW 2020/08/01 added b_mosaic in input (github update)
-    def call_TEI_candidate_sites_from_multiple_alignmts(self, sf_annotation, sf_rep_cns, sf_ref, b_se, cutoff_left_clip,
+    def call_TEI_candidate_sites_from_multiple_alignmts(self, sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
+                                                        sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
+                                                        sf_rep_Alu, sf_rep_L1, sf_rep_SVA,
+                                                        b_se, cutoff_left_clip,
                                                         cutoff_right_clip, cutoff_clip_mate_in_rep, b_mosaic,
                                                         sf_clip_folder, b_force, max_cov, sf_out):
         cnt = 0
@@ -111,8 +114,10 @@ class TE_Multi_Locator():
                     sf_new_pub=sf_clip_folder+"{0}/".format(i_idx_bam)
                 else:
                     sf_new_pub = sf_clip_folder + "/{0}/".format(i_idx_bam)
-                caller.call_TEI_candidate_sites_from_clip_reads_v2(sf_annotation, sf_rep_cns, sf_ref, b_se,
-                                                                   cutoff_hit_rep_copy, cutoff_hit_rep_copy, b_cutoff,
+                caller.call_TEI_candidate_sites_from_clip_reads_v2(sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
+                                                                   sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
+                                                                   sf_rep_Alu, sf_rep_L1, sf_rep_SVA,
+                                                                   b_se, cutoff_hit_rep_copy, cutoff_hit_rep_copy, b_cutoff,
                                                                    sf_new_pub, i_idx_bam, b_force, max_cov, sf_out_tmp)
                 i_idx_bam+=1
 ####
@@ -150,7 +155,6 @@ class TE_Multi_Locator():
                                 i_value = 0
                                 for value in fields[2:]:
                                     ###sum (left-realign, right-realign, mate_in_rep)
-                                    # YW note 2020/06/30: actually all the positions only appear once (due to usage of python dict in call_TEI_candidate_sites_from_clip_reads_v2), so unnecessary to sum here
                                     m_sites_chrm[pos][i_value] += int(value)
                                     i_value += 1
 
@@ -169,10 +173,14 @@ class TE_Multi_Locator():
                 for pos in m_sites_chrm_filtered:
                     lth = len(m_sites_chrm_filtered[pos])
                     fout_sites.write(chrm + "\t" + str(pos) + "\t")
+                    # fout_sites.write("\t".join(m_sites_chrm_filtered[pos]) + "\n") # may need to cast each number as str
                     for i in range(lth):
                         s_feature = str(m_sites_chrm_filtered[pos][i])
                         fout_sites.write(s_feature + "\t")
                     fout_sites.write("\n")
+                
+                del m_sites_chrm_filtered # YW added to save memory
+                del m_sites_chrm # YW added to save memory
 
                     # # sort the list
                     # sf_out_merged_sorted = sf_out + "_tmp.sorted"
@@ -606,22 +614,23 @@ class TELocator():
     ##So, for TEI with deletion, there will be two breakpoints, and at each breakpoint, only one type of clipped reads
     # YW 2020/08/09: this function doesn't require mate read in repeat region (--cr), the filtering is done in the last step after merging nearby clipping positions later on
     # YW 2020/08/09: did not see how deletion is considered.
-    def call_TEI_candidate_sites_from_clip_reads_v2(self, sf_annotation, sf_rep_cns, sf_ref, b_se, cutoff_left_clip,
+    def call_TEI_candidate_sites_from_clip_reads_v2(self, sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
+                                                    sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
+                                                    sf_rep_Alu, sf_rep_L1, sf_rep_SVA,
+                                                    b_se, cutoff_left_clip,
                                                     cutoff_right_clip, b_cutoff, sf_pub_folder, idx_bam,
-                                                    b_force, max_cov_cutoff, sf_out):
+                                                    b_force, max_cov_cutoff, sf_out): # YW 2021/03/18 take out max_cov_cutoff later
         # this is a public folder for different type of repeats to share the clipped reads
         if sf_pub_folder[-1]!="/":
             sf_pub_folder+="/"
         if os.path.exists(sf_pub_folder) == False:
             cmd = "mkdir -p {0}".format(sf_pub_folder)
-            #Popen(cmd, shell=True, stdout=PIPE).communicate()
             self.cmd_runner.run_cmd_small_output(cmd)
 
         #this is the local folder for the current read type to save the tmp files
         sf_clip_working_folder = self.working_folder + global_values.CLIP_FOLDER + "/{0}/".format(idx_bam)
         if os.path.exists(sf_clip_working_folder) == False:
             cmd = "mkdir -p {0}".format(sf_clip_working_folder)
-            #Popen(cmd, shell=True, stdout=PIPE).communicate()
             self.cmd_runner.run_cmd_small_output(cmd)
 
         clip_info = ClipReadInfo(self.sf_bam, self.n_jobs, self.sf_reference)
@@ -635,7 +644,8 @@ class TELocator():
             ##collect the clip positions
             initial_clip_pos_freq_cutoff = global_values.INITIAL_MIN_CLIP_CUTOFF ##########################################################################
             print("Initial minimum clip cutoff is {0}".format(initial_clip_pos_freq_cutoff))
-            clip_info.collect_clip_positions(sf_annotation, initial_clip_pos_freq_cutoff, b_se, sf_pub_folder) ##save clip pos by chrm
+            clip_info.collect_clip_positions(sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
+                                             initial_clip_pos_freq_cutoff, b_se, sf_pub_folder) ##save clip pos by chrm
             print("Output info: Collect clipped parts for file ", self.sf_bam)
             sf_all_clip_fq_ori=sf_clip_working_folder+sf_bam_name + global_values.CLIP_FQ_SUFFIX
             clip_info.collect_clipped_parts(sf_all_clip_fq_ori)
@@ -648,14 +658,21 @@ class TELocator():
             print("Collected clipped reads file {0} already exist!".format(sf_all_clip_fq))
 ####
         ####align the clipped parts to repeat copies
-        sf_algnmt = self.working_folder + sf_bam_name + global_values.CLIP_BAM_SUFFIX
+        # YW 2021/03/18 add Alu, L1, SVA
+        sf_algnmt_Alu = self.working_folder + sf_bam_name + global_values.CLIP_BAM_SUFFIX + ".Alu"
+        sf_algnmt_L1 = self.working_folder + sf_bam_name + global_values.CLIP_BAM_SUFFIX + ".L1"
+        sf_algnmt_SVA = self.working_folder + sf_bam_name + global_values.CLIP_BAM_SUFFIX + ".SVA"
         print("Output info: Re-align clipped parts for file ", self.sf_bam)
 
         bwa_align=BWAlign(global_values.BWA_PATH, global_values.BWA_REALIGN_CUTOFF, self.n_jobs)
-        bwa_align.two_stage_realign(sf_rep_cns, sf_ref, sf_all_clip_fq, sf_algnmt)
+        # YW 2021/03/18 add Alu, L1, SVA
+        bwa_align.two_stage_realign(sf_rep_cns_Alu, sf_rep_Alu, sf_all_clip_fq, sf_algnmt_Alu)
+        bwa_align.two_stage_realign(sf_rep_cns_L1, sf_rep_L1, sf_all_clip_fq, sf_algnmt_L1)
+        bwa_align.two_stage_realign(sf_rep_cns_SVA, sf_rep_SVA, sf_all_clip_fq, sf_algnmt_SVA)
 
         ####cnt number of clipped reads aligned to repeat copies from the re-alignment
-        clip_info.cnt_clip_part_aligned_to_rep(sf_algnmt)  ##require at least 3/4 (YW changed from half from previous comment) of the seq is mapped !!!!
+        # YW 2021/03/18 add Alu, L1, SVA
+        clip_info.cnt_clip_part_aligned_to_rep(sf_algnmt_Alu, sf_algnmt_L1, sf_algnmt_SVA)  ##require at least 3/4 (YW changed from half from previous comment) of the seq is mapped !!!!
 
         # if b_cutoff is set, then directly return the dict
         if b_cutoff == False:
@@ -663,8 +680,12 @@ class TELocator():
         else:
             clip_info.merge_clip_positions_with_cutoff(cutoff_left_clip, cutoff_right_clip, max_cov_cutoff,
                                                        sf_pub_folder, sf_out)
-        if os.path.isfile(sf_algnmt)==True:####remove the file
-            os.remove(sf_algnmt)
+        if os.path.isfile(sf_algnmt_Alu)==True:####remove the file
+            os.remove(sf_algnmt_Alu)
+        if os.path.isfile(sf_algnmt_L1)==True:####remove the file
+            os.remove(sf_algnmt_L1)
+        if os.path.isfile(sf_algnmt_SVA)==True:####remove the file
+            os.remove(sf_algnmt_SVA)
 ####
     ###First, Use (left, right) clipped read as threshold. Also, require some of the mate read are within repeat region
     ###Then: check the nearby small region, whether the merged number saftisfy the threshold
