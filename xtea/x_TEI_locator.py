@@ -161,10 +161,11 @@ class TE_Multi_Locator():
                 for pos in m_sites_chrm:
                     lth = len(m_sites_chrm[pos])
                     fout_sites_merged.write(chrm + "\t" + str(pos) + "\t")
-                    for i in range(lth):
-                        s_feature = str(m_sites_chrm[pos][i])
-                        fout_sites_merged.write(s_feature + "\t")
-                    fout_sites_merged.write("\n")
+                    fout_sites_merged.write("\t".join([str(i) for i in m_sites_chrm[pos]]) + "\n")
+                    # for i in range(lth):
+                    #     s_feature = str(m_sites_chrm[pos][i])
+                    #     fout_sites_merged.write(s_feature + "\t")
+                    # fout_sites_merged.write("\n")
 
                 #this will use the number of clipped reads within the nearby region
                 m_sites_chrm_filtered = xfilter.parse_sites_with_clip_cutoff_for_chrm(m_sites_chrm, cutoff_left_clip,
@@ -173,11 +174,11 @@ class TE_Multi_Locator():
                 for pos in m_sites_chrm_filtered:
                     lth = len(m_sites_chrm_filtered[pos])
                     fout_sites.write(chrm + "\t" + str(pos) + "\t")
-                    # fout_sites.write("\t".join(m_sites_chrm_filtered[pos]) + "\n") # may need to cast each number as str
-                    for i in range(lth):
-                        s_feature = str(m_sites_chrm_filtered[pos][i])
-                        fout_sites.write(s_feature + "\t")
-                    fout_sites.write("\n")
+                    fout_sites.write("\t".join([str(i) for i in m_sites_chrm_filtered[pos]]) + "\n")
+                    # for i in range(lth):
+                    #     s_feature = str(m_sites_chrm_filtered[pos][i])
+                    #     fout_sites.write(s_feature + "\t")
+                    # fout_sites.write("\n")
                 
                 del m_sites_chrm_filtered # YW added to save memory
                 del m_sites_chrm # YW added to save memory
@@ -483,11 +484,11 @@ class TE_Multi_Locator():
                     # if n_left > cutoff or n_right > cutoff:
                     if b_tumor==True:#tumor
                         if (n_left + n_right) >= cutoff:
-                            fout_sites.write(chrm + "\t" + str(pos) + "\t" + str(n_left) + "\t" + str(n_right) + "\n")
+                            fout_sites.write("\t".join([chrm, str(pos), str(n_left), str(n_right)+"\n"]))
                     else:#non tumor cases
                         if ((n_left > n_half_cutoff) and (n_right> n_half_cutoff)) or (n_left > cutoff) \
                                 or (n_right>cutoff):
-                            fout_sites.write(chrm + "\t" + str(pos) + "\t" + str(n_left) + "\t" + str(n_right) + "\n")
+                            fout_sites.write("\t".join([chrm, str(pos), str(n_left), str(n_right)+"\n"]))
 ####    # YW 2020/08/03 github update (all the following code)
         if sf_raw_disc=="":
             return

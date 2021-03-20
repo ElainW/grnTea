@@ -919,7 +919,7 @@ class ClipReadInfo():
             for pos in m_sites_chrm:
                 lth = len(m_sites_chrm[pos])
                 fout_clip_pos.write(str(pos) + "\t")
-                fout_clip_pos.write("\t".join(m_sites_chrm[pos])+"\n")
+                fout_clip_pos.write("\t".join([str(i) for i in m_sites_chrm[pos]])+"\n")
                 # for i in range(lth):
                 #     fout_clip_pos.write(str(m_sites_chrm[pos][i]) + "\t")
                 # fout_clip_pos.write("\n")
