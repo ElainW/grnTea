@@ -359,7 +359,7 @@ if __name__ == '__main__':
     if args.clip:  ###take in the normal illumina reads (10x will be viewed as normal illumina)
         print("Working on \"clip\" step!")
         sf_bam_list = args.input
-        s_working_folder = args.wfolder # YW 2021/03/18 need to make this not specific to TE (since all processes are shared)
+        s_working_folder = args.wfolder # YW 2021/03/18 make this not specific to TE (since all processes are shared)
         n_jobs = args.cores
         sf_rep_cns_Alu =args.Alu_cns
         sf_rep_cns_L1 =args.L1_cns
