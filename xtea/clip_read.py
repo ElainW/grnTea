@@ -917,7 +917,7 @@ class ClipReadInfo():
         
         with open(sf_out_clip_pos, "w") as fout_clip_pos:
             for pos in m_sites_chrm:
-                lth = len(m_sites_chrm[pos])
+                # lth = len(m_sites_chrm[pos])
                 fout_clip_pos.write(str(pos) + "\t")
                 fout_clip_pos.write("\t".join([str(i) for i in m_sites_chrm[pos]])+"\n")
                 # for i in range(lth):
@@ -934,7 +934,7 @@ class ClipReadInfo():
         for chrm in references:
             if xchrom.is_decoy_contig_chrms(chrm) == True:  ###filter out decoy and other contigs
                 continue
-            l_chrm_records.append((chrm, sf_clip_sam_Alu, sf_clip_sam_L1, sf_clip_sam_SVA, self.working_folder)) # YW 2021/03/18 need to change
+            l_chrm_records.append((chrm, sf_clip_sam_Alu, sf_clip_sam_L1, sf_clip_sam_SVA, self.working_folder))
         samfile.close()
 
         pool = Pool(self.n_jobs)
@@ -1168,7 +1168,7 @@ class ClipReadInfo():
                             fout_clip_pos.write(chrm + "\t")
                             fout_clip_pos.write(line.rstrip() + "\t")
                             fout_clip_pos.write("\t".join([str(0)]*6) + "\n")
-                #os.remove(sf_clip_pos)
+                # os.remove(sf_clip_pos)
         samfile.close()
 
     ####
