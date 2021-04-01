@@ -112,6 +112,7 @@ Also need to collect the: direction of the background ones !!!!!
 ####
 import os
 from shutil import copyfile
+import argparse
 import global_values
 from x_TEI_locator import *
 # from x_TEI_source_tracer import *
@@ -121,7 +122,6 @@ from x_reference import *
 from x_clip_disc_filter import *
 # from x_somatic_calling import *
 # from x_analysis import *
-import argparse
 # from x_reads_collection import *
 # from x_mutation import *
 # from x_sv import *
