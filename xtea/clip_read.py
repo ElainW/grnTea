@@ -366,29 +366,15 @@ class ClipReadInfo():
             # print b_mate_in_rep, rep_start_pos #######################################################################
             if l_cigar[0][0] == 4 or l_cigar[0][0] == 5:  # left clipped
                 if map_pos not in m_clip_pos:
-                    m_clip_pos[map_pos] = []
-                    m_clip_pos[map_pos].append(1)  ##record # of left clip
-                    m_clip_pos[map_pos].append(0)  ##record # of right clip
-                    if b_mate_in_rep_Alu:
-                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within Alu region
-                    else:
-                        m_clip_pos[map_pos].append(0)
-                    if b_mate_in_rep_L1:
-                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within L1 region
-                    else:
-                        m_clip_pos[map_pos].append(0)
-                    if b_mate_in_rep_SVA:
-                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within SVA region
-                    else:
-                        m_clip_pos[map_pos].append(0)
+                    m_clip_pos[map_pos] = [1, 0, 0, 0, 0]
                 else:
                     m_clip_pos[map_pos][0] += 1
-                    if b_mate_in_rep_Alu:
-                        m_clip_pos[map_pos][2] += 1
-                    if b_mate_in_rep_L1:
-                        m_clip_pos[map_pos][3] += 1
-                    if b_mate_in_rep_SVA:
-                        m_clip_pos[map_pos][4] += 1
+                if b_mate_in_rep_Alu:
+                    m_clip_pos[map_pos][2] += 1
+                if b_mate_in_rep_L1:
+                    m_clip_pos[map_pos][3] += 1
+                if b_mate_in_rep_SVA:
+                    m_clip_pos[map_pos][4] += 1
 
                 if algnmt.is_supplementary or algnmt.is_secondary:  ###secondary and supplementary are not considered
                     continue
@@ -402,29 +388,15 @@ class ClipReadInfo():
                         map_pos += lenth
 
                 if map_pos not in m_clip_pos:
-                    m_clip_pos[map_pos] = []
-                    m_clip_pos[map_pos].append(0)
-                    m_clip_pos[map_pos].append(1)
-                    if b_mate_in_rep_Alu:
-                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within Alu region
-                    else:
-                        m_clip_pos[map_pos].append(0)
-                    if b_mate_in_rep_L1:
-                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within L1 region
-                    else:
-                        m_clip_pos[map_pos].append(0)
-                    if b_mate_in_rep_SVA:
-                        m_clip_pos[map_pos].append(1)  ##record # of mate-reads within SVA region
-                    else:
-                        m_clip_pos[map_pos].append(0)
+                    m_clip_pos[map_pos] = [0, 1, 0, 0, 0]
                 else:
                     m_clip_pos[map_pos][1] += 1
-                    if b_mate_in_rep_Alu:
-                        m_clip_pos[map_pos][2] += 1
-                    if b_mate_in_rep_L1:
-                        m_clip_pos[map_pos][3] += 1
-                    if b_mate_in_rep_SVA:
-                        m_clip_pos[map_pos][4] += 1
+                if b_mate_in_rep_Alu:
+                    m_clip_pos[map_pos][2] += 1
+                if b_mate_in_rep_L1:
+                    m_clip_pos[map_pos][3] += 1
+                if b_mate_in_rep_SVA:
+                    m_clip_pos[map_pos][4] += 1
 
         sf_clip_pos = working_folder + chrm + global_values.CLIP_POS_SUFFIX
         with open(sf_clip_pos, "w") as fout_clip_pos:
