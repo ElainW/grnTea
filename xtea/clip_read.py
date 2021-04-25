@@ -1118,6 +1118,7 @@ class ClipReadInfo():
                         for line in fin_realign_clip_chrm:
                             fields = line.split()
                             m_realign_pos[int(fields[0])] = "\t".join(fields[1:])
+                    os.remove(sf_chrm_re_align_clip_pos) # YW 2021/04/07 remove unused files
 
                 sf_clip_pos = sf_pclip + chrm + global_values.CLIP_POS_SUFFIX
                 if os.path.isfile(sf_clip_pos) == False:
@@ -1140,7 +1141,7 @@ class ClipReadInfo():
                             fout_clip_pos.write(chrm + "\t")
                             fout_clip_pos.write(line.rstrip() + "\t")
                             fout_clip_pos.write("\t".join([str(0)]*6) + "\n")
-                # os.remove(sf_clip_pos)
+                os.remove(sf_clip_pos) # YW uncommented 2021/04/07
         samfile.close()
 
     ####
