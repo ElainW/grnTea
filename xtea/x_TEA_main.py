@@ -436,7 +436,7 @@ if __name__ == '__main__':
         sf_annotation_Alu = args.Alu_annotation
         sf_annotation_L1 = args.L1_annotation
         sf_annotation_SVA = args.SVA_annotation
-        sf_candidate_list = args.input
+        sf_candidate_list = args.input # YW 2021/04/23 retained map counts to cns
         sf_out = args.output
         sf_ref = args.ref  ###reference genome, some cram file require this file to open
         peak_window = global_values.PEAK_WINDOW_DEFAULT # YW 2020/07/03 note: max distance between two clipped positions for them to be considered as from one insertion/cluster
@@ -450,12 +450,11 @@ if __name__ == '__main__':
                 print("User doesn't specify skipping, although {0} exists. Rerun the \"disc\" step.".format(sf_out))
             xfilter = XIntermediateSites()
             m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
-            sf_peak_sites = s_working_folder + "clip_peak_candidate.list"
+            # sf_peak_sites = s_working_folder + "clip_peak_candidate.list" # YW: this file isn't used, commented out
             #m_sites_clip_peak = xfilter.call_peak_candidate_sites(m_original_sites, PEAK_WINDOW)  # get the peak sites
-                # get the peak sites
             # YW CHANGED THE FUNCTION NAME from call_peak_candidate_sites_with_std_derivation
             m_sites_clip_peak = xfilter.call_peak_candidate_sites_calc_std_deviation(m_original_sites, peak_window)
-            xfilter.output_candidate_sites(m_sites_clip_peak, sf_peak_sites)  # output the sites
+            # xfilter.output_candidate_sites(m_sites_clip_peak, sf_peak_sites)  # output the sites (# YW 2021/04/23 commented out)
             m_original_sites.clear()  #release the memory
             # YW added the following message
             print("Finished merging nearby clipped sites!")
@@ -487,12 +486,15 @@ if __name__ == '__main__':
             # YW 2020/08/03 github update: added 2 arguments sf_raw_disc, b_tumor
             tem_locator.filter_candidate_sites_by_discordant_pairs_multi_alignmts(m_sites_clip_peak, iextend, i_is, f_dev,
                                                                                   n_disc_cutoff, sf_annotation_Alu, sf_annotation_L1,
-                                                                                  sf_annotation_SVA, sf_tmp, sf_raw_disc, b_tumor)
+                                                                                  sf_annotation_SVA,
+                                                                                  sf_tmp, sf_raw_disc, b_tumor)
             # YW 2020/04/23 added the if statement to alert in advance the problem of unable to merge_clip_disc
             if os.stat(sf_tmp).st_size == 0:
                 print("{0} is EMPTY! It will be impossible to merge clip disc in the next step. Set all counts of left and right discordant reads to 0. Discordant cutoff {1} is too high.\n".format(sf_tmp, n_disc_cutoff))
             # YW 2020/07/20 modified merge_clip_disc function to make sure locations without discordant read support will go through
-            xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
+            # xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
+            # YW 2021/04/21 wrote the function below to merge features from clip and disc
+            xfilter.merge_clip_disc_new(sf_candidate_list, m_sites_clip_peak, sf_raw_disc, sf_out)
 ####
 ####
     ####

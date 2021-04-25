@@ -19,6 +19,15 @@ from bwa_align import *
 import global_values
 from cmd_runner import *
 
+
+# YW 2021/04/21 to write lists into final output
+def conv_list_to_str(lst):
+	if len(lst) == 0:
+		string = "[]"
+	string = "["+",".join(list(map(str, lst)))+"]"
+	return string
+
+
 class TE_Multi_Locator():
     def __init__(self, sf_list, s_working_folder, n_jobs, sf_ref):
         self.sf_list = sf_list
@@ -159,7 +168,7 @@ class TE_Multi_Locator():
                                     i_value += 1
 
                 for pos in m_sites_chrm:
-                    lth = len(m_sites_chrm[pos])
+                    # lth = len(m_sites_chrm[pos])
                     fout_sites_merged.write(chrm + "\t" + str(pos) + "\t")
                     fout_sites_merged.write("\t".join([str(i) for i in m_sites_chrm[pos]]) + "\n")
                     # for i in range(lth):
@@ -172,7 +181,7 @@ class TE_Multi_Locator():
                                                                                       cutoff_right_clip,
                                                                                       cutoff_clip_mate_in_rep)
                 for pos in m_sites_chrm_filtered:
-                    lth = len(m_sites_chrm_filtered[pos])
+                    # lth = len(m_sites_chrm_filtered[pos])
                     fout_sites.write(chrm + "\t" + str(pos) + "\t")
                     fout_sites.write("\t".join([str(i) for i in m_sites_chrm_filtered[pos]]) + "\n")
                     # for i in range(lth):
@@ -191,6 +200,11 @@ class TE_Multi_Locator():
                     # sf_peak_events = sf_out + ".peak_events.txt"
                     # self.chain_regions(sf_out_merged_sorted, global_values.NEARBY_REGION, cutoff_left_clip, cutoff_right_clip,
                     #                    cutoff_clip_mate_in_rep, sf_out, sf_peak_events)
+        # YW 2021/04/07 added to remove loaded files
+        for i in range(cnt):
+            sf_tmp = self.working_folder + global_values.CLIP_TMP + "{0}".format(i)
+            if os.path.isfile(sf_tmp):
+                os.remove(sf_tmp)
 
 ####
     #this version is designed for mosaic calling only, which:
@@ -423,8 +437,10 @@ class TE_Multi_Locator():
     # For given candidate sites from clip reads,
     # sum the num of the discordant pairs from different alignments
     # YW 2020/08/03 github update, 2 more arguments
+    # YW 2021/04/23 change r_lcluster, s_lc_chrm, s_lc_pos, r_rcluster, s_rc_chrm, s_rc_pos from list to a single entry
     def filter_candidate_sites_by_discordant_pairs_multi_alignmts(self, m_sites, iext, i_is, f_dev, cutoff,
-                                                                  sf_annotation, sf_out, sf_raw_disc="", b_tumor=False):
+                                                                  sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
+                                                                  sf_out, sf_raw_disc="", b_tumor=False):
         with open(self.sf_list) as fin_list:
             cnt = 0
             for line in fin_list:
@@ -444,7 +460,7 @@ class TE_Multi_Locator():
                     print("We are using {0} for initial cutoff".format(tmp_cutoff))
                 # 2020/08/03 github update: more output for filter_candidate_sites_by_discordant_pairs_non_barcode
                 m_sites_discord, m_sites_raw_disc = caller.filter_candidate_sites_by_discordant_pairs_non_barcode(
-                    m_sites, iext, i_is, f_dev, sf_annotation, tmp_cutoff)
+                    m_sites, iext, i_is, f_dev, sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA, tmp_cutoff)
                 xfilter = XIntermediateSites()
                 sf_out_tmp = self.working_folder + global_values.DISC_TMP + '{0}'.format(cnt)
                 xfilter.output_candidate_sites(m_sites_discord, sf_out_tmp)
@@ -464,31 +480,45 @@ class TE_Multi_Locator():
                     fields = line.split()
                     chrm = fields[0]
                     pos = int(fields[1])
-                    n_left_disc = int(fields[2])
-                    n_right_disc = int(fields[3])
+                    n_left_disc_Alu = int(fields[2])
+                    n_right_disc_Alu = int(fields[3])
+                    n_left_disc_L1 = int(fields[4])
+                    n_right_disc_L1 = int(fields[5])
+                    n_left_disc_SVA = int(fields[6])
+                    n_right_disc_SVA = int(fields[7])
                     if chrm not in m_merged_sites:
                         m_merged_sites[chrm] = {}
                     if pos not in m_merged_sites[chrm]:
-                        m_merged_sites[chrm][pos] = []
-                        m_merged_sites[chrm][pos].append(n_left_disc)
-                        m_merged_sites[chrm][pos].append(n_right_disc)
+                        m_merged_sites[chrm][pos] = [n_left_disc_Alu, n_right_disc_Alu, n_left_disc_L1, n_right_disc_L1, n_left_disc_SVA, n_right_disc_SVA]
                     else:
-                        m_merged_sites[chrm][pos][0] += n_left_disc
-                        m_merged_sites[chrm][pos][1] += n_right_disc
+                        sys.exit(f"{chrm} {pos} already exists in dict m_merged_sites")
+                        # m_merged_sites[chrm][pos][0] += n_left_disc_Alu
+                        # m_merged_sites[chrm][pos][1] += n_right_disc_Alu
+                        # m_merged_sites[chrm][pos][2] += n_left_disc_L1
+                        # m_merged_sites[chrm][pos][3] += n_right_disc_L1
+                        # m_merged_sites[chrm][pos][4] += n_left_disc_SVA
+                        # m_merged_sites[chrm][pos][5] += n_right_disc_SVA
+            os.remove(sf_tmp) # YW 2021/04/07 added to remove merged file
         with open(sf_out, "w") as fout_sites:
             n_half_cutoff=cutoff/2
             for chrm in m_merged_sites:
                 for pos in m_merged_sites[chrm]:
-                    n_left = m_merged_sites[chrm][pos][0]
-                    n_right = m_merged_sites[chrm][pos][1]
+                    n_left_Alu = m_merged_sites[chrm][pos][0]
+                    n_right_Alu = m_merged_sites[chrm][pos][1]
+                    n_left_L1 = m_merged_sites[chrm][pos][2]
+                    n_right_L1 = m_merged_sites[chrm][pos][3]
+                    n_left_SVA = m_merged_sites[chrm][pos][4]
+                    n_right_SVA = m_merged_sites[chrm][pos][5]
                     # if n_left > cutoff or n_right > cutoff:
-                    if b_tumor==True:#tumor
-                        if (n_left + n_right) >= cutoff:
-                            fout_sites.write("\t".join([chrm, str(pos), str(n_left), str(n_right)+"\n"]))
-                    else:#non tumor cases
-                        if ((n_left > n_half_cutoff) and (n_right> n_half_cutoff)) or (n_left > cutoff) \
-                                or (n_right>cutoff):
-                            fout_sites.write("\t".join([chrm, str(pos), str(n_left), str(n_right)+"\n"]))
+                    # YW 2021/04/22 commented out b_tumor if statement
+                    # if b_tumor==True:#tumor
+                    #     if (n_left + n_right) >= cutoff:
+                    #         fout_sites.write("\t".join([chrm, str(pos), str(n_left), str(n_right)+"\n"]))
+                    # else:#non tumor cases
+                    if ((n_left_Alu > n_half_cutoff or n_left_L1 > n_half_cutoff or n_left_SVA > n_half_cutoff) and (n_right_Alu >  n_half_cutoff or n_right_L1 > n_half_cutoff or n_right_SVA > n_half_cutoff)) \
+                            or (n_left_Alu > cutoff) or (n_left_L1 > cutoff) or (n_left_SVA > cutoff) \
+                            or (n_right_Alu > cutoff) or (n_right_L1 > cutoff) or (n_right_SVA > cutoff):
+                        fout_sites.write("\t".join([chrm, str(pos), str(n_left_Alu), str(n_right_Alu), str(n_left_L1), str(n_right_L1), str(n_left_SVA), str(n_right_SVA)+"\n"]))
 ####    # YW 2020/08/03 github update (all the following code)
         if sf_raw_disc=="":
             return
@@ -505,70 +535,86 @@ class TE_Multi_Locator():
                     pos = int(fields[1])
                     n_raw_left_disc = int(fields[2])
                     n_raw_right_disc = int(fields[3])
-                    n_left_disc = int(fields[4])
-                    n_right_disc = int(fields[5])
-                    s_lcluster=fields[6]
-                    s_lc_chrm=fields[7]
-                    s_lc_pos=fields[8]
-                    s_rcluster=fields[9]
-                    s_rc_chrm=fields[10]
-                    s_rc_pos=fields[11]
+                    n_left_disc_Alu = int(fields[4])
+                    n_right_dis_Alu = int(fields[5])
+                    n_left_disc_L1 = int(fields[6])
+                    n_right_disc_L1 = int(fields[7])
+                    n_left_disc_SVA = int(fields[8])
+                    n_right_disc_SVA = int(fields[9])
+                    r_lcluster=float(fields[10])
+                    # s_lc_chrm=fields[11]
+                    # s_lc_pos=fields[12]
+                    r_rcluster=float(fields[13])
+                    # s_rc_chrm=fields[14]
+                    # s_rc_pos=fields[15]
 
                     if chrm not in m_merged_raw_sites:
                         m_merged_raw_sites[chrm] = {}
                     if pos not in m_merged_raw_sites[chrm]:
-                        m_merged_raw_sites[chrm][pos] = []
-                        m_merged_raw_sites[chrm][pos].append(n_raw_left_disc)
-                        m_merged_raw_sites[chrm][pos].append(n_raw_right_disc)
-                        m_merged_raw_sites[chrm][pos].append(n_left_disc)
-                        m_merged_raw_sites[chrm][pos].append(n_right_disc)
-                        m_merged_raw_sites[chrm][pos].append([s_lcluster])
-                        m_merged_raw_sites[chrm][pos].append([s_lc_chrm])
-                        m_merged_raw_sites[chrm][pos].append([s_lc_pos])
-                        m_merged_raw_sites[chrm][pos].append([s_rcluster])
-                        m_merged_raw_sites[chrm][pos].append([s_rc_chrm])
-                        m_merged_raw_sites[chrm][pos].append([s_rc_pos])
+                        m_merged_raw_sites[chrm][pos] = [n_raw_left_disc, n_raw_right_disc,
+                                                         n_left_disc_Alu, n_right_disc_Alu,
+                                                         n_left_disc_L1, n_right_disc_L1,
+                                                         n_left_disc_SVA, n_right_disc_SVA,
+                                                         r_lcluster, r_rcluster]
                     else:
-                        m_merged_raw_sites[chrm][pos][0] += n_raw_left_disc
-                        m_merged_raw_sites[chrm][pos][1] += n_raw_right_disc
-                        m_merged_raw_sites[chrm][pos][2] += n_left_disc
-                        m_merged_raw_sites[chrm][pos][3] += n_right_disc
-                        m_merged_raw_sites[chrm][pos][4].append(s_lcluster)
-                        m_merged_raw_sites[chrm][pos][5].append(s_lc_chrm)
-                        m_merged_raw_sites[chrm][pos][6].append(s_lc_pos)
-                        m_merged_raw_sites[chrm][pos][7].append(s_rcluster)
-                        m_merged_raw_sites[chrm][pos][8].append(s_rc_chrm)
-                        m_merged_raw_sites[chrm][pos][9].append(s_rc_pos)
+                        sys.exit(f"{chrm} {pos} already exists in dict m_merged_raw_sites")
+                        # m_merged_raw_sites[chrm][pos][0] += n_raw_left_disc
+                        # m_merged_raw_sites[chrm][pos][1] += n_raw_right_disc
+                        # m_merged_raw_sites[chrm][pos][2] += n_left_disc_Alu
+                        # m_merged_raw_sites[chrm][pos][3] += n_right_disc_Alu
+                        # m_merged_raw_sites[chrm][pos][4] += n_left_disc_L1
+                        # m_merged_raw_sites[chrm][pos][5] += n_right_disc_L1
+                        # m_merged_raw_sites[chrm][pos][6] += n_left_disc_SVA
+                        # m_merged_raw_sites[chrm][pos][7] += n_right_disc_SVA
+                        # m_merged_raw_sites[chrm][pos][8].append(r_lcluster) # YW: may wanna get max
+                        # m_merged_raw_sites[chrm][pos][9].append(s_lc_chrm) # YW: may wanna see if they all match to the same chr
+                        # m_merged_raw_sites[chrm][pos][10].append(s_lc_pos) # YW: may wanna get most frequent
+                        # m_merged_raw_sites[chrm][pos][11].append(r_rcluster) # YW: may wanna get max
+                        # m_merged_raw_sites[chrm][pos][12].append(s_rc_chrm) # YW: may wanna see if they all match to the same chr
+                        # m_merged_raw_sites[chrm][pos][13].append(s_rc_pos) # YW: may wanna get most frequent
+            os.remove(sf_tmp) # YW 2021/04/07 added to remove merged file
 
         i_half_cutoff=cutoff/2
-        if b_tumor==False:#for germline, set a little bit higer cutoff
+        if b_tumor==False:#for germline, set a little bit higher cutoff
             i_half_cutoff= int(cutoff*3/4) + 1
         if i_half_cutoff<1:
             # YW 2020/08/11 changed this
             # i_half_cutoff=1
             i_half_cutoff=0
-
+        
+        # with open(sf_raw_disc, "w") as fout_sites:
+        #     for chrm in m_merged_raw_sites:
+        #         for pos in m_merged_raw_sites[chrm]:
+        #             n_raw_left = m_merged_raw_sites[chrm][pos][0]
+        #             n_raw_right = m_merged_raw_sites[chrm][pos][1]
+        #             n_left = m_merged_raw_sites[chrm][pos][2]#fall in repetitive region
+        #             n_right = m_merged_raw_sites[chrm][pos][3]#fall in repetitive region
+        # 
+        #             #left consistent
+        #             b_l_consistent=False
+        #             #here "1" indicates True, which means
+        #             if (n_raw_left>=i_half_cutoff) and ("1" in m_merged_raw_sites[chrm][pos][4]):
+        #                 b_l_consistent=True
+        #             #right consistent
+        #             b_r_consistent=False
+        #             if (n_raw_right >= i_half_cutoff) and ("1" in m_merged_raw_sites[chrm][pos][7]):
+        #                 b_r_consistent=True
+        #             if b_l_consistent or b_r_consistent:
+        #                 fout_sites.write(
+        #                     chrm + "\t" + str(pos) + "\t" + str(n_raw_left) + "\t" + str(n_raw_right) + "\t"
+        #                     + str(n_left) + "\t" + str(n_right) + "\n")
+        # YW 2021/04/17 changed the lines above to output all the information in m_merge_raw_sites
+        # YW 2021/04/22 fixed bugs
         with open(sf_raw_disc, "w") as fout_sites:
             for chrm in m_merged_raw_sites:
                 for pos in m_merged_raw_sites[chrm]:
-                    n_raw_left = m_merged_raw_sites[chrm][pos][0]
-                    n_raw_right = m_merged_raw_sites[chrm][pos][1]
-                    n_left = m_merged_raw_sites[chrm][pos][2]#fall in repetitive region
-                    n_right = m_merged_raw_sites[chrm][pos][3]#fall in repetitive region
-
-                    #left consistent
-                    b_l_consistent=False
-                    #here "1" indicates True, which means
-                    if (n_raw_left>=i_half_cutoff) and ("1" in m_merged_raw_sites[chrm][pos][4]):
-                        b_l_consistent=True
-                    #right consistent
-                    b_r_consistent=False
-                    if (n_raw_right >= i_half_cutoff) and ("1" in m_merged_raw_sites[chrm][pos][7]):
-                        b_r_consistent=True
-                    if b_l_consistent or b_r_consistent:
-                        fout_sites.write(
-                            chrm + "\t" + str(pos) + "\t" + str(n_raw_left) + "\t" + str(n_raw_right) + "\t"
-                            + str(n_left) + "\t" + str(n_right) + "\n")
+                    # n_raw_left = m_merged_raw_sites[chrm][pos][0]
+                    # n_raw_right = m_merged_raw_sites[chrm][pos][1]
+                    # n_left = m_merged_raw_sites[chrm][pos][2]#fall in repetitive region
+                    # n_right = m_merged_raw_sites[chrm][pos][3]#fall in repetitive region
+                    fout_sites.write("\t".join([chrm, str(pos), ""]))
+                    new_lst = list(map(str, m_merged_raw_sites[chrm][pos]))
+                    fout_sites.write("\t".join(new_lst) + "\n")
 ####
 ####
     # This function is not used here
@@ -670,6 +716,7 @@ class TELocator():
         bwa_align.two_stage_realign(sf_rep_cns_Alu, sf_rep_Alu, sf_all_clip_fq, sf_algnmt_Alu)
         bwa_align.two_stage_realign(sf_rep_cns_L1, sf_rep_L1, sf_all_clip_fq, sf_algnmt_L1)
         bwa_align.two_stage_realign(sf_rep_cns_SVA, sf_rep_SVA, sf_all_clip_fq, sf_algnmt_SVA)
+        os.remove(sf_all_clip_fq)
 
         ####cnt number of clipped reads aligned to repeat copies from the re-alignment
         # YW 2021/03/18 add Alu, L1, SVA
@@ -1100,15 +1147,19 @@ class TELocator():
         return m_new_candidate_sites
 
     # YW 2020/08/03 github update: added everything related to sf_candidate_list_raw_disc
+    # YW 2021/04/01 substitute sf_annotation w/ sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA
+    # YW 2021/04/16 take out filtering by ratio of clustered disc reads
     def run_filter_by_discordant_pair_by_chrom_non_barcode(self, record):
         site_chrm1 = record[0]
         sf_bam = record[1]
         iextend = int(record[2])###extend some region on both sides in order to collect all barcodes
         i_is = int(record[3])
         f_dev = int(record[4])
-        sf_annotation = record[5]
-        sf_disc_working_folder = record[6]
-        s_suffix = record[7]
+        sf_annotation_Alu = record[5]
+        sf_annotation_L1 = record[6]
+        sf_annotation_SVA = record[7]
+        sf_disc_working_folder = record[8]
+        s_suffix = record[9]
 
         sf_candidate_list = sf_disc_working_folder + site_chrm1 + s_suffix
         if os.path.exists(sf_candidate_list) == False:
@@ -1119,6 +1170,7 @@ class TELocator():
                 fields = line.split()
                 pos = int(fields[1])
                 m_candidate_pos[pos] = "\t".join(fields[2:])
+        os.remove(sf_candidate_list) # YW 2021/04/07 added to remove unused file
 
         bam_info = BamInfo(sf_bam, self.sf_reference)
         b_with_chr = bam_info.is_chrm_contain_chr()  # indicate whether the bam chrom has "chr" or not
@@ -1128,17 +1180,25 @@ class TELocator():
             return
         # print(site_chrm) ##########################################################################################
 
-        xannotation = XAnnotation(sf_annotation)
-        xannotation.set_with_chr(b_with_chr)
+        xannotation_Alu = XAnnotation(sf_annotation_Alu)
+        xannotation_Alu.set_with_chr(b_with_chr)
+        xannotation_L1 = XAnnotation(sf_annotation_L1)
+        xannotation_L1.set_with_chr(b_with_chr)
+        xannotation_SVA = XAnnotation(sf_annotation_SVA)
+        xannotation_SVA.set_with_chr(b_with_chr)
         # xannotation.load_rmsk_annotation()
         # xannotation.index_rmsk_annotation()
         i_min_copy_len=0
         boundary_extnd=0
         ####For SVA, because the rmsk annotation is bad, so we extend a little bit
-        if global_values.IS_CALL_SVA is True:
-            boundary_extnd=global_values.SVA_ANNOTATION_EXTND
-        xannotation.load_rmsk_annotation_with_extnd_with_lenth_cutoff(boundary_extnd, i_min_copy_len)
-        xannotation.index_rmsk_annotation_interval_tree()
+        # if global_values.IS_CALL_SVA is True:
+        #     boundary_extnd=global_values.SVA_ANNOTATION_EXTND
+        xannotation_Alu.load_rmsk_annotation_with_extnd_with_lenth_cutoff(boundary_extnd, i_min_copy_len)
+        xannotation_Alu.index_rmsk_annotation_interval_tree()
+        xannotation_L1.load_rmsk_annotation_with_extnd_with_lenth_cutoff(boundary_extnd, i_min_copy_len)
+        xannotation_L1.index_rmsk_annotation_interval_tree()
+        xannotation_SVA.load_rmsk_annotation_with_extnd_with_lenth_cutoff(global_values.SVA_ANNOTATION_EXTND, i_min_copy_len)
+        xannotation_SVA.index_rmsk_annotation_interval_tree()
 
         bamfile = pysam.AlignmentFile(sf_bam, "rb", reference_filename=self.sf_reference)
         m_new_candidate_sites = {}
@@ -1148,29 +1208,45 @@ class TELocator():
             if site_pos < iextend:
                 continue
 
-            n_left_discdt, n_lraw_disc, l_cluster = bam_info.cnt_discordant_pairs(bamfile, m_chrm_ids, site_chrm,
-                                                                                  site_pos - iextend, site_pos, i_is, f_dev, xannotation)
-            n_right_discdt, n_rraw_disc, r_cluster = bam_info.cnt_discordant_pairs(bamfile, m_chrm_ids, site_chrm, site_pos + 1,
-                                                                                   site_pos + iextend, i_is, f_dev, xannotation)
-            m_new_candidate_sites[site_pos] = [str(n_left_discdt), str(n_right_discdt)]
+            n_lraw_disc, n_left_discdt_Alu, n_left_discdt_L1, n_left_discdt_SVA, l_cluster = bam_info.cnt_discordant_pairs(\
+                                                                                  bamfile, m_chrm_ids, site_chrm,
+                                                                                  site_pos - iextend, site_pos, i_is, f_dev, xannotation_Alu, xannotation_L1, xannotation_SVA)
+            
+            n_rraw_disc, n_right_discdt_Alu, n_right_discdt_L1, n_right_discdt_SVA, r_cluster = bam_info.cnt_discordant_pairs(\
+                                                                                        bamfile, m_chrm_ids, site_chrm, site_pos + 1,
+                                                                                        site_pos + iextend, i_is, f_dev, xannotation_Alu, xannotation_L1, xannotation_SVA)
+            m_new_candidate_sites[site_pos] = list(map(str, [n_left_discdt_Alu, n_right_discdt_Alu,
+                                                             n_left_discdt_L1, n_right_discdt_L1,
+                                                             n_left_discdt_SVA, n_right_discdt_SVA]))
             #if l_cluster[0]==True or r_cluster[0]==True:#for transductions, require at least one side form cluster
-            s_lcluster="0"
-            s_lc_chrm="-1"
-            s_lc_pos="-1"
-            if l_cluster[0]==True:
-                s_lcluster="1"
-                s_lc_chrm=l_cluster[1]
-                s_lc_pos=str(l_cluster[2])
-            s_rcluster = "0"
+            # s_lcluster="0"
+            r_lcluster = "0"
+            s_lc_chrm = "-1"
+            s_lc_pos = "-1"
+            # if l_cluster[0]==True:
+            #     s_lcluster="1"
+            #     s_lc_chrm=l_cluster[1]
+            #     s_lc_pos=str(l_cluster[2])
+            r_lcluster = str(l_cluster[0])
+            s_lc_chrm=l_cluster[1]
+            s_lc_pos=str(l_cluster[2])
+            # s_rcluster = "0"
+            r_rcluster = "0"
             s_rc_chrm = "-1"
             s_rc_pos = "-1"
-            if r_cluster[0] == True:
-                s_rcluster = "1"
-                s_rc_chrm = r_cluster[1]
-                s_rc_pos = str(r_cluster[2])
+            # if r_cluster[0] == True:
+            #     s_rcluster = "1"
+            #     s_rc_chrm = r_cluster[1]
+            #     s_rc_pos = str(r_cluster[2])
+            r_rcluster = str(r_cluster[0])
+            s_rc_chrm = r_cluster[1]
+            s_rc_pos = str(r_cluster[2])
 
-            m_raw_disc_sites[site_pos]=[str(n_lraw_disc), str(n_rraw_disc), str(n_left_discdt), str(n_right_discdt),
-                                        s_lcluster, s_lc_chrm, s_lc_pos, s_rcluster, s_rc_chrm, s_rc_pos]
+            m_raw_disc_sites[site_pos]=[str(n_lraw_disc), str(n_rraw_disc),
+                                        str(n_left_discdt_Alu), str(n_right_discdt_Alu),
+                                        str(n_left_discdt_L1), str(n_right_discdt_L1),
+                                        str(n_left_discdt_SVA), str(n_right_discdt_SVA),
+                                        r_lcluster, s_lc_chrm, s_lc_pos, r_rcluster, s_rc_chrm, s_rc_pos]
         bamfile.close()
 ####
         ##write out the combined results
@@ -1178,25 +1254,29 @@ class TELocator():
         with open(sf_candidate_list_disc, "w") as fout_disc:
             for pos in m_new_candidate_sites:
                 fout_disc.write(str(pos) + "\t")
-                # fout_disc.write(str(m_candidate_pos[pos]) + "\t")
-                lth = len(m_new_candidate_sites[pos])
-                for i in range(lth):
-                    fout_disc.write(str(m_new_candidate_sites[pos][i]) + "\t")
-                fout_disc.write("\n")
+                # YW 2021/04/16 rewrote the following
+                fout_disc.write("\t".join(m_new_candidate_sites[pos]) + "\n")
+                # lth = len(m_new_candidate_sites[pos])
+                # for i in range(lth):
+                #     fout_disc.write(str(m_new_candidate_sites[pos][i]) + "\t")
+                # fout_disc.write("\n")
         #save the raw disc results
         sf_candidate_list_raw_disc=sf_candidate_list + global_values.RAW_DISC_SUFFIX_FILTER
         with open(sf_candidate_list_raw_disc, "w") as fout_disc_raw:
             for pos in m_raw_disc_sites:
                 fout_disc_raw.write(str(pos) + "\t")
-                # fout_disc.write(str(m_candidate_pos[pos]) + "\t")
-                lth = len(m_raw_disc_sites[pos])
-                for i in range(lth):
-                    fout_disc_raw.write(str(m_raw_disc_sites[pos][i]) + "\t")
-                fout_disc_raw.write("\n")
+                # YW 2021/04/16 rewrote the following
+                fout_disc_raw.write("\t".join(m_raw_disc_sites[pos]) + "\n")
+                # lth = len(m_raw_disc_sites[pos])
+                # for i in range(lth):
+                #     fout_disc_raw.write(str(m_raw_disc_sites[pos][i]) + "\t")
+                # fout_disc_raw.write("\n")
 
     ###This one feed in the normal illumina data, and count the discordant pairs of the left and right regions
+    # YW 2021/04/01 changed the function input
+    # YW 2021/04/17 update dict elements: ndisc for Alu/L1/SVA
     def filter_candidate_sites_by_discordant_pairs_non_barcode(self, m_candidate_sites, iextend, i_is, f_dev,
-                                                               sf_annotation, n_discordant_cutoff):
+                                                               sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA, n_discordant_cutoff):
         sf_disc_working_folder = self.working_folder + global_values.DISC_FOLDER
         if os.path.exists(sf_disc_working_folder) == False:
             cmd = "mkdir {0}".format(sf_disc_working_folder)
@@ -1212,7 +1292,7 @@ class TELocator():
                 continue
 
             l_chrm_records.append(
-                (chrm, self.sf_bam, iextend, i_is, f_dev, sf_annotation, sf_disc_working_folder, global_values.DISC_SUFFIX))
+                (chrm, self.sf_bam, iextend, i_is, f_dev, sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA, sf_disc_working_folder, global_values.DISC_SUFFIX))
 
         pool = Pool(self.n_jobs)
         pool.map(unwrap_self_filter_by_discordant_non_barcode, list(zip([self] * len(l_chrm_records), l_chrm_records)), 1)
@@ -1228,13 +1308,17 @@ class TELocator():
                 for line in fin_disc:
                     fields = line.split()
                     pos = int(fields[0])
-                    n_disc_left = int(fields[1])
-                    n_disc_right = int(fields[2])
+                    n_disc_left_Alu = int(fields[1])
+                    n_disc_right_Alu = int(fields[2])
+                    n_disc_left_L1 = int(fields[3])
+                    n_disc_right_L1 = int(fields[4])
+                    n_disc_left_SVA = int(fields[5])
+                    n_disc_right_SVA = int(fields[6])
 
                     ###Here require both left and right discordant pairs
                     # if n_disc_left < n_discordant_cutoff and n_disc_right < n_discordant_cutoff:
                     #     continue
-                    if (n_disc_left + n_disc_right) < n_discordant_cutoff:
+                    if (n_disc_left_Alu + n_disc_right_Alu < n_discordant_cutoff) and (n_disc_left_L1 + n_disc_right_L1 < n_discordant_cutoff) and (n_disc_left_SVA + n_disc_right_SVA < n_discordant_cutoff):
                         continue
 
                     if chrm not in m_new_candidate_sites:
@@ -1242,7 +1326,8 @@ class TELocator():
                     if pos not in m_new_candidate_sites[chrm]:
                         # n_clip = m_candidate_sites[chrm][pos][0]
                         # m_new_candidate_sites[chrm][pos] = (n_clip, n_disc_left, n_disc_right)
-                        m_new_candidate_sites[chrm][pos] = [n_disc_left, n_disc_right]
+                        m_new_candidate_sites[chrm][pos] = [n_disc_left_Alu, n_disc_right_Alu, n_disc_left_L1, n_disc_right_L1, n_disc_left_SVA, n_disc_right_SVA]
+            os.remove(sf_candidate_list_disc) # YW 2021/04/07 added to remove merged file
         
         #RAW_DISC_SUFFIX_FILTER
         m_raw_disc_sites = {}  # for each site, save the raw discordant reads
@@ -1256,22 +1341,28 @@ class TELocator():
                     pos = int(fields[0])
                     n_raw_disc_left = int(fields[1])
                     n_raw_disc_right = int(fields[2])
-                    n_disc_left = int(fields[3])
-                    n_disc_right = int(fields[4])
-                    s_lcluster=fields[5]
-                    s_lc_chrm=fields[6]
-                    s_lc_pos=fields[7]
-                    s_rcluster=fields[8]
-                    s_rc_chrm=fields[9]
-                    s_rc_pos=fields[10]
+                    n_disc_left_Alu = int(fields[3])
+                    n_disc_right_Alu = int(fields[4])
+                    n_disc_left_L1 = int(fields[5])
+                    n_disc_right_L1 = int(fields[6])
+                    n_disc_left_SVA = int(fields[7])
+                    n_disc_right_SVA = int(fields[8])
+                    r_lcluster=float(fields[9])
+                    s_lc_chrm=fields[10]
+                    s_lc_pos=fields[11]
+                    r_rcluster=float(fields[12])
+                    s_rc_chrm=fields[13]
+                    s_rc_pos=fields[14]
 
                     if chrm not in m_raw_disc_sites:
                         m_raw_disc_sites[chrm] = {}
                     if pos not in m_raw_disc_sites[chrm]:
                         # n_clip = m_candidate_sites[chrm][pos][0]
                         # m_new_candidate_sites[chrm][pos] = (n_clip, n_disc_left, n_disc_right)
-                        m_raw_disc_sites[chrm][pos] = [n_raw_disc_left, n_raw_disc_right, n_disc_left, n_disc_right,
-                                                       s_lcluster, s_lc_chrm, s_lc_pos, s_rcluster, s_rc_chrm, s_rc_pos]
+                        m_raw_disc_sites[chrm][pos] = [n_raw_disc_left, n_raw_disc_right, n_disc_left_Alu, n_disc_right_Alu,
+                                                       n_disc_left_L1, n_disc_right_L1, n_disc_left_SVA, n_disc_right_SVA,
+                                                       r_lcluster, s_lc_chrm, s_lc_pos, r_rcluster, s_rc_chrm, s_rc_pos]
+            os.remove(sf_candidate_list_raw_disc) # YW 2021/04/07 added to remove merged file
         return m_new_candidate_sites, m_raw_disc_sites
 
 
@@ -1279,11 +1370,13 @@ class TELocator():
         for chrm in m_candidate_list:
             with open(sf_folder + chrm + s_suffix, "w") as fout_chrm:
                 for pos in m_candidate_list[chrm]:
-                    lth = len(m_candidate_list[chrm][pos])
-                    fout_chrm.write(chrm + "\t" + str(pos) + "\t")
-                    for i in range(lth):
-                        fout_chrm.write(str(m_candidate_list[chrm][pos][i]) + "\t")
-                    fout_chrm.write("\n")
+                    # lth = len(m_candidate_list[chrm][pos])
+                    # fout_chrm.write(chrm + "\t" + str(pos) + "\t")
+                    fout_chrm.write("\t".join([chrm, str(pos), ""]))
+                    fout_chrm.write("\t".join([str(i) for i in m_candidate_list[chrm][pos]]) + "\n")
+                    # for i in range(lth):
+                    #     fout_chrm.write(str(m_candidate_list[chrm][pos][i]) + "\t")
+                    # fout_chrm.write("\n")
 
     ###output the candidate list in a file
     def output_candidate_sites(self, m_candidate_list, sf_out):

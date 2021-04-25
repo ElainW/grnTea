@@ -51,6 +51,7 @@ class XIntermediateSites():
             nearby_left_freq = 0
             nearby_right_freq = 0
             nearby_mate_in_rep_Alu, nearby_mate_in_rep_L1, nearby_mate_in_rep_SVA = 0, 0, 0
+            cns_Alu, cns_L1, cns_SVA = 0, 0, 0 # YW 2021/04/23 added
             
             for i in range(-1 * global_values.NEARBY_REGION, global_values.NEARBY_REGION):
                 i_tmp_pos = pos + i
@@ -59,10 +60,13 @@ class XIntermediateSites():
                     nearby_right_freq += m_clip_pos_freq[i_tmp_pos][1]
                     nearby_mate_in_rep_Alu += (
                     m_clip_pos_freq[i_tmp_pos][2] + m_clip_pos_freq[i_tmp_pos][5] + m_clip_pos_freq[i_tmp_pos][6])
+                    cns_Alu += m_clip_pos_freq[i_tmp_pos][5] + m_clip_pos_freq[i_tmp_pos][6] # YW 2021/04/23 added
                     nearby_mate_in_rep_L1 += (
                     m_clip_pos_freq[i_tmp_pos][3] + m_clip_pos_freq[i_tmp_pos][7] + m_clip_pos_freq[i_tmp_pos][8])
+                    cns_L1 += m_clip_pos_freq[i_tmp_pos][7] + m_clip_pos_freq[i_tmp_pos][8] # YW 2021/04/23 added
                     nearby_mate_in_rep_SVA += (
                     m_clip_pos_freq[i_tmp_pos][4] + m_clip_pos_freq[i_tmp_pos][9] + m_clip_pos_freq[i_tmp_pos][10])
+                    cns_SVA += m_clip_pos_freq[i_tmp_pos][9] + m_clip_pos_freq[i_tmp_pos][10] # YW 2021/04/23 added
 
             b_candidate=False
             # if nearby_left_freq >= cutoff_left_clip and nearby_right_freq >= cutoff_right_clip \
@@ -81,7 +85,7 @@ class XIntermediateSites():
                 i_mate_in_rep_cnt_Alu = m_clip_pos_freq[pos][2]
                 i_mate_in_rep_cnt_L1 = m_clip_pos_freq[pos][3]
                 i_mate_in_rep_cnt_SVA = m_clip_pos_freq[pos][4]
-                m_candidate_sites[pos] = (i_left_cnt, i_right_cnt, i_mate_in_rep_cnt_Alu, i_mate_in_rep_cnt_L1, i_mate_in_rep_cnt_SVA)
+                m_candidate_sites[pos] = (i_left_cnt, i_right_cnt, i_mate_in_rep_cnt_Alu, i_mate_in_rep_cnt_L1, i_mate_in_rep_cnt_SVA, cns_Alu, cns_L1, cns_SVA)
         return m_candidate_sites
 ####
     ####
@@ -130,12 +134,14 @@ class XIntermediateSites():
                 if self.is_decoy_contig_chrms(chrm):  ####we are not interested in decoy and other contigs!!!!
                     continue
                 for pos in m_candidate_list[chrm]:
-                    lth = len(m_candidate_list[chrm][pos])
-                    fout_candidate_sites.write(chrm + "\t" + str(pos) + "\t")
-                    for i in range(lth):
-                        s_feature = str(m_candidate_list[chrm][pos][i])
-                        fout_candidate_sites.write(s_feature + "\t")
-                    fout_candidate_sites.write("\n")
+                    # lth = len(m_candidate_list[chrm][pos])
+                    # fout_candidate_sites.write(chrm + "\t" + str(pos) + "\t")
+                    fout_candidate_sites.write("\t".join([chrm, str(pos), ""]))
+                    fout_candidate_sites.write("\t".join([str(i) for i in m_candidate_list[chrm][pos]]) + "\n")
+                    # for i in range(lth):
+                    #     s_feature = str(m_candidate_list[chrm][pos][i])
+                    #     fout_candidate_sites.write(s_feature + "\t")
+                    # fout_candidate_sites.write("\n")
 #
     def is_decoy_contig_chrms(self, chrm):
         fields = chrm.split("_")
@@ -162,7 +168,7 @@ class XIntermediateSites():
         with open(sf_candidate_list) as fin_candidate_sites:
             for line in fin_candidate_sites:
                 fields = line.split()
-                if len(fields)<3:
+                if len(fields)<5: # 2021/04/01 YW updated from 3
                     print(fields, " does not have enough fields")
                     continue
                 chrm = fields[0]
@@ -288,6 +294,7 @@ class XIntermediateSites():
     # In the previous step (call_TEI_candidate_sites), some sites close to each other may be introduced together
     # If there are more than 1 site close to each other, then use the peak site as a representative
     # YW 2020/07/03: renamed the function below from call_peak_candidate_sites_with_std_deviation
+    # YW 2021/04/01 get rid of lclip, rclip position std calculation, only retain the overall std position calculation
     def call_peak_candidate_sites_calc_std_deviation(self, m_candidate_sites, peak_window):
         m_peak_candidate_sites = {}
         for chrm in m_candidate_sites:
@@ -301,7 +308,7 @@ class XIntermediateSites():
                     set_cluster.add(pre_pos)
                     continue
 
-                if pos - pre_pos > peak_window:  # find the peak in the cluster
+                if pos - pre_pos > peak_window:  # find the peak clipping position of clipped reads in the cluster
                     # find the representative position of this cluster
                     # also calc the standard deviation of the positions of left clipped reads and positions of right clipped reads (YW 2020/07/03 clarified this comment)
                     max_clip = 0
@@ -323,15 +330,17 @@ class XIntermediateSites():
                     set_cluster.clear()
 
                     ####calculate the standard deviation of the positions of left and right clipped reads and also the standard deviation of all the clipped reads (YW 2020/07/03 clarified this comment)
-                    f_lclip_std=self.calc_std_deviation(l_lclip_pos)
-                    f_rclip_std=self.calc_std_deviation(l_rclip_pos)
+                    # f_lclip_std=self.calc_std_deviation(l_lclip_pos)
+                    # f_rclip_std=self.calc_std_deviation(l_rclip_pos)
                     l_rclip_pos.extend(l_lclip_pos)
                     f_clip_std=self.calc_std_deviation(l_rclip_pos)
 
                     if chrm not in m_peak_candidate_sites:
                         m_peak_candidate_sites[chrm] = {}
                     if tmp_candidate_pos not in m_peak_candidate_sites[chrm]:
-                        m_peak_candidate_sites[chrm][tmp_candidate_pos] = [max_clip, f_lclip_std, f_rclip_std, f_clip_std]
+                        # YW 2021/04/21 commented out below
+                        # m_peak_candidate_sites[chrm][tmp_candidate_pos] = [max_clip, f_lclip_std, f_rclip_std, f_clip_std]
+                        m_peak_candidate_sites[chrm][tmp_candidate_pos] = [max_clip, f_clip_std]
                 pre_pos = pos
                 set_cluster.add(pre_pos)
 
@@ -353,15 +362,16 @@ class XIntermediateSites():
                 l_lclip_pos.extend(l_tmp_lclip)
                 l_rclip_pos.extend(l_tmp_rclip)
             ####calculate the left and right cluster standard deviation
-            f_lclip_std = self.calc_std_deviation(l_lclip_pos)
-            f_rclip_std = self.calc_std_deviation(l_rclip_pos)
+            # f_lclip_std = self.calc_std_deviation(l_lclip_pos)
+            # f_rclip_std = self.calc_std_deviation(l_rclip_pos)
             l_rclip_pos.extend(l_lclip_pos)
             f_clip_std = self.calc_std_deviation(l_rclip_pos)
             if chrm not in m_peak_candidate_sites:
                 m_peak_candidate_sites[chrm] = {}
             if tmp_candidate_pos not in m_peak_candidate_sites[chrm]:
                 ##Here, use list in order to output the list (by call the output_candidate_sites function)
-                m_peak_candidate_sites[chrm][tmp_candidate_pos] = [max_clip, f_lclip_std, f_rclip_std, f_clip_std]
+                # m_peak_candidate_sites[chrm][tmp_candidate_pos] = [max_clip, f_lclip_std, f_rclip_std, f_clip_std]
+                m_peak_candidate_sites[chrm][tmp_candidate_pos] = [max_clip, f_clip_std]
         return m_peak_candidate_sites
 ####
 
@@ -558,6 +568,46 @@ class XIntermediateSites():
                     fields.append(s_right_disc)
                     fout_list.write("\t".join(fields) + "\n")
 #
+    # YW 2021/04/21 wrote this new function to incorporate info from dict m_sites_clip_peak and sf_raw_disc
+    def merge_clip_disc_new(self, sf_clip, m_sites_clip_peak, sf_raw_disc, sf_out): # YW 2021/04/21 alternatively, add info from m_original_sites to m_sites_clip_peak                         
+        with open(sf_out, "w") as fout_list:
+            m_disc={}
+            with open(sf_raw_disc) as fin_disc:
+                for line in fin_disc:
+                    fields=line.split()
+                    # YW 2021/04/21 wrote the following line to accommodate the features in sf_raw_disc:
+                    # raw_left_disc, raw_right_disc, s_left_disc_Alu, s_right_disc_Alu, s_left_disc_L1, s_right_disc_L1, s_left_disc_SVA, s_right_disc_SVA, r_lcluster, r_rcluster
+                    chrm, pos = fields[:2]
+                    if chrm not in m_disc:
+                        m_disc[chrm]={}
+                    m_disc[chrm][pos]=fields[2:]
+            with open(sf_clip) as fin_clip:
+                # YW 2020/07/20 added this to avoid printing multiple chr doesn't exist message
+                chr_not_pre_list = []
+                for line in fin_clip:
+                    fields = line.split() # YW 2021/04/23: chrm, pos, lclip, rclip, cr_Alu, cr_L1, cr_SVA, cns_Alu, cns_L1, cns_SVA
+                    chrm, pos = fields[:2]
+                    # YW 2020/07/20 added this to avoid printing multiple times a chr doesn't exist message
+                    d_fields = ['0', '0', '0', '0', '0', '0', '0', '0', '0.0', '0.0']
+                    if chrm not in m_disc:
+                        if chrm not in chr_not_pre_list:
+                            chr_not_pre_list.append(chrm)
+                            print("Error happen at merge clip and disc feature step: {0} not exist. So set left/right disc count to 0".format(chrm))
+                        # continue
+                    else: 
+                        if pos in m_disc[chrm]: # YW 2020/07/20 added and chrm in m_disc
+                            d_fields = m_disc[chrm][pos]
+                    
+                    # YW 2021/04/21 add clip pos std info
+                    f_clip_std = '-1'
+                    if chrm in m_sites_clip_peak:
+                        if int(pos) in m_sites_clip_peak[chrm]:
+                            f_clip_std = str(m_sites_clip_peak[chrm][int(pos)][-1])
+                    
+                    fields.append(f_clip_std)
+                    fields.extend(d_fields)
+                    fout_list.write("\t".join(fields) + "\n")
+                    
     ####This is to output all the candidates with all the clip, discord, barcode information in one single file
     def merge_clip_disc_barcode(self, sf_barcode_tmp, sf_disc, sf_out):
         with open(sf_out, "w") as fout_list:

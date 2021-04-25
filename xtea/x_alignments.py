@@ -95,8 +95,10 @@ class BamInfo():#
 ####
     ###Note: hard code here, use mapping quality 20 as cutoff for anchor reads
     # YW 2020/08/03 github update
-    def cnt_discordant_pairs(self, bamfile, m_chrm_ids, chrm, start, end, i_is, f_dev, xannotation):
-        n_cnt = 0
+    # YW 2021/04/08 update xannotation input to count the number of mates mapping to repeatmasker annotation coordinates
+    # YW 2021/04/16 change output of the function
+    def cnt_discordant_pairs(self, bamfile, m_chrm_ids, chrm, start, end, i_is, f_dev, xannotation_Alu, xannotation_L1, xannotation_SVA):
+        n_cnt_Alu, n_cnt_L1, n_cnt_SVA = 0, 0, 0
         n_raw_cnt=0 #this save the raw discordant PE pairs, including: abnormal insert size, abnormal direction
         iter_alignmts = bamfile.fetch(chrm, start, end)
         xchrom = XChromosome()
@@ -144,12 +146,21 @@ class BamInfo():#
                     m_mate_pos[mate_chrm].append(mate_pos)
                     n_raw_cnt+=1
                 #b_mate_within_rep, rep_start_mate = xannotation.is_within_repeat_region(mate_chrm, mate_pos)
-                b_mate_within_rep, rep_start_mate = xannotation.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
-                if b_mate_within_rep:
-                    n_cnt += 1
+                b_mate_within_rep_Alu, rep_start_mate_Alu = xannotation_Alu.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
+                b_mate_within_rep_L1, rep_start_mate_L1 = xannotation_L1.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
+                b_mate_within_rep_SVA, rep_start_mate_SVA = xannotation_SVA.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
+                if b_mate_within_rep_Alu:
+                    n_cnt_Alu += 1
+                if b_mate_within_rep_L1:
+                    n_cnt_L1 += 1
+                if b_mate_within_rep_SVA:
+                    n_cnt_SVA += 1
         dc = DiscCluster()
-        b_cluster, c_chrm, c_pos=dc.form_one_side_cluster(m_mate_pos, i_is, global_values.MIN_RAW_DISC_CLUSTER_RATIO)
-        return n_cnt, n_raw_cnt, (b_cluster, c_chrm, c_pos)
+        # YW 2021/04/16 changed the following few lines
+        # b_cluster, c_chrm, c_pos=dc.form_one_side_cluster(m_mate_pos, i_is, global_values.MIN_RAW_DISC_CLUSTER_RATIO)
+        cluster_ratio, c_chrm, c_pos = dc.form_one_side_cluster(m_mate_pos, i_is)
+        # return n_cnt, n_raw_cnt, (b_cluster, c_chrm, c_pos)
+        return n_raw_cnt, n_cnt_Alu, n_cnt_L1, n_cnt_SVA, (cluster_ratio, c_chrm, c_pos)
 
     ## "self.b_with_chr" is the format gotten from the alignment file
     ## all other format should be changed to consistent with the "self.b_with_chr"
