@@ -11,14 +11,17 @@ class DiscCluster():#
     #given the mate reads mapping positions (from one side), check whether they form clusters
     #Input: m_pos in format: {chrm:[pos]}; i_is: insert size
     #Output: True/False, cluster_chrm, cluster_pos
-    def form_one_side_cluster(self, m_pos, i_is, f_ratio):
+    # YW 2021/04/16 changed input and output of this function
+    # def form_one_side_cluster(self, m_pos, i_is, f_ratio):
+    def form_one_side_cluster(self, m_pos, i_is):
         m_cluster = {}
         max_cnt=0
         max_pos=-1
         max_chrm=""
         all_cnt=0
         if len(m_pos)==0:
-            return False, None, None
+            # return False, None, None
+            return 0, "None", -1
         for chrm in m_pos:
             l_pos = m_pos[chrm]
             l_pos.sort()  ###sort the candidate sites
@@ -58,8 +61,11 @@ class DiscCluster():#
                 max_pos = mid_pos
                 max_chrm = chrm
             all_cnt += set_size
+        # YW 2021/04/16 commented out the following
         #### calc the ratio
-        if float(max_cnt)/float(all_cnt) > f_ratio:
-            return True, max_chrm, max_pos
-        return False, None, None
+        # if float(max_cnt)/float(all_cnt) > f_ratio:
+        #     return True, max_chrm, max_pos
+        # return False, None, None
+        # YW 2021/04/16 changed output
+        return float(max_cnt)/float(all_cnt), max_chrm, max_pos
 ####
