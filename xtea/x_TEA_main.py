@@ -261,6 +261,8 @@ def parse_arguments():
                         help="cutoff of minimum # of right clipped reads")
     parser.add_argument("--cr", dest="cliprep", type=int, default=1,
                         help="cutoff of minimum # of clipped parts fall in repeats")
+    parser.add_argument("--cc", dest="clipcns", type=int, default=1,
+                        help="cutoff of minimum # of clipped parts fall in repeat cns")
     parser.add_argument("--nd", dest="ndisc", type=int, default=5,
                         help="cutoff of minimum # of discordant pair")
     parser.add_argument("--cov", dest="cov", type=float, default=30.0,
@@ -388,6 +390,7 @@ if __name__ == '__main__':
         cutoff_left_clip = args.lclip
         cutoff_right_clip = args.rclip
         cutoff_clip_mate_in_rep = args.cliprep
+        cutoff_clip_mate_in_cns = args.clipcns
         
         # YW 2020/08/01 github update: if statement and b_resume
         # YW 2020/08/04 modified github update: originally will rerun if b_resume==False, now added extra if/elif cases
@@ -407,7 +410,7 @@ if __name__ == '__main__':
                 #     cutoff_right_clip=adjust_cutoff_tumor(cutoff_right_clip)
                 cutoff_clip_mate_in_rep=rcd[2]
             # YW 2020/06/28 added more annotations for the print message
-            print("Clip cutoff: lclip: {0}, rclip: {1}, clip_mate_in_rep: {2} are used!!!".format(cutoff_left_clip, cutoff_right_clip, cutoff_clip_mate_in_rep))
+            print("Clip cutoff: lclip: {0}, rclip: {1}, clip_mate_in_rep: {2}, clip_mate_in_cns: {3} are used!!!".format(cutoff_left_clip, cutoff_right_clip, cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns))
             tem_locator = TE_Multi_Locator(sf_bam_list, s_working_folder, n_jobs, sf_ref)
 
             ####by default, if number of clipped reads is larger than this value, then discard
@@ -425,7 +428,7 @@ if __name__ == '__main__':
                                                                         sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
                                                                         sf_rep_Alu, sf_rep_L1, sf_rep_SVA,
                                                                         b_se, cutoff_left_clip,
-                                                                        cutoff_right_clip, cutoff_clip_mate_in_rep, b_mosaic,
+                                                                        cutoff_right_clip, cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns, b_mosaic,
                                                                         wfolder_pub_clip, b_force, max_cov_cutoff, sf_out)
 ####
     elif args.discordant:  # this views all the alignments as normal illumina reads
@@ -560,7 +563,7 @@ if __name__ == '__main__':
             print("Filter (on cns) cutoff: number of clipped: {0} and number of discordant reads: {1} are used!!!\n".format(n_clip_cutoff, n_disc_cutoff))
 
             x_cd_filter = XClipDiscFilter(sf_bam_list, s_working_folder, n_jobs, sf_ref)
-            x_cd_filter.call_MEIs_consensus(sf_candidate_list, sf_raw_disc, iextnd, bin_size,
+            x_cd_filter.call_MEIs_consensus(sf_candidate_list, iextnd, bin_size,
                                             sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
                                             sf_flank, i_flank_lenth,
                                             bmapped_cutoff, i_concord_dist, f_concord_ratio, n_clip_cutoff, n_disc_cutoff,

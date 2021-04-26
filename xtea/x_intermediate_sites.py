@@ -44,7 +44,7 @@ class XIntermediateSites():
 ####
     # YW 2021/03/19 update how the nearby mate in rep is calculated (now by Alu, L1, SVA)
     def parse_sites_with_clip_cutoff_for_chrm(self, m_clip_pos_freq, cutoff_left_clip, cutoff_right_clip,
-                                              cutoff_clip_mate_in_rep):
+                                              cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns):
         m_candidate_sites = {}
         for pos in m_clip_pos_freq:
             ####here need to check the nearby region
@@ -75,7 +75,10 @@ class XIntermediateSites():
             if (nearby_left_freq >= cutoff_left_clip or nearby_right_freq >= cutoff_right_clip) \
                     and (nearby_mate_in_rep_Alu >= cutoff_clip_mate_in_rep or \
                          nearby_mate_in_rep_L1 >= cutoff_clip_mate_in_rep or \
-                         nearby_mate_in_rep_SVA >= cutoff_clip_mate_in_rep):
+                         nearby_mate_in_rep_SVA >= cutoff_clip_mate_in_rep) \
+                    and (cns_Alu >= cutoff_clip_mate_in_cns or \
+                         cns_L1 >= cutoff_clip_mate_in_cns or \
+                         cns_SVA >= cutoff_clip_mate_in_cns):
                 b_candidate=True
 
             if b_candidate==True:
