@@ -171,7 +171,7 @@ class XIntermediateSites():
         with open(sf_candidate_list) as fin_candidate_sites:
             for line in fin_candidate_sites:
                 fields = line.split()
-                if len(fields)<5: # 2021/04/01 YW updated from 3
+                if len(fields)<10: # 2021/04/01 YW updated from 3, updated from 5
                     print(fields, " does not have enough fields")
                     continue
                 chrm = fields[0]
@@ -572,14 +572,18 @@ class XIntermediateSites():
                     fout_list.write("\t".join(fields) + "\n")
 #
     # YW 2021/04/21 wrote this new function to incorporate info from dict m_sites_clip_peak and sf_raw_disc
-    def merge_clip_disc_new(self, sf_clip, m_sites_clip_peak, sf_raw_disc, sf_out): # YW 2021/04/21 alternatively, add info from m_original_sites to m_sites_clip_peak                         
+    # YW 2021/04/29 added cns_cutoff: clip cns + disc cns >= 1
+    def merge_clip_disc_new(self, sf_clip, m_sites_clip_peak, sf_raw_disc, sf_out, cns_cutoff=1): # YW 2021/04/21 alternatively, add info from m_original_sites to m_sites_clip_peak                         
         with open(sf_out, "w") as fout_list:
+            # YW 2021/05/10 write the col names
+            fout_list.write("\t".join(["#chr", "pos", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "clip_pos_std", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA"]))
             m_disc={}
             with open(sf_raw_disc) as fin_disc:
                 for line in fin_disc:
                     fields=line.split()
                     # YW 2021/04/21 wrote the following line to accommodate the features in sf_raw_disc:
                     # raw_left_disc, raw_right_disc, s_left_disc_Alu, s_right_disc_Alu, s_left_disc_L1, s_right_disc_L1, s_left_disc_SVA, s_right_disc_SVA, r_lcluster, r_rcluster
+                    # YW 2021/04/29 added the following disc reads to cns: dc_Alu, dc_L1, dc_SVA
                     chrm, pos = fields[:2]
                     if chrm not in m_disc:
                         m_disc[chrm]={}
@@ -590,8 +594,8 @@ class XIntermediateSites():
                 for line in fin_clip:
                     fields = line.split() # YW 2021/04/23: chrm, pos, lclip, rclip, cr_Alu, cr_L1, cr_SVA, cns_Alu, cns_L1, cns_SVA
                     chrm, pos = fields[:2]
+                    d_fields = ['0', '0', '0', '0', '0', '0', '0', '0', '0.0', '0.0', '0', '0', '0']
                     # YW 2020/07/20 added this to avoid printing multiple times a chr doesn't exist message
-                    d_fields = ['0', '0', '0', '0', '0', '0', '0', '0', '0.0', '0.0']
                     if chrm not in m_disc:
                         if chrm not in chr_not_pre_list:
                             chr_not_pre_list.append(chrm)
@@ -608,8 +612,13 @@ class XIntermediateSites():
                             f_clip_std = str(m_sites_clip_peak[chrm][int(pos)][-1])
                     
                     fields.append(f_clip_std)
-                    fields.extend(d_fields)
-                    fout_list.write("\t".join(fields) + "\n")
+                    ##########################################
+                    # YW 2021/04/29 added this filtering for counts of reads mapping to cns sequence
+                    # YW 2021/05/07 now fields[-1] is f_clip_std
+                    if int(fields[-4]) + int(d_fields[-3]) >= cns_cutoff or int(fields[-3]) + int(d_fields[-2]) >= cns_cutoff or int(fields[-2]) + int(d_fields[-1]) >= cns_cutoff:
+                        fields.extend(d_fields)
+                ##########################################
+                        fout_list.write("\t".join(fields) + "\n")
                     
     ####This is to output all the candidates with all the clip, discord, barcode information in one single file
     def merge_clip_disc_barcode(self, sf_barcode_tmp, sf_disc, sf_out):

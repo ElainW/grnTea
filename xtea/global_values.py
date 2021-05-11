@@ -85,6 +85,7 @@ NEARBY_REGION = 50
 CLIP_FREQ = 10
 TRIM_CLIP_FREQ = 2
 PEAK_WINDOW = 100
+DISC_SAM_SUFFIX = ".disc.sam" # YW 2021/04/26 added to do map disc reads to cns
 OUTPUT_BAM_SUFFIX = ".out_bam"
 OUTPUT_BAM_HEADER = ".bam_header.sam"
 CLIP_FOLDER = "clip"
@@ -98,6 +99,7 @@ DISC_TMP = "discordant_reads_tmp"
 # YW 2020/08/02 github update: the following 2 lines
 RAW_DISC_TMP = "raw_discordant_reads_tmp"#this is for any kind of discordant
 RAW_DISC_TMP_SUFFIX=".clip_sites_raw_disc.txt"
+BMAPPED_CUTOFF = 0.65 # YW 2021/05/07 added after moving parse_disc_algnmt_consensus over
 
 # YW 2020/07/04 added
 INITIAL_MIN_DISC_CUTOFF=1
