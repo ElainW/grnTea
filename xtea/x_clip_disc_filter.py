@@ -443,7 +443,7 @@ class XClipDisc():
                     elif len_clip_seq < global_values.BWA_REALIGN_CUTOFF:
                         continue
                     
-                    # require the medium quality score should higher than threshold
+                    # require the median quality score should higher than threshold
                     l_quality_score = query_quality[:l_cigar[0][1]]
                     if self._is_qualified_clip(l_quality_score) == False:
                         continue
@@ -1927,7 +1927,7 @@ class XClipDiscFilter():
     # 4. ndisc_cutoff:
     # 5. max_depth: by default: 4*calc-depth
     # 6. check the background clipped reads (reads clipped at the location, but with low mapping quality)
-    def call_MEIs_consensus(self, sf_candidate_list, sf_raw_disc, extnd, bin_size, sf_rep_cns, sf_flank, i_flank_lenth,
+    def call_MEIs_consensus(self, sf_candidate_list, extnd, bin_size, sf_rep_cns, sf_flank, i_flank_lenth,
                             bmapped_cutoff, i_concord_dist, f_concord_ratio, nclip_cutoff, ndisc_cutoff, sf_final_list):
         sf_cns_log=self.working_folder + "filtering_log.txt"
         xlog=XLog()
@@ -3958,7 +3958,7 @@ class XClipDiscFilter():
                     #         m_lowq_clip[tmp_chrm][tmp_pos]=0
                     #     m_lowq_clip[tmp_chrm][tmp_pos] += n_lowq_clip
                     # # YW 2020/08/12 added the following line to save memory
-                    # del l_low_mapq_clip[:]
+                    # del l_low_mapq_clip
                     
                     with open(sf_disc_fa_tmp) as fin_tmp_fa:
                         n_cnt = 0
