@@ -1,6 +1,7 @@
 #!/bin/python3
 # 2021/05/10
 # modified from 2.0count_clip_disc_polyA.py, put everything into a python class
+# add counts of low MAPQ ratio (default MAPQ <= 5)
 # import python standard libraries
 import os
 import sys
@@ -10,6 +11,9 @@ from multiprocessing import Pool
 from subprocess import *
 import numpy as np
 import re
+from itertools import chain
+from shutil import rmtree
+
 # import modules
 import global_values
 from cmd_runner import *
@@ -21,19 +25,20 @@ def unwrap_extract_features_by_chr(arg, **kwarg):
 
 class Feature_Matrix():
     
-    def __init__(self, input, output, wfolder, bam_list, ref, n_jobs=8, margin=50, cMAPQ=12, err_margin=15, check_polyA_seq_max=20):
+    def __init__(self, input, output, wfolder, bam_list, ref, n_jobs=8, margin=50, cMAPQ=12, low_MAPQ=5, err_margin=15, check_polyA_seq_max=20):
         self.input = input
         self.output = output
         self.wfolder = wfolder
-        self.bam_list = bam_list # integrate this with xTea scripts
+        self.bam_list = bam_list
         self.ref = ref
         self.n_jobs = n_jobs
         self.margin = margin
         self.cMAPQ = cMAPQ
+        self.low_MAPQ = low_MAPQ
         self.err_margin = err_margin
         self.check_polyA_seq_max = check_polyA_seq_max
         self.cmd_runner = CMD_RUNNER() # to run command from the command line
-        self.disc_dict = {}
+        self.disc_dict = {} # stores information from after disc info collection and clip-cns + disc-cns filtering
     
     
     def is_poly_A_T(self, seq):  ###for a temp version here
@@ -135,6 +140,8 @@ class Feature_Matrix():
         bam = record[0]
         chrm = record[1]
         swfolder = record[2]
+        
+        extra_features = {}
     
         samfile = pysam.AlignmentFile(bam, "rb", reference_filename=self.ref)
         for insertion_pos in self.disc_dict[chrm]:
@@ -144,6 +151,8 @@ class Feature_Matrix():
             end_pos = insertion_pos + self.margin + 1
             # initialize the output counts and lists
             soft_clip_len = []
+            n_low_MAPQ = 0
+            n_total = 0
             l_cov = 0.0
             r_cov = 0.0
             polyA = 0
@@ -162,10 +171,14 @@ class Feature_Matrix():
                 l_cigar = algnmt.cigar
                 if len(l_cigar) < 1:  # wrong alignment
                     continue
-                if algnmt.mapping_quality < self.cMAPQ:
+                n_total += 1
+                if algnmt.mapping_quality <= self.low_MAPQ:
+                    n_low_MAPQ += 1
+                    continue
+                elif algnmt.mapping_quality < self.cMAPQ:
                     continue
                 
-                # avoid double polyA
+                # avoid double count polyA
                 polyA_counted = False
     
                 query_seq = algnmt.query_sequence
@@ -252,15 +265,8 @@ class Feature_Matrix():
             
             # add the output to the final dictionary
             if len(self.disc_dict[chrm][insertion_pos]) == 22:
-                self.disc_dict[chrm][insertion_pos].extend([str(longest_soft_clip_len), str(l_cov), str(r_cov), str(polyA), str(l_polyA), str(r_polyA)])
+                extra_features[insertion_pos] = list(map(str, [longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, n_low_MAPQ, n_total]))
                 # self.disc_dict[chrm][insertion_pos].extend([int(longest_soft_clip_len), l_cov, r_cov, polyA, l_polyA, r_polyA])
-            # elif len(self.disc_dict[chrm][insertion_pos]) == 28:
-            #     self.disc_dict[chrm][insertion_pos][-6] = max(int(longest_soft_clip_len), disc_chrm_dict[insertion_pos][-6])
-            #     self.disc_dict[chrm][insertion_pos][-5] += l_cov
-            #     self.disc_dict[chrm][insertion_pos][-4] += r_cov
-            #     self.disc_dict[chrm][insertion_pos][-3] += polyA
-            #     self.disc_dict[chrm][insertion_pos][-2] += l_polyA
-            #     self.disc_dict[chrm][insertion_pos][-1] += r_polyA
             else:
                 sys.exit(f"The number of fields isn't correct. It is {len(disc_chrm_dict[insertion_pos])}!")
                 
@@ -268,12 +274,16 @@ class Feature_Matrix():
         
         chrm_feat = swfolder + chrm + "_feature_matrix.txt"
         with open(chrm_feat, 'w') as fout:
-            for insertion_pos in self.disc_dict[chrm]:
+            for insertion_pos in extra_features:
                 fout.write("\t".join([chrm, str(insertion_pos), ""]))
-                fout.write("\t".join(self.disc_dict[chrm][insertion_pos]) + "\n")
+                fout.write("\t".join(extra_features[insertion_pos]) + "\n")
+        extra_features.clear() # release memory
     
     
     def extract_features_of_given_list(self, bam, swfolder):
+        '''
+        operate on each bam file
+        '''
         l_chrm_records = []
     
         for chrm in self.disc_dict:
@@ -283,6 +293,14 @@ class Feature_Matrix():
         pool.map(unwrap_extract_features_by_chr, list(zip([self] * len(l_chrm_records), l_chrm_records)), 1)
         pool.close()
         pool.join()
+        
+        with open(swfolder + "feature_matrix.txt", 'w') as fout:
+            for chrm in self.disc_dict:
+                chrm_feat = swfolder + chrm + "_feature_matrix.txt"
+                with open(chrm_feat, 'r') as fin:
+                    for line in fin:
+                        fout.write(line)
+                os.remove(chrm_feat)
     
     
     def load_in_candidate_list(self):
@@ -302,24 +320,61 @@ class Feature_Matrix():
                     self.disc_dict[chrm][pos] = fields[2:]
     
     
-    def output_sample_feature_matrix(self, swfolder):
+    def output_sample_feature_matrix(self, cnt):
+        '''
+        operate on all bam files in the bam list
+        '''
         # write the feature matrix header
-        colnames = "\t".join(["#chr", "pos", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "clip_pos_std", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA", "longest_clip_len", "l_cov", "r_cov", "polyA", "cns_std_l_polyA", "cns_std_r_polyA"])
-        with open(swfolder + "feature_matrix.txt", 'w') as fout:
+        colnames = "\t".join(["#chr", "pos", "pos+1", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "clip_pos_std", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA", "longest_clip_len", "l_cov", "r_cov", "polyA", "cns_std_l_polyA", "cns_std_r_polyA", "ratio_low_MAPQ"])
+        with open(self.output, 'w') as fout:
             fout.write(colnames + "\n")
-            for chrm in self.disc_dict:
-                chrm_feat = swfolder + chrm + "_feature_matrix.txt"
-                with open(chrm_feat, 'r') as fin:
+            # load extra features for each sample into self.disc_dict
+            for i in range(cnt):
+                swfolder = self.wfolder + str(i) + "/"
+                sample_feat_mat = swfolder + "feature_matrix.txt"
+                with open(sample_feat_mat, 'r') as fin:
                     for line in fin:
-                        fout.write(line)
-                    os.remove(chrm_feat)
+                        fields = line.rstrip().split("\t")
+                        chrm = fields[0]
+                        insertion_pos = int(fields[1])
+                        longest_soft_clip_len = int(fields[2])
+                        l_cov = float(fields[3])
+                        r_cov = float(fields[4])
+                        polyA = int(fields[5])
+                        l_polyA = int(fields[6])
+                        r_polyA = int(fields[7])
+                        n_low_MAPQ = int(fields[8])
+                        n_total = int(fields[9])
+                        
+                        if chrm in self.disc_dict:
+                            if insertion_pos in self.disc_dict[chrm]:
+                                if len(self.disc_dict[chrm][insertion_pos]) == 22:
+                                    self.disc_dict[chrm][insertion_pos].extend([longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, n_low_MAPQ, n_total])
+                                elif len(self.disc_dict[chrm][insertion_pos]) == 30:
+                                    self.disc_dict[chrm][insertion_pos][-8] = max(longest_soft_clip_len, self.disc_dict[chrm][insertion_pos][-8])
+                                    self.disc_dict[chrm][insertion_pos][-7] += l_cov
+                                    self.disc_dict[chrm][insertion_pos][-6] += r_cov
+                                    self.disc_dict[chrm][insertion_pos][-5] += polyA
+                                    self.disc_dict[chrm][insertion_pos][-4] += l_polyA
+                                    self.disc_dict[chrm][insertion_pos][-3] += r_polyA
+                                    self.disc_dict[chrm][insertion_pos][-2] += n_low_MAPQ
+                                    self.disc_dict[chrm][insertion_pos][-1] += n_total
+                            else:
+                                sys.exit(f"{insertion_pos} does not exist in {chrm} of the disc input")
+                        else:
+                            sys.exit(f"{chrm} does not exist in the disc input")
+                rmtree(swfolder)
+            
+            # write self.disc_dict into final output
+            for chrm in self.disc_dict:
+                for insertion_pos in self.disc_dict[chrm]:
+                    low_MAPQ_ratio = str(self.disc_dict[chrm][insertion_pos][-2]/self.disc_dict[chrm][insertion_pos][-1])
+                    fout.write("\t".join([chrm, str(insertion_pos), str(insertion_pos + 1), ""]))
+                    fout.write("\t".join(map(str, self.disc_dict[chrm][insertion_pos][:-2])) + "\t" + low_MAPQ_ratio + "\n")
 
 
     def run_feature_extraction(self):
-        '''
-        now cannot handle the case where there are multiple bam files for one sample
-        '''
-        print(f"With minimal MAPQ required for clipped reads inspection: {self.cMAPQ}; maximum distance {self.err_margin} bp between clipping position and breakpoint allowed")
+        print(f"With minimal MAPQ required for clipped reads inspection: {self.cMAPQ}; MAPQ < {self.low_MAPQ} for low MAPQ reads; maximum distance {self.err_margin} bp between clipping position and breakpoint allowed")
         self.load_in_candidate_list()
         cnt = 0
         with open(self.bam_list, 'r') as b_list:
@@ -331,4 +386,5 @@ class Feature_Matrix():
                 scmd = f"mkdir -p {swfolder}"
                 self.cmd_runner.run_cmd_small_output(scmd)
                 self.extract_features_of_given_list(bam, swfolder)
-                self.output_sample_feature_matrix(swfolder)
+                cnt += 1
+        self.output_sample_feature_matrix(cnt)
