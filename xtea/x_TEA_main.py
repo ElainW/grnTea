@@ -136,6 +136,7 @@ from x_parameter import *
 # from x_gvcf import * # new
 from x_genotype_classify import * # new
 # from x_orphan_transduction import * # new
+from extract_features import * # YW 2021/05/10 added this
 
 
 def parse_arguments():
@@ -229,6 +230,10 @@ def parse_arguments():
                         help="Input barcode indexed bam file", metavar="FILE")
     parser.add_argument("-o", "--output", dest="output",
                         help="The output file", metavar="FILE")
+    # YW 2021/05/10 added this
+    # YW TO DO: add_subparsers to make this required for -D option
+    parser.add_argument("-m", "--final_matrix", dest="final_matrix",
+                        help="The final feature matrix", metavar="FILE")
     parser.add_argument("-p", "--path", dest="wfolder", type=str, default="./",
                         help="Working folder")
     parser.add_argument("--cp", dest="cwfolder", type=str,
@@ -265,6 +270,9 @@ def parse_arguments():
                         help="cutoff of minimum # of clipped parts fall in repeat cns")
     parser.add_argument("--nd", dest="ndisc", type=int, default=5,
                         help="cutoff of minimum # of discordant pair")
+    # YW 2021/04/30 added this
+    parser.add_argument("--ncns", dest="ncns", type=int, default=1,
+                        help="cutoff of minimum # of clip + disc mapping to TE consensus")
     parser.add_argument("--cov", dest="cov", type=float, default=30.0,
                         help="approximate read depth")
     parser.add_argument("--iniclip", dest="iniclip", type=int, default=2,
@@ -436,12 +444,16 @@ if __name__ == '__main__':
         sf_bam_list = args.bam  ###read in a bam list file
         s_working_folder = args.wfolder
         n_jobs = args.cores
+        sf_rep_cns_Alu =args.Alu_cns
+        sf_rep_cns_L1 =args.L1_cns
+        sf_rep_cns_SVA =args.SVA_cns
         sf_annotation_Alu = args.Alu_annotation
         sf_annotation_L1 = args.L1_annotation
         sf_annotation_SVA = args.SVA_annotation
         sf_candidate_list = args.input # YW 2021/04/23 retained map counts to cns
         sf_out = args.output
         sf_ref = args.ref  ###reference genome, some cram file require this file to open
+        feature_matrix = args.final_matrix # YW 2021/05/21 added this to output the final feature matrix
         peak_window = global_values.PEAK_WINDOW_DEFAULT # YW 2020/07/03 note: max distance between two clipped positions for them to be considered as from one insertion/cluster
         # if args.postFmosaic or args.somatic:#for mosaic events
         #     peak_window = global_values.PEAK_WINDOW_MOS_SOM
@@ -464,6 +476,7 @@ if __name__ == '__main__':
             b_force = True
             rcd, basic_rcd = automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs,
                                                        b_force, b_tumor, f_purity)
+            # YW TO DO: change to manual input of read length, insert size, and std deviation of insert size
             rlth = basic_rcd[1]  # read length
             mean_is = basic_rcd[2]  # mean insert size
             std_var = basic_rcd[3]  # standard deviation
@@ -476,28 +489,36 @@ if __name__ == '__main__':
             # this is the cutoff for  "left discordant" and "right discordant"
             # Either of them is larger than this cutoff, the site will be reported
             n_disc_cutoff = args.ndisc
+            n_cns_cutoff = args.ncns # YW 2021/04/30 added this
             if b_automatic==True:
                 n_disc_cutoff=rcd[1]
-                # if b_tumor==True:
-                #     n_disc_cutoff = adjust_cutoff_tumor(n_disc_cutoff, 0)
+
             print("Discordant cutoff: {0} is used!!!".format(n_disc_cutoff))
 
-            sf_tmp = s_working_folder + "disc_tmp.list"
+            # sf_tmp = s_working_folder + "disc_tmp.list" # YW 2021/04/30 commented this out because we don't need it
             # YW 2020/08/03 github update: added the following line
             sf_raw_disc=sf_out + global_values.RAW_DISC_TMP_SUFFIX #save the left and right raw disc for each site
             tem_locator = TE_Multi_Locator(sf_bam_list, s_working_folder, n_jobs, sf_ref)
             # YW 2020/08/03 github update: added 2 arguments sf_raw_disc, b_tumor
+            # YW 2021/04/30 removed sf_tmp from the input (no longer need this file output)
             tem_locator.filter_candidate_sites_by_discordant_pairs_multi_alignmts(m_sites_clip_peak, iextend, i_is, f_dev,
-                                                                                  n_disc_cutoff, sf_annotation_Alu, sf_annotation_L1,
+                                                                                  n_disc_cutoff,
+                                                                                  sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
+                                                                                  sf_annotation_Alu, sf_annotation_L1,
                                                                                   sf_annotation_SVA,
-                                                                                  sf_tmp, sf_raw_disc, b_tumor)
+                                                                                  sf_raw_disc, b_tumor)
             # YW 2020/04/23 added the if statement to alert in advance the problem of unable to merge_clip_disc
-            if os.stat(sf_tmp).st_size == 0:
-                print("{0} is EMPTY! It will be impossible to merge clip disc in the next step. Set all counts of left and right discordant reads to 0. Discordant cutoff {1} is too high.\n".format(sf_tmp, n_disc_cutoff))
+            # commented out below because we don't need it
+            # if os.stat(sf_tmp).st_size == 0:
+            #     print("{0} is EMPTY! It will be impossible to merge clip disc in the next step. Set all counts of left and right discordant reads to 0. Discordant cutoff {1} is too high.\n".format(sf_tmp, n_disc_cutoff))
             # YW 2020/07/20 modified merge_clip_disc function to make sure locations without discordant read support will go through
             # xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
-            xfilter.merge_clip_disc_new(sf_candidate_list, m_sites_clip_peak, sf_raw_disc, sf_out)
+            xfilter.merge_clip_disc_new(sf_candidate_list, m_sites_clip_peak, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
+        # YW 2021/05/10 wrote the function below to extract extra features
+        feat_folder = s_working_folder + "features/"
+        feat_mat = Feature_Matrix(sf_out, feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
+        feat_mat.run_feature_extraction()
 ####
 ####
     ####
@@ -505,6 +526,8 @@ if __name__ == '__main__':
         print("Working on \"clip-disc-filtering\" step!")
         sf_bam_list = args.bam  ###read in a bam list file
         s_working_folder = args.wfolder
+        if s_working_folder[-1] != "/":
+            s_working_folder += "/"
         print("Current working folder is: {0}\n".format(s_working_folder))
         n_jobs = args.cores
         sf_ref = args.ref  ###reference genome, some cram file require this file to open
