@@ -372,13 +372,13 @@ class TE_Multi_Locator():
 				bwa_align.realign_disc_reads(sf_rep_cns_Alu, sf_disc_fa_tmp, sf_disc_algnmt_Alu)
 				bwa_align.realign_disc_reads(sf_rep_cns_L1, sf_disc_fa_tmp, sf_disc_algnmt_L1)
 				bwa_align.realign_disc_reads(sf_rep_cns_SVA, sf_disc_fa_tmp, sf_disc_algnmt_SVA)
-				# os.remove(sf_disc_fa_tmp)
+				os.remove(sf_disc_fa_tmp)
 				self.parse_disc_algnmt_consensus_short(sf_disc_algnmt_Alu, global_values.BMAPPED_CUTOFF, m_disc, "Alu")
-				# os.remove(sf_disc_algnmt_Alu)
+				os.remove(sf_disc_algnmt_Alu)
 				self.parse_disc_algnmt_consensus_short(sf_disc_algnmt_L1, global_values.BMAPPED_CUTOFF, m_disc, "L1")
-				# os.remove(sf_disc_algnmt_L1)
+				os.remove(sf_disc_algnmt_L1)
 				self.parse_disc_algnmt_consensus_short(sf_disc_algnmt_SVA, global_values.BMAPPED_CUTOFF, m_disc, "SVA")
-				# os.remove(sf_disc_algnmt_SVA)
+				os.remove(sf_disc_algnmt_SVA)
 				##########################################################
 				
 				xfilter = XIntermediateSites()
@@ -683,17 +683,17 @@ class TELocator():
 		clip_info.set_working_folder(sf_clip_working_folder)
 		if os.path.islink(sf_all_clip_fq)==False or b_force==True:
 			print("Collected clipped reads file {0} doesn't exist. Generate it now!".format(sf_all_clip_fq))
-		##collect the clip positions
-		initial_clip_pos_freq_cutoff = global_values.INITIAL_MIN_CLIP_CUTOFF ##########################################################################
-		print("Initial minimum clip cutoff is {0}".format(initial_clip_pos_freq_cutoff))
-		clip_info.collect_clip_positions(sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
-						initial_clip_pos_freq_cutoff, b_se, sf_pub_folder) ##save clip pos by chrm
-		print("Output info: Collect clipped parts for file ", self.sf_bam)
-		sf_all_clip_fq_ori=sf_clip_working_folder+sf_bam_name + global_values.CLIP_FQ_SUFFIX
-		clip_info.collect_clipped_parts(sf_all_clip_fq_ori)
-		
-		if os.path.isfile(sf_all_clip_fq)==True or os.path.islink(sf_all_clip_fq)==True:
-			os.remove(sf_all_clip_fq)
+			##collect the clip positions
+			initial_clip_pos_freq_cutoff = global_values.INITIAL_MIN_CLIP_CUTOFF ##########################################################################
+			print("Initial minimum clip cutoff is {0}".format(initial_clip_pos_freq_cutoff))
+			clip_info.collect_clip_positions(sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
+							initial_clip_pos_freq_cutoff, b_se, sf_pub_folder) ##save clip pos by chrm
+			print("Output info: Collect clipped parts for file ", self.sf_bam)
+			sf_all_clip_fq_ori=sf_clip_working_folder+sf_bam_name + global_values.CLIP_FQ_SUFFIX
+			clip_info.collect_clipped_parts(sf_all_clip_fq_ori)
+			
+			if os.path.isfile(sf_all_clip_fq)==True or os.path.islink(sf_all_clip_fq)==True:
+				os.remove(sf_all_clip_fq)
 			cmd="ln -s {0} {1}".format(sf_all_clip_fq_ori, sf_all_clip_fq)
 			self.cmd_runner.run_cmd_small_output(cmd)
 		else:
