@@ -115,27 +115,17 @@ from shutil import copyfile
 import argparse
 import global_values
 from x_TEI_locator import *
-# from x_TEI_source_tracer import *
 from x_local_assembly import *
 from x_intermediate_sites import *
 from x_reference import *
 from x_clip_disc_filter import *
-# from x_somatic_calling import *
-# from x_analysis import *
-# from x_reads_collection import *
-# from x_mutation import *
-# from x_sv import *
-# from x_gene_annotation import *
 from x_genotype_feature import *
 from x_basic_info import *
 from x_parameter import *
 # from x_post_filter import *
-# from x_mosaic_calling import *
 # from x_joint_calling import *
 # from x_igv import *
-# from x_gvcf import * # new
 from x_genotype_classify import * # new
-# from x_orphan_transduction import * # new
 from extract_features import * # YW 2021/05/10 added this
 
 
@@ -184,9 +174,9 @@ def parse_arguments():
     parser.add_argument("--force",
                         action="store_true", dest="force", default=False,
                         help="Force to start from the very beginning")
-    parser.add_argument("--tumor",
-                        action="store_true", dest="tumor", default=False,
-                        help="Working on tumor samples")
+    # parser.add_argument("--tumor",
+    #                     action="store_true", dest="tumor", default=False,
+    #                     help="Working on tumor samples")
 ####
     parser.add_argument("--bed",
                         action="store_true", dest="bed", default=False,
@@ -246,8 +236,8 @@ def parse_arguments():
                         help="flank region file", metavar="FILE")
     parser.add_argument("--flklen", dest="flklen", type=int,
                         help="flank region file")
-    parser.add_argument("--purity", dest="purity", type=float, default=0.45,#by default tumor purity set to 45%
-                        help="Tumor purity")
+    # parser.add_argument("--purity", dest="purity", type=float, default=0.45,#by default tumor purity set to 45%
+    #                     help="Tumor purity")
     parser.add_argument("--ref", dest="ref",
                         help="genome reference", metavar="FILE")
     # parser.add_argument("--cns", dest="cns",
@@ -290,7 +280,8 @@ def parse_arguments():
 ####
 ####
 # YW 2020/08/01 github update: add the last 2 arguments
-def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False, b_tumor=False, f_purity=0.45):
+# def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False, b_tumor=False, f_purity=0.45):
+def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False):
     ####1. collect the basic information
     search_win = 500
     x_basic_info = X_BasicInfo(s_working_folder, n_jobs, sf_ref)
@@ -302,8 +293,8 @@ def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_f
 
     ####2. based on the coverage, set the parameters
     xpar=Parameters()
-    if b_tumor==True:
-        f_cov=f_cov*f_purity
+    # if b_tumor==True:
+    #     f_cov=f_cov*f_purity
     par_rcd=xpar.get_par_by_cov(f_cov) #in format (iclip, idisc, i_clip-disc)
     print("Ave coverage is {0}: automatic parameters (clip, disc, clip-disc) with value ({1}, {2} ,{3})\n".format(f_cov, par_rcd[0], par_rcd[1], par_rcd[2]))
     return par_rcd, rcd
@@ -334,10 +325,10 @@ def automatic_gnrt_parameters_case_control(sf_bam_list, sf_ref, s_working_folder
     return par_rcd, rcd
 
 ####
-def adjust_cutoff_tumor(ncutoff=-1, i_adjust=1):
-    if ncutoff-i_adjust>1:
-        ncutoff=ncutoff-i_adjust
-    return ncutoff
+# def adjust_cutoff_tumor(ncutoff=-1, i_adjust=1):
+#     if ncutoff-i_adjust>1:
+#         ncutoff=ncutoff-i_adjust
+#     return ncutoff
 
 ####
 ##main function
@@ -351,18 +342,18 @@ if __name__ == '__main__':
         global_values.turn_off_rna_mediated()
     if args.cbs:
         global_values.turn_on_check_by_sample()
-    if args.sva:
-        global_values.turn_on_sva()
+    # if args.sva:
+    #     global_values.turn_on_sva()
     # YW 2020/08/16 added this
-    if args.l1:
-        global_values.turn_on_l1()
+    # if args.l1:
+    #     global_values.turn_on_l1()
 
     b_automatic=True
     if args.user_specific:
         b_automatic=False
     # YW 2020/08/01 github update the following 3
-    b_tumor=args.tumor #whether this is tumor sample
-    f_purity=args.purity#tumor purity, by default 0.45
+    # b_tumor=args.tumor #whether this is tumor sample
+    # f_purity=args.purity#tumor purity, by default 0.45
     b_resume=args.resume#resume the running, which will skip the step if output file already exist
 
     
@@ -386,7 +377,7 @@ if __name__ == '__main__':
         sf_ref=args.ref ###reference genome "-ref"
         b_force=args.force #force to run from the very beginning
         # YW 2020/08/01 github update b_mosaic
-        b_mosaic=False #this is for mosaic calling from normal tissue # YW 2021/03/18 set this to False
+        # b_mosaic=False #this is for mosaic calling from normal tissue # YW 2021/03/18 set this to False
         #i_iniclip=args.iniclip#
         if b_force == True:
             global_values.set_force_clean()
@@ -401,21 +392,16 @@ if __name__ == '__main__':
         cutoff_clip_mate_in_cns = args.clipcns
         
         # YW 2020/08/01 github update: if statement and b_resume
-        # YW 2020/08/04 modified github update: originally will rerun if b_resume==False, now added extra if/elif cases
         if b_resume == True and os.path.isfile(sf_out)==True:
             print("{0} exists, skipping \"clip\" step".format(sf_out))
         else:
             if os.path.isfile(sf_out)==True:
                 print("User doesn't specify skipping, although {0} exists. Rerun the \"clip\" step.".format(sf_out))
             if b_automatic==True:
-                # YW 2020/08/01 github update, 2 more arguments b_tumor, f_purity
-                rcd, basic_rcd=automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs,
-                                                         b_force, b_tumor, f_purity)
+                # YW 2020/08/01 github update, 2 more arguments b_tumor, f_purity --> 2021/05/19 removed both
+                rcd, basic_rcd=automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force)
                 cutoff_left_clip=rcd[0]
                 cutoff_right_clip=rcd[0]
-                # if b_tumor==True:
-                #     cutoff_left_clip=adjust_cutoff_tumor(cutoff_left_clip)
-                #     cutoff_right_clip=adjust_cutoff_tumor(cutoff_right_clip)
                 cutoff_clip_mate_in_rep=rcd[2]
             # YW 2020/06/28 added more annotations for the print message
             print("Clip cutoff: lclip: {0}, rclip: {1}, clip_mate_in_rep: {2}, clip_mate_in_cns: {3} are used!!!".format(cutoff_left_clip, cutoff_right_clip, cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns))
@@ -432,11 +418,12 @@ if __name__ == '__main__':
             ##2. require >=2 clip reads (actually depending on user input), whose clipped part is aligned to repeat copies (depending on --cr)
         
             # YW 2020/08/01 added b_mosaic input (github update), and updated in the function too, but this hasn't been used
+            # YW 2021/05/19 took out b_mosaic
             tem_locator.call_TEI_candidate_sites_from_multiple_alignmts(sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
                                                                         sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
                                                                         sf_rep_Alu, sf_rep_L1, sf_rep_SVA,
                                                                         b_se, cutoff_left_clip,
-                                                                        cutoff_right_clip, cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns, b_mosaic,
+                                                                        cutoff_right_clip, cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns,
                                                                         wfolder_pub_clip, b_force, max_cov_cutoff, sf_out)
 ####
     elif args.discordant:  # this views all the alignments as normal illumina reads
@@ -465,17 +452,13 @@ if __name__ == '__main__':
                 print("User doesn't specify skipping, although {0} exists. Rerun the \"disc\" step.".format(sf_out))
             xfilter = XIntermediateSites()
             m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
-            # sf_peak_sites = s_working_folder + "clip_peak_candidate.list" # YW: this file isn't used, commented out
-            #m_sites_clip_peak = xfilter.call_peak_candidate_sites(m_original_sites, PEAK_WINDOW)  # get the peak sites
             # YW CHANGED THE FUNCTION NAME from call_peak_candidate_sites_with_std_derivation
             m_sites_clip_peak = xfilter.call_peak_candidate_sites_calc_std_deviation(m_original_sites, peak_window)
-            # xfilter.output_candidate_sites(m_sites_clip_peak, sf_peak_sites)  # output the sites (# YW 2021/04/23 commented out)
             m_original_sites.clear()  #release the memory
             # YW added the following message
             print("Finished merging nearby clipped sites!")
             b_force = True
-            rcd, basic_rcd = automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs,
-                                                       b_force, b_tumor, f_purity)
+            rcd, basic_rcd = automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force)
             # YW TO DO: change to manual input of read length, insert size, and std deviation of insert size
             rlth = basic_rcd[1]  # read length
             mean_is = basic_rcd[2]  # mean insert size
@@ -499,18 +482,15 @@ if __name__ == '__main__':
             # YW 2020/08/03 github update: added the following line
             sf_raw_disc=sf_out + global_values.RAW_DISC_TMP_SUFFIX #save the left and right raw disc for each site
             tem_locator = TE_Multi_Locator(sf_bam_list, s_working_folder, n_jobs, sf_ref)
-            # YW 2020/08/03 github update: added 2 arguments sf_raw_disc, b_tumor
+            # YW 2020/08/03 github update: added 2 arguments sf_raw_disc, b_tumor --> 2021/05/19 removed b_tumor
             # YW 2021/04/30 removed sf_tmp from the input (no longer need this file output)
             tem_locator.filter_candidate_sites_by_discordant_pairs_multi_alignmts(m_sites_clip_peak, iextend, i_is, f_dev,
                                                                                   n_disc_cutoff,
                                                                                   sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
                                                                                   sf_annotation_Alu, sf_annotation_L1,
                                                                                   sf_annotation_SVA,
-                                                                                  sf_raw_disc, b_tumor)
-            # YW 2020/04/23 added the if statement to alert in advance the problem of unable to merge_clip_disc
-            # commented out below because we don't need it
-            # if os.stat(sf_tmp).st_size == 0:
-            #     print("{0} is EMPTY! It will be impossible to merge clip disc in the next step. Set all counts of left and right discordant reads to 0. Discordant cutoff {1} is too high.\n".format(sf_tmp, n_disc_cutoff))
+                                                                                  sf_raw_disc)
+            
             # YW 2020/07/20 modified merge_clip_disc function to make sure locations without discordant read support will go through
             # xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
@@ -554,8 +534,7 @@ if __name__ == '__main__':
             if os.path.isfile(sf_output)==True:
                 print("User doesn't specify skipping, although {0} exists. Rerun the \"clip-disc-filtering\" step.\n".format(sf_output))
             b_force=True
-            rcd, basic_rcd = automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force,
-                                                       b_tumor, f_purity)
+            rcd, basic_rcd = automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force)
             ave_cov = basic_rcd[0]  # ave coverage
             rlth = basic_rcd[1]  # read length
             mean_is = basic_rcd[2]  # mean insert size
@@ -580,9 +559,6 @@ if __name__ == '__main__':
             if b_automatic==True:
                 n_clip_cutoff=rcd[0]
                 n_disc_cutoff=rcd[1]
-                # if b_tumor==True:
-                #     n_clip_cutoff = adjust_cutoff_tumor(n_clip_cutoff)
-                #     n_disc_cutoff = adjust_cutoff_tumor(n_disc_cutoff, 2)
             print("Filter (on cns) cutoff: number of clipped: {0} and number of discordant reads: {1} are used!!!\n".format(n_clip_cutoff, n_disc_cutoff))
 
             x_cd_filter = XClipDiscFilter(sf_bam_list, s_working_folder, n_jobs, sf_ref)

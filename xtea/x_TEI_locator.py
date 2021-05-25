@@ -69,11 +69,12 @@ class TE_Multi_Locator():
 
 	####
 	# YW 2020/08/01 added b_mosaic in input (github update)
+	# YW 2021/05/19 took out b_mosaic
 	def call_TEI_candidate_sites_from_multiple_alignmts(self, sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
 							    sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
 							    sf_rep_Alu, sf_rep_L1, sf_rep_SVA,
 							    b_se, cutoff_left_clip,
-							    cutoff_right_clip, cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns, b_mosaic,
+							    cutoff_right_clip, cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns,
 							    sf_clip_folder, b_force, max_cov, sf_out):
 		cnt = 0
 		s_sample_bam = ""
@@ -316,10 +317,11 @@ class TE_Multi_Locator():
 	# YW 2021/04/23 change r_lcluster, s_lc_chrm, s_lc_pos, r_rcluster, s_rc_chrm, s_rc_pos from list to a single entry
 	# YW 2021/04/27 add f_disc_fa_tmp for extract_mate_reads_by_name function
 	# YW 2021/04/30 remove sf_out from input argument
+	# YW 2021/05/19 removed b_tumor
 	def filter_candidate_sites_by_discordant_pairs_multi_alignmts(self, m_sites, iext, i_is, f_dev, cutoff,
 									sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
 									sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA, 
-									sf_raw_disc="", b_tumor=False):
+									sf_raw_disc=""):
 		sf_disc_working_folder = self.working_folder + global_values.DISC_FOLDER
 		cmd = f"mkdir -p {sf_disc_working_folder}"
 		self.cmd_runner.run_cmd_small_output(cmd)
@@ -461,8 +463,8 @@ class TE_Multi_Locator():
 		#####################################################
                 
 		i_half_cutoff=cutoff/2
-		if b_tumor==False:#for germline, set a little bit higher cutoff
-			i_half_cutoff= int(cutoff*3/4) + 1
+		# if b_tumor==False:#for germline, set a little bit higher cutoff
+		# 	i_half_cutoff= int(cutoff*3/4) + 1
 		if i_half_cutoff<1:
 			# YW 2020/08/11 changed this
 			# i_half_cutoff=1
