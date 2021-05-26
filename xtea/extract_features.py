@@ -1,17 +1,19 @@
 #!/bin/python3
 # 2021/05/10
-# modified from 2.0count_clip_disc_polyA.py, put everything into a python class
-# add counts of low MAPQ ratio (default MAPQ <= 5)
+##@@author: Yilan (Elain) Wang, Harvard University
+##@@contact: yilanwang@g.harvard.edu
+'''
+1. modified from 2.0count_clip_disc_polyA.py, put everything into a python class
+2. add counts of low MAPQ ratio (default MAPQ <= 5)
+'''
 # import python standard libraries
 import os
 import sys
 import pysam
-import argparse
 from multiprocessing import Pool
 from subprocess import *
 import numpy as np
 import re
-from itertools import chain
 from shutil import rmtree
 
 # import modules
