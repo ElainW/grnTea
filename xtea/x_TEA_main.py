@@ -275,6 +275,17 @@ def parse_arguments():
                         help="Reference panel database for filtering, or a blacklist region", metavar="FILE")
     parser.add_argument("--model", dest="model", default="null",
                         help="Already trained model (.pkl file) for genotype classification", metavar="FILE")
+    
+    # YW 2021/05/26 added to parallelize cns remapping
+    parser.add_argument("--c_realn_partition", dest="c_realn_partition", type=str, default="short",
+                        help="slurm partition for running realignment of clipped reads to repeat cns")
+    parser.add_argument("--c_realn_time", dest="c_realn_time", type=str, default="0-00:30", # update this to 8h
+                        help="runtime for running realignment of clipped reads to repeat cns")
+    parser.add_argument("--c_realn_mem", dest="c_realn_mem", type=int, default=20,
+                        help="run memory for running realignment of clipped reads to repeat cns")
+    parser.add_argument("--check_interval", dest="check_interval", type=int, default=60,
+                        help="interval of checking whether the sbatch jobs of cns alignment of other repeat type have finished after finishing the main cns realignment job")
+    
     args = parser.parse_args()
     return args
 ####
@@ -390,6 +401,12 @@ if __name__ == '__main__':
         cutoff_right_clip = args.rclip
         cutoff_clip_mate_in_rep = args.cliprep
         cutoff_clip_mate_in_cns = args.clipcns
+        
+        # YW 2021/05/26 added to parallelize cns remapping
+        global_values.set_c_realign_partition(args.c_realn_partition)
+        global_values.set_c_realign_time(args.c_realn_time)
+        global_values.set_c_realign_memory(args.c_realn_mem)
+        global_values.set_check_interval(args.check_interval)
         
         # YW 2020/08/01 github update: if statement and b_resume
         if b_resume == True and os.path.isfile(sf_out)==True:
