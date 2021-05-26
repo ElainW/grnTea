@@ -109,6 +109,25 @@ def set_initial_min_disc_cutoff(ndisc):
 
 # YW 2020/07/21 added
 INSERT_SIZE=500 # changed from 100000
+##############################################################################
+##############################################################################
+# YW 2021/05/26 added for cns remapping parallelization in cns_parallel.py
+C_REALIGN_PARTITION="short"
+def set_c_realign_partition(c_realign_partition):
+    global C_REALIGN_PARTITION
+    C_REALIGN_PARTITION=c_realign_partition
+C_REALIGN_TIME="0-8:00"
+def set_c_realign_time(c_realign_time):
+    global C_REALIGN_TIME
+    C_REALIGN_TIME=c_realign_time
+C_REALIGN_MEMORY=20
+def set_c_realign_memory(c_realign_memory):
+    global C_REALIGN_MEMORY
+    C_REALIGN_MEMORY=c_realign_memory
+CHECK_INTERVAL=60 # in seconds
+def set_check_interval(check_interval):
+    global CHECK_INTERVAL
+    CHECK_INTERVAL=check_interval
 ###############################################################################
 ###############################################################################
 ####originally used in x_clip_disc_filter.py
