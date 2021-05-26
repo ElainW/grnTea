@@ -714,6 +714,7 @@ class TELocator():
 		bwa_align.two_stage_realign(sf_rep_cns_L1, sf_rep_L1, sf_all_clip_fq, sf_algnmt_L1)
 		bwa_align.two_stage_realign(sf_rep_cns_SVA, sf_rep_SVA, sf_all_clip_fq, sf_algnmt_SVA)
 		os.remove(sf_all_clip_fq)
+		# YW 2021/05/25 the above portions are too time consuming, start 3 parallel jobs to save time and pause the program until all three are finished
 		
 		####cnt number of clipped reads aligned to repeat copies from the re-alignment
 		# YW 2021/03/18 add Alu, L1, SVA
