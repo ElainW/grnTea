@@ -124,6 +124,20 @@ C_REALIGN_MEMORY=20
 def set_c_realign_memory(c_realign_memory):
     global C_REALIGN_MEMORY
     C_REALIGN_MEMORY=c_realign_memory
+
+D_REALIGN_PARTITION="short"
+def set_d_realign_partition(d_realign_partition):
+    global D_REALIGN_PARTITION
+    D_REALIGN_PARTITION=d_realign_partition
+D_REALIGN_TIME="0-8:00"
+def set_d_realign_time(d_realign_time):
+    global D_REALIGN_TIME
+    D_REALIGN_TIME=d_realign_time
+D_REALIGN_MEMORY=20
+def set_d_realign_memory(d_realign_memory):
+    global D_REALIGN_MEMORY
+    D_REALIGN_MEMORY=d_realign_memory
+
 CHECK_INTERVAL=60 # in seconds
 def set_check_interval(check_interval):
     global CHECK_INTERVAL

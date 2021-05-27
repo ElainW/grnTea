@@ -370,13 +370,39 @@ class TE_Multi_Locator():
 				
 				##########################################################
 				# YW 2021/04/27 copied and modified from from x_clip_disc_filter.py to realign and parse disc reads (now doing these by sample, not all at once)
+				# YW 2021/05/26 made this chunk parallel
 				sf_disc_algnmt_Alu = tmp_pos_folder + "Alu" + global_values.DISC_SAM_SUFFIX
 				sf_disc_algnmt_L1 = tmp_pos_folder + "L1" + global_values.DISC_SAM_SUFFIX
 				sf_disc_algnmt_SVA = tmp_pos_folder + "SVA" + global_values.DISC_SAM_SUFFIX
 				bwa_align = BWAlign(global_values.BWA_PATH, global_values.BWA_REALIGN_CUTOFF, self.n_jobs)
+				
+				# bwa_align.realign_disc_reads(sf_rep_cns_Alu, sf_disc_fa_tmp, sf_disc_algnmt_Alu)
+				# bwa_align.realign_disc_reads(sf_rep_cns_L1, sf_disc_fa_tmp, sf_disc_algnmt_L1)
+				# bwa_align.realign_disc_reads(sf_rep_cns_SVA, sf_disc_fa_tmp, sf_disc_algnmt_SVA)
+				
+				#######################################
+				# to parallel disc realignment
+				cns_parallel = CNS_PARALLEL(self.n_jobs, self.working_folder, sf_disc_fa_tmp, cnt)
+				L1_script, L1_done = cns_parallel.gnrt_disc_py_scripts("L1", sf_rep_cns_L1, sf_disc_algnmt_L1)
+				SVA_script, SVA_done = cns_parallel.gnrt_disc_py_scripts("SVA", sf_rep_cns_SVA, sf_disc_algnmt_SVA)
+				cns_parallel.run_sbatch_scripts([(L1_script, L1_done), (SVA_script, SVA_done)], "disc")
+				
 				bwa_align.realign_disc_reads(sf_rep_cns_Alu, sf_disc_fa_tmp, sf_disc_algnmt_Alu)
-				bwa_align.realign_disc_reads(sf_rep_cns_L1, sf_disc_fa_tmp, sf_disc_algnmt_L1)
-				bwa_align.realign_disc_reads(sf_rep_cns_SVA, sf_disc_fa_tmp, sf_disc_algnmt_SVA)
+				print("Alu cns realignment has finished!")
+				while not os.path.exists(L1_done) or not os.path.exists(SVA_done):
+					sleep(global_values.CHECK_INTERVAL)
+				# YW 2021/05/26 remove files so next time we run this chunk of code we don't automatically skip L1 and SVA realignment
+				os.remove(L1_done)
+				os.remove(SVA_done)
+				if os.path.exists(sf_disc_algnmt_L1) and os.path.exists(sf_disc_algnmt_SVA):
+					if os.path.getsize(sf_disc_algnmt_L1)>0 and os.path.getsize(sf_disc_algnmt_SVA)>0:
+						print(f"Alu, L1, SVA disc realignments have all finished for bam {cnt}. Proceed to counting clipped parts...")
+					else:
+						sys.exit("Something went wrong with L1 or SVA disc realignment!!!")
+				else:
+					sys.exit("Something went wrong with L1 or SVA disc realignment!!!")
+				########################################
+				
 				os.remove(sf_disc_fa_tmp)
 				self.parse_disc_algnmt_consensus_short(sf_disc_algnmt_Alu, global_values.BMAPPED_CUTOFF, m_disc, "Alu")
 				os.remove(sf_disc_algnmt_Alu)

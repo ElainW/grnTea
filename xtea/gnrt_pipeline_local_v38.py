@@ -41,7 +41,7 @@ def gnrt_script_head(spartition, ncores, stime, smemory, s_id):
     s_head += f"#SBATCH --mem={smemory}G\n"
     s_head += f"#SBATCH -p {spartition}\n"
     s_head += f"#SBATCH -J {s_id}\n" # YW added 2021/05/24
-    s_head += f"#SBATCH -o {s_id}/{s_id}_%j.out\n"
+    s_head += f"#SBATCH -o {s_id}/%j.out\n"
     s_head += "#SBATCH --mail-type=END,FAIL\n"
     s_head += "#SBATCH --mail-user=yilanwang@g.harvard.edu\n"
     if spartition == "park" or spartition == "priopark":
@@ -96,7 +96,7 @@ def gnrt_parameters(l_pars):
 # YW 2021/05/23 changed sclip_step, sdisc_step command, add annotation/reference/cns by rep_type in l_rep_type (Alu/L1/SVA), commented out other steps and excluded other rep type (raise NonImplementedError)
 def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, iflag,
                          b_user_par, b_force, b_resume, l_rep_type, s_cfolder,
-                         c_realn_partition, c_realn_time, c_realn_mem, check_interval):
+                         c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval):
     s_user = ""
     if b_user_par == True:
         s_user = "--user"
@@ -132,7 +132,8 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     #                                                                                                 iclip_rp, ncores,
     #                                                                                                 s_cfolder, s_purity, s_user, s_clean, s_tumor, s_resume)
     sdisc_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -D -i ${{PREFIX}}\"candidate_list_from_clip.txt\" --nd {idisc_c} " \
-                 f"--ncns {icns_c} --ref ${{REF}} -b ${{BAM_LIST}} -p ${{TMP}} -o ${{PREFIX}}\"candidate_list_from_disc.txt\" -n {ncores} -m ${{PREFIX}}\"feature_matrix.txt\" {s_user} {s_resume} "
+                 f"--ncns {icns_c} --ref ${{REF}} -b ${{BAM_LIST}} -p ${{TMP}} -o ${{PREFIX}}\"candidate_list_from_disc.txt\" -n {ncores} -m ${{PREFIX}}\"feature_matrix.txt\" {s_user} {s_resume} " \
+                 f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} "
     if REP_TYPE_ALU in l_rep_type:
         sdisc_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-cns ${ALU_CNS} "
     if REP_TYPE_L1 in l_rep_type:
@@ -908,12 +909,15 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         c_realn_partition = args.c_realn_partition
         c_realn_time = args.c_realn_time
         c_realn_mem = args.c_realn_mem
+        d_realn_partition = args.d_realn_partition
+        d_realn_time = args.d_realn_time
+        d_realn_mem = args.d_realn_mem
         check_interval = args.check_interval
         
         # YW 2021/05/20 removed b_mosaic, b_tumor, f_purity, i_rep_type, iflt_clip, iflt_disc, itei_len, added l_rep_type
         s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len,
                                              iflag, b_user_par, b_force, b_resume, l_rep_type, sf_pub_clip,
-                                             c_realn_partition, c_realn_time, c_realn_mem, check_interval)
+                                             c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval)
         # if rep_type is REP_TYPE_SVA:
         #     s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, iflt_clip, iflt_disc, ncores, iflk_len,
         #                                          itei_len, iflag, b_mosaic, b_user_par, b_force, b_tumor, b_resume, f_purity, i_rep_type,sf_pub_clip, True, False)
@@ -1207,10 +1211,16 @@ def parse_arguments():
     # YW 2021/05/26 added to parallelize cns remapping
     parser.add_argument("--c_realn_partition", dest="c_realn_partition", type=str, default="short",
                         help="slurm partition for running realignment of clipped reads to repeat cns")
-    parser.add_argument("--c_realn_time", dest="c_realn_time", type=str, default="0-00:30", # update this to 8h
+    parser.add_argument("--c_realn_time", dest="c_realn_time", type=str, default="0-8:00", # update this to 8h
                         help="runtime for running realignment of clipped reads to repeat cns")
     parser.add_argument("--c_realn_mem", dest="c_realn_mem", type=int, default=20,
                         help="run memory (in GB) for running realignment of clipped reads to repeat cns")
+    parser.add_argument("--d_realn_partition", dest="d_realn_partition", type=str, default="short",
+                        help="slurm partition for running realignment of disc reads to repeat cns")
+    parser.add_argument("--d_realn_time", dest="d_realn_time", type=str, default="0-3:00", # update this!
+                        help="runtime for running realignment of disc reads to repeat cns")
+    parser.add_argument("--d_realn_mem", dest="d_realn_mem", type=int, default=20,
+                        help="run memory (in GB) for running realignment of disc reads to repeat cns")
     parser.add_argument("--check_interval", dest="check_interval", type=int, default=60,
                         help="interval (in seconds) of checking whether the sbatch jobs of cns alignment of other repeat type have finished after finishing the main cns realignment job")
     
