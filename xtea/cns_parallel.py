@@ -31,6 +31,11 @@ class CNS_PARALLEL():
 	def gnrt_clip_py_scripts(self, rep_type, sf_rep_cns, sf_rep, sf_algnmt):
 		py_scr = self.working_folder + rep_type + "_clip_cns_realn.py"
 		done_f = self.working_folder + rep_type + "_clip_cns_realn.done"
+		fail_f = self.working_folder + rep_type + "_clip_cns_realn.fail"
+		if os.path.exists(done_f):
+			os.remove(done_f)
+		if os.path.exists(fail_f):
+			os.remove(fail_f)
 		with open(py_scr, 'w') as fout:
 			scmd = "#!/bin/python3\n\n"
 			scmd += "import sys\n"
@@ -42,11 +47,16 @@ class CNS_PARALLEL():
 			scmd += f"bwa_align = BWAlign(global_values.BWA_PATH, global_values.BWA_REALIGN_CUTOFF, {self.n_jobs})\n"
 			scmd += f"bwa_align.two_stage_realign(\"{sf_rep_cns}\", \"{sf_rep}\", \"{self.sf_fq}\", \"{sf_algnmt}\")\n"
 			fout.write(scmd)
-		return py_scr, done_f
+		return py_scr, done_f, fail_f
 	
 	def gnrt_disc_py_scripts(self, rep_type, sf_rep_cns, sf_algnmt):
 		py_scr = self.working_folder + rep_type + "_disc_cns_realn.py"
 		done_f = self.working_folder + rep_type + "_disc_cns_realn.done"
+		fail_f = self.working_folder + rep_type + "_disc_cns_realn.fail"
+		if os.path.exists(done_f):
+			os.remove(done_f)
+		if os.path.exists(fail_f):
+			os.remove(fail_f)
 		with open(py_scr, 'w') as fout:
 			scmd = "#!/bin/python3\n\n"
 			scmd += "import sys\n"
@@ -58,7 +68,7 @@ class CNS_PARALLEL():
 			scmd += f"bwa_align = BWAlign(global_values.BWA_PATH, global_values.BWA_REALIGN_CUTOFF, {self.n_jobs})\n"
 			scmd += f"bwa_align.realign_disc_reads(\"{sf_rep_cns}\", \"{self.sf_fq}\", \"{sf_algnmt}\")\n"
 			fout.write(scmd)
-		return py_scr, done_f
+		return py_scr, done_f, fail_f
 	
 	def run_sbatch_scripts(self, scr_list, option):
 		if option != "clip" and option != "disc":
@@ -68,7 +78,7 @@ class CNS_PARALLEL():
 		with open(bash_script, 'w') as fout:
 			fout.write("#!/bin/bash\n\n")
 			for scr in scr_list:
-				py_scr, done_f = scr
+				py_scr, done_f, fail_f = scr
 				rep_type = os.path.basename(py_scr).split("_")[0]
 				sbatch_script = self.working_folder + rep_type + "_" + option + "_cns_realn.sh"
 				with open(sbatch_script, 'w') as sub_fout:
@@ -88,7 +98,8 @@ class CNS_PARALLEL():
 					sheader += "#SBATCH --mail-type=FAIL\n"
 					sheader += "#SBATCH --mail-user=yilanwang@g.harvard.edu\n\n"
 					scmd = f"python3 {py_scr}\n"
-					scmd += f"touch {done_f}\n"
+					scmd += f"STATUS=$?\n"
+					scmd += f"if [ \"$STATUS\" -eq 0 ]; then touch {done_f}; else touch {fail_f}; fi\n"
 					sub_fout.write(sheader)
 					sub_fout.write(scmd)
 				fout.write(f"sbatch {sbatch_script}\n")

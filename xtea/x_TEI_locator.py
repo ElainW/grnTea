@@ -383,14 +383,18 @@ class TE_Multi_Locator():
 				#######################################
 				# to parallel disc realignment
 				cns_parallel = CNS_PARALLEL(self.n_jobs, self.working_folder, sf_disc_fa_tmp, cnt)
-				L1_script, L1_done = cns_parallel.gnrt_disc_py_scripts("L1", sf_rep_cns_L1, sf_disc_algnmt_L1)
-				SVA_script, SVA_done = cns_parallel.gnrt_disc_py_scripts("SVA", sf_rep_cns_SVA, sf_disc_algnmt_SVA)
-				cns_parallel.run_sbatch_scripts([(L1_script, L1_done), (SVA_script, SVA_done)], "disc")
+				L1_script, L1_done, L1_fail = cns_parallel.gnrt_disc_py_scripts("L1", sf_rep_cns_L1, sf_disc_algnmt_L1)
+				SVA_script, SVA_done, SVA_fail = cns_parallel.gnrt_disc_py_scripts("SVA", sf_rep_cns_SVA, sf_disc_algnmt_SVA)
+				cns_parallel.run_sbatch_scripts([(L1_script, L1_done, L1_fail), (SVA_script, SVA_done, SVA_fail)], "disc")
 				
 				bwa_align.realign_disc_reads(sf_rep_cns_Alu, sf_disc_fa_tmp, sf_disc_algnmt_Alu)
 				print("Alu cns realignment has finished!")
-				while not os.path.exists(L1_done) or not os.path.exists(SVA_done):
+				while (not os.path.exists(L1_done) or not os.path.exists(SVA_done)) and (not os.path.exists(L1_fail) or not os.path.exists(SVA_fail)):
 					sleep(global_values.CHECK_INTERVAL)
+				if os.path.exists(L1_fail):
+					sys.exit("L1 cns realignment failed.")
+				if os.path.exists(SVA_fail):
+					sys.exit("SVA cns realignment failed.")
 				# YW 2021/05/26 remove files so next time we run this chunk of code we don't automatically skip L1 and SVA realignment
 				os.remove(L1_done)
 				os.remove(SVA_done)
@@ -740,16 +744,20 @@ class TELocator():
 		# YW 2021/05/26 modified the following to parallelize clipped read mapping to cns
 		bwa_align = BWAlign(global_values.BWA_PATH, global_values.BWA_REALIGN_CUTOFF, self.n_jobs)
 		cns_parallel = CNS_PARALLEL(self.n_jobs, self.working_folder, sf_all_clip_fq, idx_bam)
-		L1_script, L1_done = cns_parallel.gnrt_clip_py_scripts("L1", sf_rep_cns_L1, sf_rep_L1, sf_algnmt_L1)
-		SVA_script, SVA_done = cns_parallel.gnrt_clip_py_scripts("SVA", sf_rep_cns_SVA, sf_rep_SVA, sf_algnmt_SVA)
-		cns_parallel.run_sbatch_scripts([(L1_script, L1_done), (SVA_script, SVA_done)], "clip")
+		L1_script, L1_done, L1_fail = cns_parallel.gnrt_clip_py_scripts("L1", sf_rep_cns_L1, sf_rep_L1, sf_algnmt_L1)
+		SVA_script, SVA_done, SVA_fail = cns_parallel.gnrt_clip_py_scripts("SVA", sf_rep_cns_SVA, sf_rep_SVA, sf_algnmt_SVA)
+		cns_parallel.run_sbatch_scripts([(L1_script, L1_done, L1_fail), (SVA_script, SVA_done, SVA_fail)], "clip")
 		# YW 2021/03/18 add Alu, L1, SVA
 		bwa_align.two_stage_realign(sf_rep_cns_Alu, sf_rep_Alu, sf_all_clip_fq, sf_algnmt_Alu)
 		# bwa_align.two_stage_realign(sf_rep_cns_L1, sf_rep_L1, sf_all_clip_fq, sf_algnmt_L1)
 		# bwa_align.two_stage_realign(sf_rep_cns_SVA, sf_rep_SVA, sf_all_clip_fq, sf_algnmt_SVA)
 		print("Alu cns realignment has finished!")
-		while not os.path.exists(L1_done) or not os.path.exists(SVA_done):
+		while not os.path.exists(L1_done) or not os.path.exists(SVA_done) and (not os.path.exists(L1_fail) or not os.path.exists(SVA_fail)):
 			sleep(global_values.CHECK_INTERVAL)
+		if os.path.exists(L1_fail):
+			sys.exit("L1 cns realignment failed.")
+		if os.path.exists(SVA_fail):
+			sys.exit("SVA cns realignment failed.")
 		# YW 2021/05/26 remove files so next time we run this chunk of code we don't automatically skip L1 and SVA realignment
 		os.remove(L1_done)
 		os.remove(SVA_done)
