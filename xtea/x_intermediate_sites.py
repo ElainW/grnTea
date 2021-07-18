@@ -576,7 +576,7 @@ class XIntermediateSites():
     def merge_clip_disc_new(self, sf_clip, m_sites_clip_peak, sf_raw_disc, sf_out, cns_cutoff=1): # YW 2021/04/21 alternatively, add info from m_original_sites to m_sites_clip_peak                         
         with open(sf_out, "w") as fout_list:
             # YW 2021/05/10 write the col names
-            fout_list.write("\t".join(["#chr", "pos", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "clip_pos_std", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA"]))
+            fout_list.write("\t".join(["#chr", "pos", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "clip_pos_std", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA"]) + "\n")
             m_disc={}
             with open(sf_raw_disc) as fin_disc:
                 for line in fin_disc:
