@@ -389,7 +389,7 @@ class TE_Multi_Locator():
 				
 				bwa_align.realign_disc_reads(sf_rep_cns_Alu, sf_disc_fa_tmp, sf_disc_algnmt_Alu)
 				print("Alu cns realignment has finished!")
-				while (not os.path.exists(L1_done) or not os.path.exists(SVA_done)) and (not os.path.exists(L1_fail) or not os.path.exists(SVA_fail)):
+				while not (os.path.exists(L1_done) or os.path.exists(L1_fail)) or not (os.path.exists(SVA_done) or os.path.exists(SVA_fail)):
 					sleep(global_values.CHECK_INTERVAL)
 				if os.path.exists(L1_fail):
 					sys.exit("L1 cns realignment failed.")
