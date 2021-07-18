@@ -370,8 +370,11 @@ class Feature_Matrix():
             # write self.disc_dict into final output
             for chrm in self.disc_dict:
                 for insertion_pos in self.disc_dict[chrm]:
-                    low_MAPQ_ratio = str(self.disc_dict[chrm][insertion_pos][-2]/self.disc_dict[chrm][insertion_pos][-1])
                     fout.write("\t".join([chrm, str(insertion_pos), str(insertion_pos + 1), ""]))
+                    try:
+                        low_MAPQ_ratio = str(self.disc_dict[chrm][insertion_pos][-2]/self.disc_dict[chrm][insertion_pos][-1])
+                    except ZeroDivisionError:
+                        low_MAPQ_ratio = '-1'
                     fout.write("\t".join(map(str, self.disc_dict[chrm][insertion_pos][:-2])) + "\t" + low_MAPQ_ratio + "\n")
 
 
