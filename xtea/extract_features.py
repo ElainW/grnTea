@@ -1,17 +1,19 @@
 #!/bin/python3
 # 2021/05/10
-# modified from 2.0count_clip_disc_polyA.py, put everything into a python class
-# add counts of low MAPQ ratio (default MAPQ <= 5)
+##@@author: Yilan (Elain) Wang, Harvard University
+##@@contact: yilanwang@g.harvard.edu
+'''
+1. modified from 2.0count_clip_disc_polyA.py, put everything into a python class
+2. add counts of low MAPQ ratio (default MAPQ <= 5)
+'''
 # import python standard libraries
 import os
 import sys
 import pysam
-import argparse
 from multiprocessing import Pool
 from subprocess import *
 import numpy as np
 import re
-from itertools import chain
 from shutil import rmtree
 
 # import modules
@@ -368,8 +370,11 @@ class Feature_Matrix():
             # write self.disc_dict into final output
             for chrm in self.disc_dict:
                 for insertion_pos in self.disc_dict[chrm]:
-                    low_MAPQ_ratio = str(self.disc_dict[chrm][insertion_pos][-2]/self.disc_dict[chrm][insertion_pos][-1])
                     fout.write("\t".join([chrm, str(insertion_pos), str(insertion_pos + 1), ""]))
+                    try:
+                        low_MAPQ_ratio = str(self.disc_dict[chrm][insertion_pos][-2]/self.disc_dict[chrm][insertion_pos][-1])
+                    except ZeroDivisionError:
+                        low_MAPQ_ratio = '-1'
                     fout.write("\t".join(map(str, self.disc_dict[chrm][insertion_pos][:-2])) + "\t" + low_MAPQ_ratio + "\n")
 
 

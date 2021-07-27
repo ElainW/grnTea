@@ -11,6 +11,8 @@ import sys
 import pysam
 from subprocess import *
 from multiprocessing import Pool
+from time import sleep # YW 2021/05/26 added for parallel realignment of clip/disc reads (to wait for cns realignment to finish for L1 and SVA before proceeding)
+
 from clip_read import ClipReadInfo
 from x_annotation import *
 from x_alignments import *
@@ -18,6 +20,7 @@ from x_intermediate_sites import *
 from bwa_align import *
 import global_values
 from cmd_runner import *
+from cns_parallel import *  # YW 2021/05/26 added for parallel realignment of clip/disc reads
 
 
 # YW 2021/04/21 to write lists into final output
@@ -367,13 +370,43 @@ class TE_Multi_Locator():
 				
 				##########################################################
 				# YW 2021/04/27 copied and modified from from x_clip_disc_filter.py to realign and parse disc reads (now doing these by sample, not all at once)
+				# YW 2021/05/26 made this chunk parallel
 				sf_disc_algnmt_Alu = tmp_pos_folder + "Alu" + global_values.DISC_SAM_SUFFIX
 				sf_disc_algnmt_L1 = tmp_pos_folder + "L1" + global_values.DISC_SAM_SUFFIX
 				sf_disc_algnmt_SVA = tmp_pos_folder + "SVA" + global_values.DISC_SAM_SUFFIX
 				bwa_align = BWAlign(global_values.BWA_PATH, global_values.BWA_REALIGN_CUTOFF, self.n_jobs)
+				
+				# bwa_align.realign_disc_reads(sf_rep_cns_Alu, sf_disc_fa_tmp, sf_disc_algnmt_Alu)
+				# bwa_align.realign_disc_reads(sf_rep_cns_L1, sf_disc_fa_tmp, sf_disc_algnmt_L1)
+				# bwa_align.realign_disc_reads(sf_rep_cns_SVA, sf_disc_fa_tmp, sf_disc_algnmt_SVA)
+				
+				#######################################
+				# to parallel disc realignment
+				cns_parallel = CNS_PARALLEL(self.n_jobs, self.working_folder, sf_disc_fa_tmp, cnt)
+				L1_script, L1_done, L1_fail = cns_parallel.gnrt_disc_py_scripts("L1", sf_rep_cns_L1, sf_disc_algnmt_L1)
+				SVA_script, SVA_done, SVA_fail = cns_parallel.gnrt_disc_py_scripts("SVA", sf_rep_cns_SVA, sf_disc_algnmt_SVA)
+				cns_parallel.run_sbatch_scripts([(L1_script, L1_done, L1_fail), (SVA_script, SVA_done, SVA_fail)], "disc")
+				
 				bwa_align.realign_disc_reads(sf_rep_cns_Alu, sf_disc_fa_tmp, sf_disc_algnmt_Alu)
-				bwa_align.realign_disc_reads(sf_rep_cns_L1, sf_disc_fa_tmp, sf_disc_algnmt_L1)
-				bwa_align.realign_disc_reads(sf_rep_cns_SVA, sf_disc_fa_tmp, sf_disc_algnmt_SVA)
+				print("Alu cns realignment has finished!")
+				while not (os.path.exists(L1_done) or os.path.exists(L1_fail)) or not (os.path.exists(SVA_done) or os.path.exists(SVA_fail)):
+					sleep(global_values.CHECK_INTERVAL)
+				if os.path.exists(L1_fail):
+					sys.exit("L1 cns realignment failed.")
+				if os.path.exists(SVA_fail):
+					sys.exit("SVA cns realignment failed.")
+				# YW 2021/05/26 remove files so next time we run this chunk of code we don't automatically skip L1 and SVA realignment
+				os.remove(L1_done)
+				os.remove(SVA_done)
+				if os.path.exists(sf_disc_algnmt_L1) and os.path.exists(sf_disc_algnmt_SVA):
+					if os.path.getsize(sf_disc_algnmt_L1)>0 and os.path.getsize(sf_disc_algnmt_SVA)>0:
+						print(f"Alu, L1, SVA disc realignments have all finished for bam {cnt}. Proceed to counting clipped parts...")
+					else:
+						sys.exit("Something went wrong with L1 or SVA disc realignment!!!")
+				else:
+					sys.exit("Something went wrong with L1 or SVA disc realignment!!!")
+				########################################
+				
 				os.remove(sf_disc_fa_tmp)
 				self.parse_disc_algnmt_consensus_short(sf_disc_algnmt_Alu, global_values.BMAPPED_CUTOFF, m_disc, "Alu")
 				os.remove(sf_disc_algnmt_Alu)
@@ -708,11 +741,34 @@ class TELocator():
 		sf_algnmt_SVA = self.working_folder + sf_bam_name + global_values.CLIP_BAM_SUFFIX + ".SVA"
 		print("Output info: Re-align clipped parts for file ", self.sf_bam)
 		
-		bwa_align=BWAlign(global_values.BWA_PATH, global_values.BWA_REALIGN_CUTOFF, self.n_jobs)
+		# YW 2021/05/26 modified the following to parallelize clipped read mapping to cns
+		bwa_align = BWAlign(global_values.BWA_PATH, global_values.BWA_REALIGN_CUTOFF, self.n_jobs)
+		cns_parallel = CNS_PARALLEL(self.n_jobs, self.working_folder, sf_all_clip_fq, idx_bam)
+		L1_script, L1_done, L1_fail = cns_parallel.gnrt_clip_py_scripts("L1", sf_rep_cns_L1, sf_rep_L1, sf_algnmt_L1)
+		SVA_script, SVA_done, SVA_fail = cns_parallel.gnrt_clip_py_scripts("SVA", sf_rep_cns_SVA, sf_rep_SVA, sf_algnmt_SVA)
+		cns_parallel.run_sbatch_scripts([(L1_script, L1_done, L1_fail), (SVA_script, SVA_done, SVA_fail)], "clip")
 		# YW 2021/03/18 add Alu, L1, SVA
 		bwa_align.two_stage_realign(sf_rep_cns_Alu, sf_rep_Alu, sf_all_clip_fq, sf_algnmt_Alu)
-		bwa_align.two_stage_realign(sf_rep_cns_L1, sf_rep_L1, sf_all_clip_fq, sf_algnmt_L1)
-		bwa_align.two_stage_realign(sf_rep_cns_SVA, sf_rep_SVA, sf_all_clip_fq, sf_algnmt_SVA)
+		# bwa_align.two_stage_realign(sf_rep_cns_L1, sf_rep_L1, sf_all_clip_fq, sf_algnmt_L1)
+		# bwa_align.two_stage_realign(sf_rep_cns_SVA, sf_rep_SVA, sf_all_clip_fq, sf_algnmt_SVA)
+		print("Alu cns realignment has finished!")
+		while not os.path.exists(L1_done) or not os.path.exists(SVA_done) and (not os.path.exists(L1_fail) or not os.path.exists(SVA_fail)):
+			sleep(global_values.CHECK_INTERVAL)
+		if os.path.exists(L1_fail):
+			sys.exit("L1 cns realignment failed.")
+		if os.path.exists(SVA_fail):
+			sys.exit("SVA cns realignment failed.")
+		# YW 2021/05/26 remove files so next time we run this chunk of code we don't automatically skip L1 and SVA realignment
+		os.remove(L1_done)
+		os.remove(SVA_done)
+		if os.path.exists(sf_algnmt_L1) and os.path.exists(sf_algnmt_SVA):
+			if os.path.getsize(sf_algnmt_L1)>0 and os.path.getsize(sf_algnmt_SVA)>0:
+				print(f"Alu, L1, SVA clip realignments have all finished for bam {idx_bam}. Proceed to counting clipped parts...")
+			else:
+				sys.exit("Something went wrong with L1 or SVA clip realignment!!!")
+		else:
+			sys.exit("Something went wrong with L1 or SVA clip realignment!!!")
+		# remove unused intermediate files to save disk space
 		os.remove(sf_all_clip_fq)
 		# YW 2021/05/25 the above portions are too time consuming, start 3 parallel jobs to save time and pause the program until all three are finished
 		
@@ -739,7 +795,6 @@ class TELocator():
 			sf_clip_working_folder+="/"
 		if os.path.exists(sf_clip_working_folder) == False:
 			cmd = "mkdir {0}".format(sf_clip_working_folder)
-			#Popen(cmd, shell=True, stdout=PIPE).communicate()
 			self.cmd_runner.run_cmd_small_output(cmd)
 		
 		clip_info = ClipReadInfo(self.sf_bam, self.n_jobs, self.sf_reference)

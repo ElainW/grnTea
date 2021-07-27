@@ -275,6 +275,23 @@ def parse_arguments():
                         help="Reference panel database for filtering, or a blacklist region", metavar="FILE")
     parser.add_argument("--model", dest="model", default="null",
                         help="Already trained model (.pkl file) for genotype classification", metavar="FILE")
+    
+    # YW 2021/05/26 added to parallelize cns remapping
+    parser.add_argument("--c_realn_partition", dest="c_realn_partition", type=str, default="short",
+                        help="slurm partition for running realignment of clipped reads to repeat cns")
+    parser.add_argument("--c_realn_time", dest="c_realn_time", type=str, default="0-08:00",
+                        help="runtime for running realignment of clipped reads to repeat cns")
+    parser.add_argument("--c_realn_mem", dest="c_realn_mem", type=int, default=20,
+                        help="run memory (in GB) for running realignment of clipped reads to repeat cns")
+    parser.add_argument("--d_realn_partition", dest="d_realn_partition", type=str, default="short",
+                        help="slurm partition for running realignment of disc reads to repeat cns")
+    parser.add_argument("--d_realn_time", dest="d_realn_time", type=str, default="0-03:00", # update this!
+                        help="runtime for running realignment of disc reads to repeat cns")
+    parser.add_argument("--d_realn_mem", dest="d_realn_mem", type=int, default=20,
+                        help="run memory (in GB) for running realignment of disc reads to repeat cns")
+    parser.add_argument("--check_interval", dest="check_interval", type=int, default=60,
+                        help="interval (in sec) of checking whether the sbatch jobs of cns alignment of other repeat type have finished after finishing the main cns realignment job")
+    
     args = parser.parse_args()
     return args
 ####
@@ -391,6 +408,12 @@ if __name__ == '__main__':
         cutoff_clip_mate_in_rep = args.cliprep
         cutoff_clip_mate_in_cns = args.clipcns
         
+        # YW 2021/05/26 added to parallelize cns remapping
+        global_values.set_c_realign_partition(args.c_realn_partition)
+        global_values.set_c_realign_time(args.c_realn_time)
+        global_values.set_c_realign_memory(args.c_realn_mem)
+        global_values.set_check_interval(args.check_interval)
+        
         # YW 2020/08/01 github update: if statement and b_resume
         if b_resume == True and os.path.isfile(sf_out)==True:
             print("{0} exists, skipping \"clip\" step".format(sf_out))
@@ -440,6 +463,13 @@ if __name__ == '__main__':
         sf_candidate_list = args.input # YW 2021/04/23 retained map counts to cns
         sf_out = args.output
         sf_ref = args.ref  ###reference genome, some cram file require this file to open
+        
+        # YW 2021/05/26 added to parallelize cns remapping
+        global_values.set_d_realign_partition(args.d_realn_partition)
+        global_values.set_d_realign_time(args.d_realn_time)
+        global_values.set_d_realign_memory(args.d_realn_mem)
+        global_values.set_check_interval(args.check_interval)
+        
         feature_matrix = args.final_matrix # YW 2021/05/21 added this to output the final feature matrix
         peak_window = global_values.PEAK_WINDOW_DEFAULT # YW 2020/07/03 note: max distance between two clipped positions for them to be considered as from one insertion/cluster
         # if args.postFmosaic or args.somatic:#for mosaic events
