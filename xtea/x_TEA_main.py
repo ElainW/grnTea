@@ -127,6 +127,7 @@ from x_parameter import *
 # from x_igv import *
 from x_genotype_classify import * # new
 from extract_features import * # YW 2021/05/10 added this
+from coor_lift import * # YW 2021/07/27 added this
 
 
 def parse_arguments():
@@ -291,6 +292,16 @@ def parse_arguments():
                         help="run memory (in GB) for running realignment of disc reads to repeat cns")
     parser.add_argument("--check_interval", dest="check_interval", type=int, default=60,
                         help="interval (in sec) of checking whether the sbatch jobs of cns alignment of other repeat type have finished after finishing the main cns realignment job")
+    
+    # YW 2021/07/27 added to enable control bam file coordinate lifting
+    parser.add_argument("--ctrl", dest="ctrl",
+                        action="store_true", default=False,
+                        help="indicate running of aDNA ctrl bam input, skip feature extraction in -D step")
+    parser.add_argument("--ref_bed", dest="ref_bed", default="/n/data1/bch/genetics/lee/elain/xTEA_benchmarking/alt_reference/gold_std_hg38_v4_int.temp",
+                        help="The file with gold std set coordinate and insertion size, required only when --ctrl", metavar="FILE")
+    parser.add_argument("--error_margin", dest="error_margin", type=str, default=15,
+                        help="error margin to lift coordinate, required only when --ctrl")
+    
     
     args = parser.parse_args()
     return args
@@ -525,10 +536,14 @@ if __name__ == '__main__':
             # xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
             xfilter.merge_clip_disc_new(sf_candidate_list, m_sites_clip_peak, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
-        # YW 2021/05/10 wrote the function below to extract extra features
-        feat_folder = s_working_folder + "features/"
-        feat_mat = Feature_Matrix(sf_out, feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
-        feat_mat.run_feature_extraction()
+        if args.ctrl == False:
+            # YW 2021/05/10 wrote the function below to extract extra features
+            feat_folder = s_working_folder + "features/"
+            feat_mat = Feature_Matrix(sf_out, feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
+            feat_mat.run_feature_extraction()
+        else: # YW 2021/07/27 erform coordinate lifting to gold std set deleted ref
+            coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
+            coor_lift.run_coor_lift("ctrl")
 ####
 ####
     ####
