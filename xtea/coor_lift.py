@@ -3,9 +3,10 @@
 ##@@author: Yilan (Elain) Wang, Harvard University
 ##@@contact: yilanwang@g.harvard.edu
 '''
-1. modified from 3.0coor_lift.py, put everything into a python class
+1. modified from 3.0coor_lift.py, put everything into a python class, used dynamic programming(?) to accelerate the runs
 2. convert TE coordinates from ctrl bam to test bam
 Note: this is not an exact inverse function of 3.0coor_lift.py parse_result_ML because insertions located within gold std set TEs are processed differently
+3. subtract TE coordinates in test bam overlapping those in ctrl bam after coordinate lifting
 '''
 # import python standard libraries
 import os
@@ -51,6 +52,9 @@ class Coor_Lift():
 			
 	
 	def run_coor_lift(self, mode="ctrl"):
+		'''
+		convert TE coordinates from ctrl bam to test bam
+		'''
 		if mode != "ctrl":
 			raise NotImplementedError
 		
@@ -93,4 +97,23 @@ class Coor_Lift():
 					else: # have iterated through all the gold std set pos in chr
 						if mode == 'ctrl':
 							self.write_output(f_out, chr, str(s-to_change_sum[chr]), str(s+1-to_change_sum[chr]))
+	
+	
+	def sort_subtract_overlap(self, ctrl_file):
+		'''
+		subtract TE coordinates in test bam overlapping those in ctrl bam after coordinate lifting
+		test bam only
+		'''
+		print(f"Removing overlapping coordinate in {self.input} from {ctrl_file}...")
+		if not os.path.isfile(ctrl_file):
+			sys.exit(f"{ctrl_file} does not exist. Please run xTea-ML on the corresponding control bam file first!")
+		sorted_input = self.input + "_sorted" # do not use .sorted as this is self.output
+		sorted_ctrl = ctrl_file + ".sorted"
+		# make sure the input file is sorted
+		self.cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {self.input}", sorted_input)
+		self.cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {ctrl_file}", sorted_ctrl)
+		self.cmd_runner.run_cmd_to_file("awk -F'\\t' '{OFS=\"\\t\"; print $1,$2,$2+1,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24}' " + f"{sorted_input} | intersectBed -v -sorted -wa -a stdin -b {sorted_ctrl}", self.output)
+		# clean up intermediate files
+		# os.remove(sorted_input)
+		# os.remove(sorted_ctrl)
 						
