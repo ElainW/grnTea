@@ -301,7 +301,9 @@ def parse_arguments():
                         help="The file with gold std set coordinate and insertion size, required only when --ctrl", metavar="FILE")
     parser.add_argument("--error_margin", dest="error_margin", type=str, default=15,
                         help="error margin to lift coordinate, required only when --ctrl")
-    
+    # YW 2021/07/30 added to enable input of ctrl bed file for coordinate subtraction
+    parser.add_argument("--ctrl_bed", dest="ctrl_bed", default=None,
+                        help="TEI coordinate from the control bam file, ancient only, required only when --ctrl==False", metavar="FILE")
     
     args = parser.parse_args()
     return args
@@ -537,9 +539,12 @@ if __name__ == '__main__':
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
             xfilter.merge_clip_disc_new(sf_candidate_list, m_sites_clip_peak, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
         if args.ctrl == False:
+            # YW 2021/07/30 wrote the function below to subtract TEI coordinates overlapping with ctrl (ancient only!!!)
+            coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
+            coor_lift.sort_subtract_overlap(args.ctrl_bed)
             # YW 2021/05/10 wrote the function below to extract extra features
             feat_folder = s_working_folder + "features/"
-            feat_mat = Feature_Matrix(sf_out, feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
+            feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
             feat_mat.run_feature_extraction()
         else: # YW 2021/07/27 erform coordinate lifting to gold std set deleted ref
             coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)

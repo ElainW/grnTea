@@ -270,7 +270,7 @@ class Feature_Matrix():
                 extra_features[insertion_pos] = list(map(str, [longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, n_low_MAPQ, n_total]))
                 # self.disc_dict[chrm][insertion_pos].extend([int(longest_soft_clip_len), l_cov, r_cov, polyA, l_polyA, r_polyA])
             else:
-                sys.exit(f"The number of fields isn't correct. It is {len(disc_chrm_dict[insertion_pos])}!")
+                sys.exit(f"The number of fields isn't correct. It is {len(disc_dict[chrm][insertion_pos])}!")
                 
         samfile.close()
         
@@ -311,7 +311,7 @@ class Feature_Matrix():
                 if line[0] == "#": # skip the header line
                     continue
                 fields = line.split()
-                if len(fields) < 24:
+                if len(fields) < 25:
                     print(fields, " does not have enough fields")
                     continue
                 chrm = fields[0]
@@ -319,7 +319,7 @@ class Feature_Matrix():
                 if chrm not in self.disc_dict:
                     self.disc_dict[chrm] = {}
                 if pos not in self.disc_dict[chrm]:
-                    self.disc_dict[chrm][pos] = fields[2:]
+                    self.disc_dict[chrm][pos] = fields[3:]
     
     
     def output_sample_feature_matrix(self, cnt):
