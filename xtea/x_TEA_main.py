@@ -280,15 +280,15 @@ def parse_arguments():
     # YW 2021/05/26 added to parallelize cns remapping
     parser.add_argument("--c_realn_partition", dest="c_realn_partition", type=str, default="short",
                         help="slurm partition for running realignment of clipped reads to repeat cns")
-    parser.add_argument("--c_realn_time", dest="c_realn_time", type=str, default="0-08:00",
+    parser.add_argument("--c_realn_time", dest="c_realn_time", type=str, default="0-08:00", #"1-00:00 for highcov"
                         help="runtime for running realignment of clipped reads to repeat cns")
-    parser.add_argument("--c_realn_mem", dest="c_realn_mem", type=int, default=20,
+    parser.add_argument("--c_realn_mem", dest="c_realn_mem", type=int, default=50,
                         help="run memory (in GB) for running realignment of clipped reads to repeat cns")
     parser.add_argument("--d_realn_partition", dest="d_realn_partition", type=str, default="short",
                         help="slurm partition for running realignment of disc reads to repeat cns")
-    parser.add_argument("--d_realn_time", dest="d_realn_time", type=str, default="0-03:00", # update this!
+    parser.add_argument("--d_realn_time", dest="d_realn_time", type=str, default="0-00:10",
                         help="runtime for running realignment of disc reads to repeat cns")
-    parser.add_argument("--d_realn_mem", dest="d_realn_mem", type=int, default=20,
+    parser.add_argument("--d_realn_mem", dest="d_realn_mem", type=int, default=1,
                         help="run memory (in GB) for running realignment of disc reads to repeat cns")
     parser.add_argument("--check_interval", dest="check_interval", type=int, default=60,
                         help="interval (in sec) of checking whether the sbatch jobs of cns alignment of other repeat type have finished after finishing the main cns realignment job")
@@ -538,17 +538,27 @@ if __name__ == '__main__':
             # xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
             xfilter.merge_clip_disc_new(sf_candidate_list, m_sites_clip_peak, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
+        
         if args.ctrl == False:
-            # YW 2021/07/30 wrote the function below to subtract TEI coordinates overlapping with ctrl (ancient only!!!)
-            coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
-            coor_lift.sort_subtract_overlap(args.ctrl_bed)
-            # YW 2021/05/10 wrote the function below to extract extra features
-            feat_folder = s_working_folder + "features/"
-            feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
-            feat_mat.run_feature_extraction()
-        else: # YW 2021/07/27 erform coordinate lifting to gold std set deleted ref
-            coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
-            coor_lift.run_coor_lift("ctrl")
+            if b_resume and os.path.isfile(feature_matrix):
+                print(f"{feature_matrix} exists, skipping \"feature extraction\" step!")
+            else:
+                if b_resume and os.path.isfile(sf_out + ".sorted"):
+                    print(f"{sf_out}.sorted exists. Proceed to generating the feature matrix...")
+                else:
+                    # YW 2021/07/30 wrote the function below to subtract TEI coordinates overlapping with ctrl (ancient only!!!)
+                    coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
+                    coor_lift.sort_subtract_overlap(args.ctrl_bed)
+                # YW 2021/05/10 wrote the function below to extract extra features
+                feat_folder = s_working_folder + "features/"
+                feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
+                feat_mat.run_feature_extraction()
+        else: # YW 2021/07/27 perform coordinate lifting to gold std set deleted ref
+            if b_resume and os.path.isfile(sf_out + ".lifted"):
+                print(f"{sf_out}.lifted exists, skipping \"coordinate lifting\" step for ctrl!")
+            else:
+                coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
+                coor_lift.run_coor_lift("ctrl")
 ####
 ####
     ####
