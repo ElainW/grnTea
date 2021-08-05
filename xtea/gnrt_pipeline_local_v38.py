@@ -94,9 +94,11 @@ def gnrt_parameters(l_pars):
 # grnt calling steps
 # YW 2021/05/20 added icns_c, took out b_tumor, f_purity, b_mosaic, changed i_rep_type to l_rep_type
 # YW 2021/05/23 changed sclip_step, sdisc_step command, add annotation/reference/cns by rep_type in l_rep_type (Alu/L1/SVA), commented out other steps and excluded other rep type (raise NonImplementedError)
+# YW 2021/08/04 added b_ctrl, sf_ref_bed, error_margin to enable control bam file coordinate lifting
 def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, iflag,
                          b_user_par, b_force, b_resume, l_rep_type, s_cfolder,
-                         c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval):
+                         c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval,
+                         b_ctrl, sf_ref_bed, error_margin):
     s_user = ""
     if b_user_par == True:
         s_user = "--user"
@@ -133,13 +135,18 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     #                                                                                                 s_cfolder, s_purity, s_user, s_clean, s_tumor, s_resume)
     sdisc_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -D -i ${{PREFIX}}\"candidate_list_from_clip.txt\" --nd {idisc_c} " \
                  f"--ncns {icns_c} --ref ${{REF}} -b ${{BAM_LIST}} -p ${{TMP}} -o ${{PREFIX}}\"candidate_list_from_disc.txt\" -n {ncores} -m ${{PREFIX}}\"feature_matrix.txt\" {s_user} {s_resume} " \
-                 f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} "
+                 f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} --error_margin {error_margin} " # YW 2021/08/04 added error_margin
     if REP_TYPE_ALU in l_rep_type:
         sdisc_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-cns ${ALU_CNS} "
     if REP_TYPE_L1 in l_rep_type:
         sdisc_step += "--L1-annotation ${L1_ANNOTATION} --L1-cns ${L1_CNS} "
     if REP_TYPE_SVA in l_rep_type:
-        sdisc_step += "--SVA-annotation ${SVA_ANNOTATION} --SVA-cns ${SVA_CNS}\n"
+        sdisc_step += "--SVA-annotation ${SVA_ANNOTATION} --SVA-cns ${SVA_CNS} "
+    # YW 2021/08/04 added to enable control bam file coordinate lifting
+    if b_ctrl:
+        sdisc_step += f"--ctrl --ref_bed {sf_ref_bed}\n"
+    else:
+        sdisc_step += "--ctrl_bed ${CTRL_BED}\n"
     # if b_SVA is True:
     #     sdisc_step = "python3 ${{XTEA_PATH}}\"x_TEA_main.py\"  -D --sva -i ${{PREFIX}}\"candidate_list_from_clip.txt\" --nd {0} " \
     #                  "--ref ${{REF}} -a ${{ANNOTATION}} -b ${{BAM_LIST}} -p ${{TMP}} " \
@@ -608,6 +615,7 @@ def gnrt_pipelines(s_head, s_libs, s_calling_cmd, sf_id, sf_bams, sf_bams_10X, s
                 if os.path.isfile(sf_10X_barcode_bai) == False:
                     cmd = f"ln -s {s_barcode_bam + '.bai'} {sf_10X_barcode_bai}"
                     run_cmd(cmd)
+    
 ####
     for sid in m_id:
         sf_folder = sf_root_folder
@@ -639,8 +647,9 @@ def gnrt_pipelines(s_head, s_libs, s_calling_cmd, sf_id, sf_bams, sf_bams_10X, s
     return l_sbatch_files
 
 # YW 2021/05/20 took out s_tmp_cns, sf_anno1, sf_flank; substitute sf_anno, sf_copy_with_flank, sf_cns with l_sf_anno, l_sf_copy_with_flank, l_sf_cns respectively
+# YW 2021/08/04 added sf_ctrl_bed
 def write_to_config(l_sf_anno, sf_ref, sf_gene, sf_black_list, l_sf_copy_with_flank, sf_flank, l_sf_cns,
-                    sf_xtea, s_bl, s_bam1, s_bc_bam, s_tmp, s_tmp_clip, sf_config):
+                    sf_xtea, s_bl, s_bam1, s_bc_bam, s_tmp, s_tmp_clip, sf_ctrl_bed, sf_config):
     with open(sf_config, "w") as fout:
         for sf_anno in l_sf_anno:
             fout.write(sf_anno)
@@ -658,11 +667,13 @@ def write_to_config(l_sf_anno, sf_ref, sf_gene, sf_black_list, l_sf_copy_with_fl
         fout.write(s_bc_bam)
         fout.write(s_tmp)
         fout.write(s_tmp_clip)
+        fout.write(sf_ctrl_bed)
         # fout.write(s_tmp_cns)
 #
 #generate library configuration files
 # YW 2021/05/19 enabled adding multiple library configuration files to the same command (separated by repeat type/MT)
-def gnrt_lib_config(l_rep_type, sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, sf_config_prefix):
+# YW 2021/08/04 added sf_ctrl_bed to enable control bam file coordinate lifting
+def gnrt_lib_config(l_rep_type, sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, sf_config_prefix, sf_ctrl_bed):
     if sf_folder_rep[-1] != "/":
         sf_folder_rep += "/"
     if sf_folder_xtea[-1] != "/":
@@ -683,6 +694,7 @@ def gnrt_lib_config(l_rep_type, sf_folder_rep, sf_ref, sf_gene, sf_black_list, s
     sf_gene_anno="GENE " + sf_gene + "\n"
     sf_black_list = "BLACK_LIST " + sf_black_list + "\n"
     sf_flank = "SF_FLANK null\n"
+    sf_ctrl_bed = "CTRL_BED " + sf_ctrl_bed + "\n"
     l_sf_anno = []
     # l_sf_anno1 = []
     l_sf_copy_with_flank = []
@@ -753,7 +765,7 @@ def gnrt_lib_config(l_rep_type, sf_folder_rep, sf_ref, sf_gene, sf_black_list, s
     # YW 2021/05/20
     sf_config = sf_config_prefix + "config"
     write_to_config(l_sf_anno, sf_ref, sf_gene_anno, sf_black_list, l_sf_copy_with_flank, sf_flank,
-                    l_sf_cns, sf_xtea, s_bl, s_bam1, s_bc_bam, s_tmp, s_tmp_clip, sf_config)
+                    l_sf_cns, sf_xtea, s_bl, s_bam1, s_bc_bam, s_tmp, s_tmp_clip, sf_ctrl_bed, sf_config) # YW 2021/08/04 added sf_ctrl_bed
 
 def cp_file(sf_from, sf_to):
     cmd = "cp {0} {1}".format(sf_from, sf_to)
@@ -777,9 +789,11 @@ def get_sample_id(sf_bam):
 
 ####gnrt the running shell
 # YW 2021/05/20 modified to generate calling command using one config file, not by different rep_type, removed b_mosaic, b_tumor, f_purity
+# YW 2021/08/04 added b_ctrl=False, sf_ctrl_bed="null" to enable control bam file coordinate lifting
 def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_force, s_wfolder,
                        sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, spartition, stime, smemory,
-                       ncores, sf_submit_sh, sf_case_control_bam_list="null", b_lsf=False, b_slurm=True, b_resume=False):
+                       ncores, sf_submit_sh, sf_case_control_bam_list="null", b_lsf=False, b_slurm=True, b_resume=False,
+                       b_ctrl=False, sf_ctrl_bed="null"):
     if s_wfolder[-1] != "/":
         s_wfolder += "/"
     scmd = "mkdir -p {0}".format(s_wfolder)
@@ -790,7 +804,7 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         for line in fin_id:
             sid = line.rstrip()
             m_id[sid] = 1
-            sf_folder = s_wfolder + sid  # first creat folder
+            sf_folder = s_wfolder + sid  # first create folder
             if os.path.exists(sf_folder) == True:
                 continue
             cmd = "mkdir {0}".format(sf_folder)
@@ -802,12 +816,20 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
     ####gnrt the sample, bam, x10 bam files
     # YW 2021/05/19 took out the l_rep_type argument
     split_bam_list(m_id, sf_bams, sf_10X_bams, s_wfolder, sf_case_control_bam_list)
-
+    
+    # YW 2021/08/04 added to enable control bam file coordinate lifting, generate the ref_bed file
+    m_ctrls = {}
+    split_ctrl_bed_list(m_id, sf_ctrl_bed, s_wfolder, m_ctrls)
+    
     l_sh=[]
     for sid_tmp in m_id:
         sf_sample_folder=s_wfolder + sid_tmp + "/"
         sf_pub_clip = sf_sample_folder + PUB_CLIP + "/"
-        gnrt_lib_config(l_rep_type, sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, sf_sample_folder)
+        # YW 2021/08/04 added m_ctrls to enable control bam file coordinate lifting
+        if sid_tmp in m_ctrls:
+            gnrt_lib_config(l_rep_type, sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, sf_sample_folder, m_ctrls[sid_tmp])
+        else:
+            gnrt_lib_config(l_rep_type, sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, sf_sample_folder, "null")
         # for rep_type in l_rep_type:
         #     i_rep_type=get_flag_by_rep_type(rep_type)
         #     sf_config = sf_sample_folder+rep_type+".config"
@@ -886,7 +908,7 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         sf_rep_x10_bam = sf_sample_folder + "/x10_bam_list1.txt"
         if os.path.exists(sf_rep_x10_bam)==False:
             sf_rep_x10_bam="null"
-
+        
         s_head = ""
         if b_lsf==True:
             s_head = gnrt_script_head_lsf(spartition, ncores, stime, smemory, sid_tmp)
@@ -913,11 +935,15 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         d_realn_time = args.d_realn_time
         d_realn_mem = args.d_realn_mem
         check_interval = args.check_interval
+        # YW 2021/08/04 added to enable control bam file coordinate lifting
+        sf_ref_bed = args.ref_bed
+        error_margin = args.error_margin
         
         # YW 2021/05/20 removed b_mosaic, b_tumor, f_purity, i_rep_type, iflt_clip, iflt_disc, itei_len, added l_rep_type
+        # YW 2021/08/04 added b_ctrl, sf_ref_bed, and error_margin
         s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len,
                                              iflag, b_user_par, b_force, b_resume, l_rep_type, sf_pub_clip,
-                                             c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval)
+                                             c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval, b_ctrl, sf_ref_bed, error_margin)
         # if rep_type is REP_TYPE_SVA:
         #     s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, iflt_clip, iflt_disc, ncores, iflk_len,
         #                                          itei_len, iflag, b_mosaic, b_user_par, b_force, b_tumor, b_resume, f_purity, i_rep_type,sf_pub_clip, True, False)
@@ -938,8 +964,7 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         #     sf_tmp_cmd=gnrt_calling_command_somatic_case_control(iflt_clip, iflt_disc, ncores, sf_ctr_list,
         #                                                          iflk_len, sf_case_ctrl_list, iflag, i_rep_type)
         #     s_calling_cmd+=sf_tmp_cmd
-        l_tmp_sh=gnrt_pipelines(s_head, s_libs, s_calling_cmd, sf_rep_sample_id, sf_rep_bam, sf_rep_x10_bam,
-                                sf_sample_folder)
+        l_tmp_sh=gnrt_pipelines(s_head, s_libs, s_calling_cmd, sf_rep_sample_id, sf_rep_bam, sf_rep_x10_bam, sf_sample_folder)
         for tmp_sh in l_tmp_sh:
             l_sh.append(tmp_sh)
     with open(sf_submit_sh, "w") as fout_submit:
@@ -1030,6 +1055,27 @@ def split_bam_list(m_ids, sf_bams, sf_x10_bams, s_wfolder, sf_case_control_bam_l
             sf_rep_x10_bam = sf_sample_folder + "x10_bam_list1.txt"
             with open(sf_rep_x10_bam, "w") as fout_rep_x10_bams:
                 fout_rep_x10_bams.write(sid_tmp+"\t"+m_bams_10X[sid_tmp][0]+"\t"+m_bams_10X[sid_tmp][1]+"\n")
+
+
+# YW 2021/08/04 added to enable control bam file coordinate lifting
+def split_ctrl_bed_list(m_ids, sf_ctrl_bed, s_wfolder, m_ctrls):
+    if sf_ctrl_bed != "null":
+        with open(sf_ctrl_bed) as fin:
+            for lines in fin:
+                fields = lines.split()
+                sid = fields[0]
+                if sid not in m_ids:
+                    continue
+                s_ctrl = fields[1]
+                if sid not in m_ctrls:
+                    m_ctrls[sid] = s_ctrl
+                else:
+                    sys.exit(f"Error: There are duplicate ctrl bed input for {sid}! Exiting...")
+        # for sid_tmp in m_ids:
+        #     sf_sample_folder = s_wfolder + sid_tmp + "/"
+        #     f_ctrl_bed = sf_sample_folder + "ctrl_bed.txt"
+        #     with open(f_ctrl_bed, "w") as fout_ctrl_bed:
+        #         fout_ctrl_bed.write(sid_tmp+"\t"+m_ctrls[sid_tmp]+"\n")
 
 
 ####run the pipelines
@@ -1209,20 +1255,31 @@ def parse_arguments():
                         help="Reference panel database for filtering, or a blacklist region", metavar="FILE")
     
     # YW 2021/05/26 added to parallelize cns remapping
-    parser.add_argument("--c_realn_partition", dest="c_realn_partition", type=str, default="short",
+    parser.add_argument("--c_realn_partition", dest="c_realn_partition", type=str, default="short", # medium for highcov
                         help="slurm partition for running realignment of clipped reads to repeat cns")
-    parser.add_argument("--c_realn_time", dest="c_realn_time", type=str, default="0-8:00", # update this to 8h
+    parser.add_argument("--c_realn_time", dest="c_realn_time", type=str, default="0-8:00", # 1-00:00 for highcov
                         help="runtime for running realignment of clipped reads to repeat cns")
-    parser.add_argument("--c_realn_mem", dest="c_realn_mem", type=int, default=20,
+    parser.add_argument("--c_realn_mem", dest="c_realn_mem", type=int, default=50,
                         help="run memory (in GB) for running realignment of clipped reads to repeat cns")
     parser.add_argument("--d_realn_partition", dest="d_realn_partition", type=str, default="short",
                         help="slurm partition for running realignment of disc reads to repeat cns")
-    parser.add_argument("--d_realn_time", dest="d_realn_time", type=str, default="0-3:00", # update this!
+    parser.add_argument("--d_realn_time", dest="d_realn_time", type=str, default="0-0:10",
                         help="runtime for running realignment of disc reads to repeat cns")
-    parser.add_argument("--d_realn_mem", dest="d_realn_mem", type=int, default=20,
+    parser.add_argument("--d_realn_mem", dest="d_realn_mem", type=int, default=1,
                         help="run memory (in GB) for running realignment of disc reads to repeat cns")
     parser.add_argument("--check_interval", dest="check_interval", type=int, default=60,
                         help="interval (in seconds) of checking whether the sbatch jobs of cns alignment of other repeat type have finished after finishing the main cns realignment job")
+    
+    # YW 2021/08/04 added to enable control bam file coordinate lifting
+    parser.add_argument("--ctrl", dest="ctrl",
+                        action="store_true", default=False,
+                        help="indicate running of aDNA ctrl bam input, skip feature extraction in -D step")
+    parser.add_argument("--ref_bed", dest="ref_bed", default="/n/data1/bch/genetics/lee/elain/xTEA_benchmarking/alt_reference/gold_std_hg38_v4_int.temp",
+                        help="The file with gold std set coordinate and insertion size, required only when --ctrl", metavar="FILE")
+    parser.add_argument("--error_margin", dest="error_margin", type=str, default=15,
+                        help="error margin to lift coordinate, required only when --ctrl")
+    parser.add_argument("--ctrl_bed", dest="ctrl_bed", default=None,
+                        help="File containing link to TEI coordinate from the control bam file, ancient only, required only when --ctrl==False", metavar="FILE")
     
     args = parser.parse_args()
     return args
@@ -1250,6 +1307,17 @@ if __name__ == '__main__':
             raise NotImplementedError
         b_slurm=args.slurm ####
         b_resume = args.resume
+        
+        # new args added by YW 2021/08/04 to enable control bam file coordinate lifting
+        b_ctrl = args.ctrl
+        sf_ctrl_bed = args.ctrl_bed
+        if not b_ctrl:
+            if not sf_ctrl_bed:
+                sys.exit("TE calling results from control bam file is required!")
+            if not os.path.isfile(sf_ctrl_bed):
+                sys.exit(f"{sf_ctrl_bed} doesn't exist. Exiting...")
+        else:
+            sf_ctrl_bed = "null"
     ####
 
         if s_wfolder[-1]!="/":
@@ -1313,7 +1381,7 @@ if __name__ == '__main__':
         #                        spartition, stime, smemory, ncores, sf_sbatch_sh, sf_bams, b_lsf, b_slurm, b_resume)
         gnrt_running_shell(sf_id, sf_bams, sf_bams_10X, l_rep_type, b_user_par, b_force,
                            s_wfolder, sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, spartition, stime,
-                           smemory, ncores, sf_sbatch_sh, "null", b_lsf, b_slurm, b_resume)
+                           smemory, ncores, sf_sbatch_sh, "null", b_lsf, b_slurm, b_resume, b_ctrl, sf_ctrl_bed)
 
     #run_pipeline(l_rep_type, sample_id, s_wfolder)
     #cp_compress_results(s_wfolder, l_rep_type, sample_id)
