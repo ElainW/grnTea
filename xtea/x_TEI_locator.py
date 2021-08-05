@@ -189,7 +189,7 @@ class TE_Multi_Locator():
 				
 		# YW 2021/04/07 added to remove loaded files
 		for i in range(cnt):
-			sf_tmp = self.working_folder + global_values.CLIP_TMP + "{0}".format(i)
+			sf_tmp = self.working_folder + global_values.CLIP_TMP + str(i)
 			if os.path.isfile(sf_tmp):
 				os.remove(sf_tmp)
 
@@ -770,6 +770,7 @@ class TELocator():
 			sys.exit("Something went wrong with L1 or SVA clip realignment!!!")
 		# remove unused intermediate files to save disk space
 		os.remove(sf_all_clip_fq)
+		os.remove(sf_all_clip_fq_ori)
 		# YW 2021/05/25 the above portions are too time consuming, start 3 parallel jobs to save time and pause the program until all three are finished
 		
 		####cnt number of clipped reads aligned to repeat copies from the re-alignment

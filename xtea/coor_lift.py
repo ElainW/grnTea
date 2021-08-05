@@ -97,6 +97,8 @@ class Coor_Lift():
 					else: # have iterated through all the gold std set pos in chr
 						if mode == 'ctrl':
 							self.write_output(f_out, chr, str(s-to_change_sum[chr]), str(s+1-to_change_sum[chr]))
+		# clean up the intermediate file
+		os.remove(self.input + ".sorted")
 	
 	
 	def sort_subtract_overlap(self, ctrl_file):
