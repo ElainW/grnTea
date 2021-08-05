@@ -278,9 +278,9 @@ def parse_arguments():
                         help="Already trained model (.pkl file) for genotype classification", metavar="FILE")
     
     # YW 2021/05/26 added to parallelize cns remapping
-    parser.add_argument("--c_realn_partition", dest="c_realn_partition", type=str, default="short",
+    parser.add_argument("--c_realn_partition", dest="c_realn_partition", type=str, default="short", # medium for highcov
                         help="slurm partition for running realignment of clipped reads to repeat cns")
-    parser.add_argument("--c_realn_time", dest="c_realn_time", type=str, default="0-08:00", #"1-00:00 for highcov"
+    parser.add_argument("--c_realn_time", dest="c_realn_time", type=str, default="0-08:00", #"1-00:00" for highcov
                         help="runtime for running realignment of clipped reads to repeat cns")
     parser.add_argument("--c_realn_mem", dest="c_realn_mem", type=int, default=50,
                         help="run memory (in GB) for running realignment of clipped reads to repeat cns")
@@ -299,7 +299,7 @@ def parse_arguments():
                         help="indicate running of aDNA ctrl bam input, skip feature extraction in -D step")
     parser.add_argument("--ref_bed", dest="ref_bed", default="/n/data1/bch/genetics/lee/elain/xTEA_benchmarking/alt_reference/gold_std_hg38_v4_int.temp",
                         help="The file with gold std set coordinate and insertion size, required only when --ctrl", metavar="FILE")
-    parser.add_argument("--error_margin", dest="error_margin", type=str, default=15,
+    parser.add_argument("--error_margin", dest="error_margin", type=int, default=15,
                         help="error margin to lift coordinate, required only when --ctrl")
     # YW 2021/07/30 added to enable input of ctrl bed file for coordinate subtraction
     parser.add_argument("--ctrl_bed", dest="ctrl_bed", default=None,
@@ -540,7 +540,7 @@ if __name__ == '__main__':
             xfilter.merge_clip_disc_new(sf_candidate_list, m_sites_clip_peak, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
         
         if args.ctrl == False:
-            if b_resume and os.path.isfile(feature_matrix):
+            if b_resume and os.path.getsize(feature_matrix)>0:
                 print(f"{feature_matrix} exists, skipping \"feature extraction\" step!")
             else:
                 if b_resume and os.path.isfile(sf_out + ".sorted"):
@@ -554,7 +554,7 @@ if __name__ == '__main__':
                 feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
                 feat_mat.run_feature_extraction()
         else: # YW 2021/07/27 perform coordinate lifting to gold std set deleted ref
-            if b_resume and os.path.isfile(sf_out + ".lifted"):
+            if b_resume and os.path.getsize(sf_out + ".lifted")>0:
                 print(f"{sf_out}.lifted exists, skipping \"coordinate lifting\" step for ctrl!")
             else:
                 coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
