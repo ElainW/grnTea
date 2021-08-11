@@ -716,6 +716,7 @@ class TELocator():
 		sf_bam_name = os.path.basename(self.sf_bam)
 		sf_all_clip_fq = sf_pub_folder + sf_bam_name + global_values.CLIP_FQ_SUFFIX
 		clip_info.set_working_folder(sf_clip_working_folder)
+		sf_all_clip_fq_ori=sf_clip_working_folder+sf_bam_name + global_values.CLIP_FQ_SUFFIX
 		if os.path.islink(sf_all_clip_fq)==False or b_force==True:
 			print("Collected clipped reads file {0} doesn't exist. Generate it now!".format(sf_all_clip_fq))
 			##collect the clip positions
@@ -724,7 +725,6 @@ class TELocator():
 			clip_info.collect_clip_positions(sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
 							initial_clip_pos_freq_cutoff, b_se, sf_pub_folder) ##save clip pos by chrm
 			print("Output info: Collect clipped parts for file ", self.sf_bam)
-			sf_all_clip_fq_ori=sf_clip_working_folder+sf_bam_name + global_values.CLIP_FQ_SUFFIX
 			clip_info.collect_clipped_parts(sf_all_clip_fq_ori)
 			
 			if os.path.isfile(sf_all_clip_fq)==True or os.path.islink(sf_all_clip_fq)==True:
@@ -769,8 +769,10 @@ class TELocator():
 		else:
 			sys.exit("Something went wrong with L1 or SVA clip realignment!!!")
 		# remove unused intermediate files to save disk space
-		os.remove(sf_all_clip_fq)
-		os.remove(sf_all_clip_fq_ori)
+		if os.path.exists(sf_all_clip_fq):
+			os.remove(sf_all_clip_fq)
+		if os.path.exists(sf_all_clip_fq_ori):
+			os.remove(sf_all_clip_fq_ori)
 		# YW 2021/05/25 the above portions are too time consuming, start 3 parallel jobs to save time and pause the program until all three are finished
 		
 		####cnt number of clipped reads aligned to repeat copies from the re-alignment
