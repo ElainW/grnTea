@@ -540,8 +540,15 @@ if __name__ == '__main__':
             xfilter.merge_clip_disc_new(sf_candidate_list, m_sites_clip_peak, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
         
         if args.ctrl == False:
-            if b_resume and os.path.getsize(feature_matrix)>0:
-                print(f"{feature_matrix} exists, skipping \"feature extraction\" step!")
+            if b_resume and os.path.isfile(feature_matrix):
+                if os.path.getsize(feature_matrix)>0:
+                    print(f"{feature_matrix} exists, skipping \"feature extraction\" step!")
+                else:
+                    coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
+                    coor_lift.sort_subtract_overlap(args.ctrl_bed)
+                    feat_folder = s_working_folder + "features/"
+                    feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
+                    feat_mat.run_feature_extraction()
             else:
                 if b_resume and os.path.isfile(sf_out + ".sorted"):
                     print(f"{sf_out}.sorted exists. Proceed to generating the feature matrix...")
@@ -554,8 +561,12 @@ if __name__ == '__main__':
                 feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
                 feat_mat.run_feature_extraction()
         else: # YW 2021/07/27 perform coordinate lifting to gold std set deleted ref
-            if b_resume and os.path.getsize(sf_out + ".lifted")>0:
-                print(f"{sf_out}.lifted exists, skipping \"coordinate lifting\" step for ctrl!")
+            if b_resume and os.path.isfile(sf_out + ".lifted"):
+                if os.path.getsize(sf_out + ".lifted")>0:
+                    print(f"{sf_out}.lifted exists, skipping \"coordinate lifting\" step for ctrl!")
+                else:
+                    coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
+                    coor_lift.run_coor_lift("ctrl")
             else:
                 coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
                 coor_lift.run_coor_lift("ctrl")
