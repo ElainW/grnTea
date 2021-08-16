@@ -730,7 +730,7 @@ class XIntermediateSites():
                 return True
         return False
 
-    ####calculate the std derivation of a list of positions
+    ####calculate the std deviation of a list of positions
     def calc_std_deviation(self, l_pos):
         if len(l_pos)<=0:
             return -1
