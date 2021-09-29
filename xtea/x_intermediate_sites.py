@@ -179,9 +179,12 @@ class XIntermediateSites():
                 if chrm not in m_list:
                     m_list[chrm] = {}
                 if pos not in m_list[chrm]:
-                    m_list[chrm][pos] = []
-                for ivalue in fields[2:]:
-                    m_list[chrm][pos].append(int(ivalue))
+                    # m_list[chrm][pos] = []
+                    m_list[chrm][pos] = [int(fields[2]), int(fields[3])] # YW 2021/09/28 changed
+                # YW 2021/09/24 changed because only lclip, rclip are used in subsequent steps
+                # for ivalue in fields[2:]:
+                # for ivalue in fields[2:4]:
+                #     m_list[chrm][pos].append(int(ivalue))
         return m_list
 
     ####
@@ -573,10 +576,12 @@ class XIntermediateSites():
 #
     # YW 2021/04/21 wrote this new function to incorporate info from dict m_sites_clip_peak and sf_raw_disc
     # YW 2021/04/29 added cns_cutoff: clip cns + disc cns >= 1
-    def merge_clip_disc_new(self, sf_clip, m_sites_clip_peak, sf_raw_disc, sf_out, cns_cutoff=1): # YW 2021/04/21 alternatively, add info from m_original_sites to m_sites_clip_peak                         
+    # YW 2021/09/24 removed all code related to m_sites_clip_peak
+    def merge_clip_disc_new(self, sf_clip, sf_raw_disc, sf_out, cns_cutoff=1): # YW 2021/04/21 alternatively, add info from m_original_sites to m_sites_clip_peak                         
         with open(sf_out, "w") as fout_list:
             # YW 2021/05/10 write the col names
-            fout_list.write("\t".join(["#chr", "pos", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "clip_pos_std", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA"]) + "\n")
+            # YW 2021/09/24 remove "clip_pos_std"
+            fout_list.write("\t".join(["#chr", "pos", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA"]) + "\n")
             m_disc={}
             with open(sf_raw_disc) as fin_disc:
                 for line in fin_disc:
@@ -606,16 +611,18 @@ class XIntermediateSites():
                             d_fields = m_disc[chrm][pos]
                     
                     # YW 2021/04/21 add clip pos std info
-                    f_clip_std = '-1'
-                    if chrm in m_sites_clip_peak:
-                        if int(pos) in m_sites_clip_peak[chrm]:
-                            f_clip_std = str(m_sites_clip_peak[chrm][int(pos)][-1])
-                    
-                    fields.append(f_clip_std)
+                    # YW 2021/09/24 remove clip pos std info here 
+                    # f_clip_std = '-1'
+                    # if chrm in m_sites_clip_peak:
+                    #     if int(pos) in m_sites_clip_peak[chrm]:
+                    #         f_clip_std = str(m_sites_clip_peak[chrm][int(pos)][-1])
+                    # 
+                    # fields.append(f_clip_std)
                     ##########################################
                     # YW 2021/04/29 added this filtering for counts of reads mapping to cns sequence
                     # YW 2021/05/07 now fields[-1] is f_clip_std
-                    if int(fields[-4]) + int(d_fields[-3]) >= cns_cutoff or int(fields[-3]) + int(d_fields[-2]) >= cns_cutoff or int(fields[-2]) + int(d_fields[-1]) >= cns_cutoff:
+                    # YW 2021/09/24 change the numbers because now f_clip_std is removed
+                    if int(fields[-3]) + int(d_fields[-3]) >= cns_cutoff or int(fields[-2]) + int(d_fields[-2]) >= cns_cutoff or int(fields[-1]) + int(d_fields[-1]) >= cns_cutoff:
                         fields.extend(d_fields)
                 ##########################################
                         fout_list.write("\t".join(fields) + "\n")

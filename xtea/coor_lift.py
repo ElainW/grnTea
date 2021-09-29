@@ -114,7 +114,7 @@ class Coor_Lift():
 		# make sure the input file is sorted
 		self.cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {self.input}", sorted_input)
 		self.cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {ctrl_file}", sorted_ctrl)
-		self.cmd_runner.run_cmd_to_file("awk -F'\\t' '{OFS=\"\\t\"; print $1,$2,$2+1,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24}' " + f"{sorted_input} | intersectBed -v -sorted -wa -a stdin -b {sorted_ctrl}", self.output)
+		self.cmd_runner.run_cmd_to_file("awk -F'\\t' '{OFS=\"\\t\"; print $1,$2,$2+1,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23}' " + f"{sorted_input} | intersectBed -v -sorted -wa -a stdin -b {sorted_ctrl}", self.output)
 		# clean up intermediate files
 		os.remove(sorted_input)
 		os.remove(sorted_ctrl)

@@ -496,7 +496,8 @@ if __name__ == '__main__':
             xfilter = XIntermediateSites()
             m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
             # YW CHANGED THE FUNCTION NAME from call_peak_candidate_sites_with_std_derivation
-            m_sites_clip_peak = xfilter.call_peak_candidate_sites_calc_std_deviation(m_original_sites, peak_window)
+            # m_sites_clip_peak = xfilter.call_peak_candidate_sites_calc_std_deviation(m_original_sites, peak_window)
+            m_sites_clip_peak = xfilter.call_peak_candidate_sites(m_original_sites, peak_window) # YW 2021/09/24 no longer need clip_pos_std here, so switch to a shorter function
             m_original_sites.clear()  #release the memory
             # YW added the following message
             print("Finished merging nearby clipped sites!")
@@ -533,11 +534,12 @@ if __name__ == '__main__':
                                                                                   sf_annotation_Alu, sf_annotation_L1,
                                                                                   sf_annotation_SVA,
                                                                                   sf_raw_disc)
+            m_sites_clip_peak.clear() # YW 2021/09/24 added to save memory
             
             # YW 2020/07/20 modified merge_clip_disc function to make sure locations without discordant read support will go through
             # xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
-            xfilter.merge_clip_disc_new(sf_candidate_list, m_sites_clip_peak, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
+            xfilter.merge_clip_disc_new(sf_candidate_list, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
         
         if args.ctrl == False:
             if b_resume and os.path.isfile(feature_matrix):
@@ -548,10 +550,16 @@ if __name__ == '__main__':
                     coor_lift.sort_subtract_overlap(args.ctrl_bed)
                     feat_folder = s_working_folder + "features/"
                     feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
-                    feat_mat.run_feature_extraction()
+                    xfilter = XIntermediateSites()
+                    m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
+                    feat_mat.run_feature_extraction(m_original_sites)
             else:
                 if b_resume and os.path.isfile(sf_out + ".sorted"):
-                    print(f"{sf_out}.sorted exists. Proceed to generating the feature matrix...")
+                    if os.path.getsize(sf_out + ".sorted")>0:
+                        print(f"{sf_out}.sorted exists. Proceed to generating the feature matrix...")
+                    else:
+                        coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
+                        coor_lift.sort_subtract_overlap(args.ctrl_bed)
                 else:
                     # YW 2021/07/30 wrote the function below to subtract TEI coordinates overlapping with ctrl (ancient only!!!)
                     coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
@@ -559,7 +567,9 @@ if __name__ == '__main__':
                 # YW 2021/05/10 wrote the function below to extract extra features
                 feat_folder = s_working_folder + "features/"
                 feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
-                feat_mat.run_feature_extraction()
+                xfilter = XIntermediateSites()
+                m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
+                feat_mat.run_feature_extraction(m_original_sites)
         else: # YW 2021/07/27 perform coordinate lifting to gold std set deleted ref
             if b_resume and os.path.isfile(sf_out + ".lifted"):
                 if os.path.getsize(sf_out + ".lifted")>0:
