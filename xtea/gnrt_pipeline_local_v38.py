@@ -16,6 +16,7 @@ S_VERSION="v0.1"
 
 ####
 PUB_CLIP="pub_clip"
+PUB_CLIP_LOCUS="pub_clip_locus"
 REP_TYPE_L1="L1"
 REP_TYPE_ALU="Alu"
 REP_TYPE_SVA="SVA"
@@ -97,9 +98,9 @@ def gnrt_parameters(l_pars):
 # YW 2021/05/23 changed sclip_step, sdisc_step command, add annotation/reference/cns by rep_type in l_rep_type (Alu/L1/SVA), commented out other steps and excluded other rep type (raise NonImplementedError)
 # YW 2021/08/04 added b_ctrl, sf_ref_bed, error_margin to enable control bam file coordinate lifting
 def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, iflag,
-                         b_user_par, b_force, b_resume, l_rep_type, s_cfolder,
+                         b_user_par, b_force, b_resume, l_rep_type, s_cfolder, s_cfolder_locus,
                          c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval,
-                         b_ctrl, sf_ref_bed, error_margin):
+                         b_ctrl, sf_ref_bed, error_margin, sf_locus_file):
     s_user = ""
     if b_user_par == True:
         s_user = "--user"
@@ -148,6 +149,31 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
         sdisc_step += f"--ctrl --ref_bed {sf_ref_bed}\n"
     else:
         sdisc_step += "--ctrl_bed ${CTRL_BED}\n"
+    
+    sclip_locus_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -L --locus_file {sf_locus_file} -i ${{BAM_LIST}} --lc {iclip_c} --rc {iclip_c} --cr {iclip_rp} " \
+                 f"-o ${{PREFIX}}\"candidate_list_from_clip_locus.txt\"  -n {ncores} --cp {s_cfolder_locus} {s_user} {s_clean} {s_resume} " \
+                 f"--ref ${{REF}} -p ${{TMP}} --c_realn_partition {c_realn_partition} --c_realn_time {c_realn_time} --c_realn_mem {c_realn_mem} --check_interval {check_interval} "
+    if REP_TYPE_ALU in l_rep_type:
+        sclip_locus_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-reference ${ALU_COPY_WITH_FLANK} --Alu-cns ${ALU_CNS} "
+    if REP_TYPE_L1 in l_rep_type:
+        sclip_locus_step += "--L1-annotation ${L1_ANNOTATION} --L1-reference ${L1_COPY_WITH_FLANK} --L1-cns ${L1_CNS} "
+    if REP_TYPE_SVA in l_rep_type:
+        sclip_locus_step += "--SVA-annotation ${SVA_ANNOTATION} --SVA-reference ${SVA_COPY_WITH_FLANK} --SVA-cns ${SVA_CNS}\n"
+    
+    sdisc_locus_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -D -i ${{PREFIX}}\"candidate_list_from_clip_locus.txt\" --nd {idisc_c} " \
+                       f"--ncns {icns_c} --ref ${{REF}} -b ${{BAM_LIST}} -p ${{TMP}} -o ${{PREFIX}}\"candidate_list_from_disc_locus.txt\" -n {ncores} -m ${{PREFIX}}\"feature_matrix_locus.txt\" {s_user} {s_resume} " \
+                       f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} --error_margin {error_margin} "
+    if REP_TYPE_ALU in l_rep_type:
+        sdisc_locus_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-cns ${ALU_CNS} "
+    if REP_TYPE_L1 in l_rep_type:
+        sdisc_locus_step += "--L1-annotation ${L1_ANNOTATION} --L1-cns ${L1_CNS} "
+    if REP_TYPE_SVA in l_rep_type:
+        sdisc_locus_step += "--SVA-annotation ${SVA_ANNOTATION} --SVA-cns ${SVA_CNS} "
+    # YW 2021/08/04 added to enable control bam file coordinate lifting
+    if b_ctrl:
+        sdisc_locus_step += f"--ctrl --ref_bed {sf_ref_bed}\n"
+    else:
+        sdisc_locus_step += "--ctrl_bed ${CTRL_BED}\n"
     # if b_SVA is True:
     #     sdisc_step = "python3 ${{XTEA_PATH}}\"x_TEA_main.py\"  -D --sva -i ${{PREFIX}}\"candidate_list_from_clip.txt\" --nd {0} " \
     #                  "--ref ${{REF}} -a ${{ANNOTATION}} -b ${{BAM_LIST}} -p ${{TMP}} " \
@@ -279,7 +305,12 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     if iflag & 1 == 1:
         s_cmd += sclip_step
     if iflag & 2 == 2:
-        s_cmd += sdisc_step
+        s_cmd += sclip_locus_step
+    if iflag & 4 == 4:
+        if iflag & 1 == 1:
+            s_cmd += sdisc_step
+        if iflag & 2 == 2:
+            s_cmd += sdisc_locus_step
     # if iflag & 4 == 4:
     #     s_cmd += sbarcode_step
     # if iflag & 8 == 8:
@@ -794,7 +825,7 @@ def get_sample_id(sf_bam):
 def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_force, s_wfolder,
                        sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, spartition, stime, smemory,
                        ncores, sf_submit_sh, sf_case_control_bam_list="null", b_lsf=False, b_slurm=True, b_resume=False,
-                       b_ctrl=False, sf_ctrl_bed="null"):
+                       b_ctrl=False, sf_ctrl_bed="null", sf_locus_file="null"):
     if s_wfolder[-1] != "/":
         s_wfolder += "/"
     scmd = "mkdir -p {0}".format(s_wfolder)
@@ -808,10 +839,14 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
             sf_folder = s_wfolder + sid  # first create folder
             if os.path.exists(sf_folder) == True:
                 continue
-            cmd = "mkdir {0}".format(sf_folder)
+            cmd = "mkdir -p {0}".format(sf_folder)
             Popen(cmd, shell=True, stdout=PIPE).communicate()
             sf_pub_clip = sf_folder+ "/" + PUB_CLIP + "/"
-            cmd = "mkdir {0}".format(sf_pub_clip)
+            cmd = "mkdir -p {0}".format(sf_pub_clip)
+            Popen(cmd, shell=True, stdout=PIPE).communicate()
+            # YW 2021/10/20 added the following for clip_locus_specific
+            sf_pub_clip_locus = sf_folder + "/" + PUB_CLIP_LOCUS + "/"
+            cmd = "mkdir -p {0}".format(sf_pub_clip_locus)
             Popen(cmd, shell=True, stdout=PIPE).communicate()
 
     ####gnrt the sample, bam, x10 bam files
@@ -826,6 +861,7 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
     for sid_tmp in m_id:
         sf_sample_folder=s_wfolder + sid_tmp + "/"
         sf_pub_clip = sf_sample_folder + PUB_CLIP + "/"
+        sf_pub_clip_locus = sf_sample_folder + PUB_CLIP_LOCUS + "/"
         # YW 2021/08/04 added m_ctrls to enable control bam file coordinate lifting
         if sid_tmp in m_ctrls:
             gnrt_lib_config(l_rep_type, sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, sf_sample_folder, m_ctrls[sid_tmp])
@@ -943,8 +979,8 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         # YW 2021/05/20 removed b_mosaic, b_tumor, f_purity, i_rep_type, iflt_clip, iflt_disc, itei_len, added l_rep_type
         # YW 2021/08/04 added b_ctrl, sf_ref_bed, and error_margin
         s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len,
-                                             iflag, b_user_par, b_force, b_resume, l_rep_type, sf_pub_clip,
-                                             c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval, b_ctrl, sf_ref_bed, error_margin)
+                                             iflag, b_user_par, b_force, b_resume, l_rep_type, sf_pub_clip, sf_pub_clip_locus,
+                                             c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval, b_ctrl, sf_ref_bed, error_margin, sf_locus_file)
         # if rep_type is REP_TYPE_SVA:
         #     s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, iflt_clip, iflt_disc, ncores, iflk_len,
         #                                          itei_len, iflag, b_mosaic, b_user_par, b_force, b_tumor, b_resume, f_purity, i_rep_type,sf_pub_clip, True, False)
@@ -1223,9 +1259,9 @@ def parse_arguments():
     parser.add_argument("--xtea", dest="xtea", type=str,
                         help="xTEA folder")
 
-    parser.add_argument("-f", "--flag", dest="flag", type=int, default=3, # YW 2021/05/22 added default=3
+    parser.add_argument("-f", "--flag", dest="flag", type=int, default=5, # YW 2021/05/22 added default=3
                         # help="Flag indicates which step to run (1-clip, 2-disc, 4-barcode, 8-xfilter, 16-filter, 32-asm)")
-                        help="Flag indicates which step to run (1-clip, 2-disc, 16-filter)")
+                        help="Flag indicates which step to run (1-clip, 2-locus-specific-clip, 4-disc)")
 
     parser.add_argument("-y", "--reptype", dest="rep_type", type=int, default=7, # YW 2021/05/19 changed from 1
                         help="Type of repeats working on: 1-L1, 2-Alu, 4-SVA, 8-HERV, 16-Mitochondrial")
@@ -1282,6 +1318,10 @@ def parse_arguments():
     parser.add_argument("--ctrl_bed", dest="ctrl_bed", default=None,
                         help="File containing link to TEI coordinate from the control bam file, ancient only, required only when --ctrl==False", metavar="FILE")
     
+    # YW 2021/10/12 added to enable extraction of features from predefined loci
+    parser.add_argument("--locus_file", dest="locus_file", default=None,
+                        help="The file with TEI loci to extract features, required only when -L/--locus_clip", metavar="FILE")
+    
     args = parser.parse_args()
     return args
 
@@ -1319,6 +1359,10 @@ if __name__ == '__main__':
                 sys.exit(f"{sf_ctrl_bed} doesn't exist. Exiting...")
         else:
             sf_ctrl_bed = "null"
+            
+        # new args added by YW 2021/10/12 to enable TEI feature collection from predefined loci
+        sf_locus_file = args.locus_file
+        
     ####
 
         if s_wfolder[-1]!="/":
@@ -1382,7 +1426,7 @@ if __name__ == '__main__':
         #                        spartition, stime, smemory, ncores, sf_sbatch_sh, sf_bams, b_lsf, b_slurm, b_resume)
         gnrt_running_shell(sf_id, sf_bams, sf_bams_10X, l_rep_type, b_user_par, b_force,
                            s_wfolder, sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, spartition, stime,
-                           smemory, ncores, sf_sbatch_sh, "null", b_lsf, b_slurm, b_resume, b_ctrl, sf_ctrl_bed)
+                           smemory, ncores, sf_sbatch_sh, "null", b_lsf, b_slurm, b_resume, b_ctrl, sf_ctrl_bed, sf_locus_file)
 
     #run_pipeline(l_rep_type, sample_id, s_wfolder)
     #cp_compress_results(s_wfolder, l_rep_type, sample_id)

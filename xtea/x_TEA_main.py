@@ -305,6 +305,18 @@ def parse_arguments():
     parser.add_argument("--ctrl_bed", dest="ctrl_bed", default=None,
                         help="TEI coordinate from the control bam file, ancient only, required only when --ctrl==False", metavar="FILE")
     
+    # YW 2021/09/29 added to enable extraction of clip info from pre-defined loci
+    parser.add_argument("-L", "--locus_clip",
+                        action="store_true", dest="locus_clip", default=False,
+                        help="Extract clip info from predefined loci")
+    parser.add_argument("--locus_file", dest="locus_file",
+                        help="The bed file with predefined loci of polymorphic or reference TEIs, required only when -L", metavar="FILE")
+    
+    # YW 2021/10/27 added to enable extraction of features without a matched reference control
+    parser.add_argument("--train",
+                        action="store_true", dest="train", default=False,
+                        help="Turn on training mode, where there is a matched reference control")
+    
     args = parser.parse_args()
     return args
 ####
@@ -353,6 +365,27 @@ def automatic_gnrt_parameters_case_control(sf_bam_list, sf_ref, s_working_folder
     par_rcd=xpar.get_par_by_cov(f_cov) #in format (iclip, idisc, i_clip-disc)
     print("Ave coverage is {0}: automatic parameters (clip, disc, clip-disc) with value ({1}, {2} ,{3})\n".format(f_cov, par_rcd[0], par_rcd[1], par_rcd[2]))
     return par_rcd, rcd
+
+
+# YW 2021/09/29 added for locus_clip option
+# potentially add process_chrm_name
+def load_locus_file(locus_file):
+    m_list = {}
+    with open(locus_file) as fin_candidate_sites:
+        for line in fin_candidate_sites:
+            if line[0] == "#":
+                continue
+            fields = line.split()
+            if len(fields)<2: # chrm pos TE (optional)
+                print(fields, " does not have enough fields")
+                continue
+            chrm = fields[0]
+            pos = int(fields[1])
+            if chrm not in m_list:
+                m_list[chrm] = [pos]
+            else:
+                m_list[chrm].append(pos)
+    return m_list
 
 ####
 # def adjust_cutoff_tumor(ncutoff=-1, i_adjust=1):
@@ -541,45 +574,143 @@ if __name__ == '__main__':
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
             xfilter.merge_clip_disc_new(sf_candidate_list, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
         
-        if args.ctrl == False:
-            if b_resume and os.path.isfile(feature_matrix):
-                if os.path.getsize(feature_matrix)>0:
-                    print(f"{feature_matrix} exists, skipping \"feature extraction\" step!")
+        if args.train: # YW 2021/10/27 added this if statement
+            if args.ctrl == False:
+                if b_resume and os.path.isfile(feature_matrix):
+                    if os.path.getsize(feature_matrix)>0:
+                        print(f"{feature_matrix} exists, skipping \"feature extraction\" step!")
+                    else:
+                        coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
+                        coor_lift.sort_subtract_overlap(args.ctrl_bed)
+                        feat_folder = s_working_folder + "features/"
+                        feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
+                        xfilter = XIntermediateSites()
+                        m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
+                        feat_mat.run_feature_extraction(m_original_sites)
                 else:
-                    coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
-                    coor_lift.sort_subtract_overlap(args.ctrl_bed)
+                    if b_resume and os.path.isfile(sf_out + ".sorted"):
+                        if os.path.getsize(sf_out + ".sorted")>0:
+                            print(f"{sf_out}.sorted exists. Proceed to generating the feature matrix...")
+                        else:
+                            coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
+                            coor_lift.sort_subtract_overlap(args.ctrl_bed)
+                    else:
+                        # YW 2021/07/30 wrote the function below to subtract TEI coordinates overlapping with ctrl (ancient only!!!)
+                        coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
+                        coor_lift.sort_subtract_overlap(args.ctrl_bed)
+                    # YW 2021/05/10 wrote the function below to extract extra features
+                    feat_folder = s_working_folder + "features/"
+                    feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
+                    xfilter = XIntermediateSites()
+                    m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
+                    feat_mat.run_feature_extraction(m_original_sites)
+            else: # YW 2021/07/27 perform coordinate lifting to gold std set deleted ref
+                if b_resume and os.path.isfile(sf_out + ".lifted"):
+                    if os.path.getsize(sf_out + ".lifted")>0:
+                        print(f"{sf_out}.lifted exists, skipping \"coordinate lifting\" step for ctrl!")
+                    else:
+                        coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
+                        coor_lift.run_coor_lift("ctrl")
+                else:
+                    coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
+                    coor_lift.run_coor_lift("ctrl")
+        else:
+            if b_resume and os.path.isfile(feature_matrix):
+                if os.path.getsize(feature_matrix):
+                    print(f"{feature_matrix} exists. Exiting...")
+                else:
+                    # need to sort
                     feat_folder = s_working_folder + "features/"
                     feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
                     xfilter = XIntermediateSites()
                     m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
                     feat_mat.run_feature_extraction(m_original_sites)
             else:
-                if b_resume and os.path.isfile(sf_out + ".sorted"):
-                    if os.path.getsize(sf_out + ".sorted")>0:
-                        print(f"{sf_out}.sorted exists. Proceed to generating the feature matrix...")
-                    else:
-                        coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
-                        coor_lift.sort_subtract_overlap(args.ctrl_bed)
-                else:
-                    # YW 2021/07/30 wrote the function below to subtract TEI coordinates overlapping with ctrl (ancient only!!!)
-                    coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
-                    coor_lift.sort_subtract_overlap(args.ctrl_bed)
-                # YW 2021/05/10 wrote the function below to extract extra features
                 feat_folder = s_working_folder + "features/"
                 feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
                 xfilter = XIntermediateSites()
                 m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
                 feat_mat.run_feature_extraction(m_original_sites)
-        else: # YW 2021/07/27 perform coordinate lifting to gold std set deleted ref
-            if b_resume and os.path.isfile(sf_out + ".lifted"):
-                if os.path.getsize(sf_out + ".lifted")>0:
-                    print(f"{sf_out}.lifted exists, skipping \"coordinate lifting\" step for ctrl!")
-                else:
-                    coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
-                    coor_lift.run_coor_lift("ctrl")
-            else:
-                coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
-                coor_lift.run_coor_lift("ctrl")
+    
+    # 2021/09/29 NEW OPTIONS FOR PRE-DEFINED LOCI
+    elif args.locus_clip:
+        print("Working on \"collecting clip info based on loci\" step!")
+        locus_dict = load_locus_file(args.locus_file)
+        sf_bam_list = args.input
+        # UPDATE THE FOLLOWING in cmd!!!
+        s_working_folder = args.wfolder # YW 2021/03/18 make this not specific to TE (since all processes are shared)
+        n_jobs = args.cores
+        sf_rep_cns_Alu =args.Alu_cns
+        sf_rep_cns_L1 =args.L1_cns
+        sf_rep_cns_SVA =args.SVA_cns
+        sf_rep_Alu = args.Alu_reference  ####repeat copies "-r"
+        sf_rep_L1 = args.L1_reference
+        sf_rep_SVA = args.SVA_reference
+        sf_annotation_Alu = args.Alu_annotation
+        sf_annotation_L1 = args.L1_annotation
+        sf_annotation_SVA = args.SVA_annotation
+        
+        sf_out = args.output
+        b_se = args.single  ##single end reads or not, default is not
+        sf_ref=args.ref ###reference genome "-ref"
+        b_force=args.force #force to run from the very beginning
+        # YW 2020/08/01 github update b_mosaic
+        # b_mosaic=False #this is for mosaic calling from normal tissue # YW 2021/03/18 set this to False
+        #i_iniclip=args.iniclip#
+        if b_force == True:
+            global_values.set_force_clean()
+        site_clip_cutoff=args.siteclip #this is the cutoff for the exact position, use larger value for 10X
+        global_values.set_initial_min_clip_cutoff(site_clip_cutoff)
+        
+        # YW 2021/09/29 should we keep these?
+        # merge the list from different bams of the same individual
+        # Here when do the filtering, nearby regions are already considered!
+        cutoff_left_clip = args.lclip
+        cutoff_right_clip = args.rclip
+        cutoff_clip_mate_in_rep = args.cliprep
+        cutoff_clip_mate_in_cns = args.clipcns
+        
+        # YW 2021/05/26 added to parallelize cns remapping
+        global_values.set_c_realign_partition(args.c_realn_partition)
+        global_values.set_c_realign_time(args.c_realn_time)
+        global_values.set_c_realign_memory(args.c_realn_mem)
+        global_values.set_check_interval(args.check_interval)
+        
+        # YW 2020/08/01 github update: if statement and b_resume
+        if b_resume == True and os.path.isfile(sf_out)==True:
+            print("{0} exists, skipping \"clip\" step".format(sf_out))
+        else:
+            if os.path.isfile(sf_out)==True:
+                print("User doesn't specify skipping, although {0} exists. Rerun the \"clip\" step.".format(sf_out))
+            if b_automatic==True:
+                # YW 2020/08/01 github update, 2 more arguments b_tumor, f_purity --> 2021/05/19 removed both
+                rcd, basic_rcd=automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force)
+                cutoff_left_clip=rcd[0]
+                cutoff_right_clip=rcd[0]
+                cutoff_clip_mate_in_rep=rcd[2]
+            # YW 2020/06/28 added more annotations for the print message
+            print("Clip cutoff: lclip: {0}, rclip: {1}, clip_mate_in_rep: {2}, clip_mate_in_cns: {3} are used!!!".format(cutoff_left_clip, cutoff_right_clip, cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns))
+            tem_locator = TE_Multi_Locator(sf_bam_list, s_working_folder, n_jobs, sf_ref)
+
+            ####by default, if number of clipped reads is larger than this value, then discard
+            max_cov_cutoff=int(15*args.cov) #by default, this value is 600
+            wfolder_pub_clip = args.cwfolder #public clip folder (for predefined loci)
+            
+            # YW 2020/08/09 clarified the comment
+            ##Hard code inside:
+            # 1. call_TEI_candidate_sites_from_clip_reads_v2 --> run_cnt_clip_part_aligned_to_rep_by_chrm_sort_version
+            # here if 3/4 of the seq is mapped, then consider it as aligned to rep.
+            ##2. require >=2 clip reads (actually depending on user input), whose clipped part is aligned to repeat copies (depending on --cr)
+        
+            # YW 2020/08/01 added b_mosaic input (github update), and updated in the function too, but this hasn't been used
+            # YW 2021/05/19 took out b_mosaic
+            tem_locator.collect_clip_info_from_TEI_candidate_sites(locus_dict,
+                                                                   sf_annotation_Alu, sf_annotation_L1, sf_annotation_SVA,
+                                                                   sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
+                                                                   sf_rep_Alu, sf_rep_L1, sf_rep_SVA,
+                                                                   b_se, cutoff_left_clip,
+                                                                   cutoff_right_clip, cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns,
+                                                                   wfolder_pub_clip, b_force, max_cov_cutoff, sf_out)
 ####
 ####
     ####

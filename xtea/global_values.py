@@ -89,6 +89,7 @@ DISC_SAM_SUFFIX = ".disc.sam" # YW 2021/04/26 added to do map disc reads to cns
 OUTPUT_BAM_SUFFIX = ".out_bam"
 OUTPUT_BAM_HEADER = ".bam_header.sam"
 CLIP_FOLDER = "clip"
+CLIP_LOCUS_FOLDER = "clip_locus"
 DISC_FOLDER = "disc"
 DISC_SUFFIX = '.discord_pos.txt'
 DISC_SUFFIX_FILTER = '.discdt'
