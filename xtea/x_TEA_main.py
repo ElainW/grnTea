@@ -128,6 +128,7 @@ from x_parameter import *
 from x_genotype_classify import * # new
 from extract_features import * # YW 2021/05/10 added this
 from coor_lift import * # YW 2021/07/27 added this
+from cmd_runner import * # YW 2021/10/27 added this
 
 
 def parse_arguments():
@@ -574,6 +575,7 @@ if __name__ == '__main__':
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
             xfilter.merge_clip_disc_new(sf_candidate_list, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
         
+        b_train=args.train
         if args.train: # YW 2021/10/27 added this if statement
             if args.ctrl == False:
                 if b_resume and os.path.isfile(feature_matrix):
@@ -583,7 +585,7 @@ if __name__ == '__main__':
                         coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
                         coor_lift.sort_subtract_overlap(args.ctrl_bed)
                         feat_folder = s_working_folder + "features/"
-                        feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
+                        feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
                         xfilter = XIntermediateSites()
                         m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
                         feat_mat.run_feature_extraction(m_original_sites)
@@ -600,7 +602,7 @@ if __name__ == '__main__':
                         coor_lift.sort_subtract_overlap(args.ctrl_bed)
                     # YW 2021/05/10 wrote the function below to extract extra features
                     feat_folder = s_working_folder + "features/"
-                    feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
+                    feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
                     xfilter = XIntermediateSites()
                     m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
                     feat_mat.run_feature_extraction(m_original_sites)
@@ -614,23 +616,18 @@ if __name__ == '__main__':
                 else:
                     coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
                     coor_lift.run_coor_lift("ctrl")
-        else:
+        else: # YW 2021/10/27 added the following
             if b_resume and os.path.isfile(feature_matrix):
-                if os.path.getsize(feature_matrix):
-                    print(f"{feature_matrix} exists. Exiting...")
-                else:
-                    # need to sort
-                    feat_folder = s_working_folder + "features/"
-                    feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
-                    xfilter = XIntermediateSites()
-                    m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
-                    feat_mat.run_feature_extraction(m_original_sites)
-            else:
-                feat_folder = s_working_folder + "features/"
-                feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs)
-                xfilter = XIntermediateSites()
-                m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
-                feat_mat.run_feature_extraction(m_original_sites)
+                if os.path.getsize(feature_matrix) > 0:
+                    sys.exit(f"{feature_matrix} exists. Exiting...")
+            # need to sort sf_out
+            cmd_runner = CMD_RUNNER()
+            cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {sf_out}", sf_out + ".sorted")
+            feat_folder = s_working_folder + "features/"
+            feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
+            xfilter = XIntermediateSites()
+            m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
+            feat_mat.run_feature_extraction(m_original_sites)
     
     # 2021/09/29 NEW OPTIONS FOR PRE-DEFINED LOCI
     elif args.locus_clip:

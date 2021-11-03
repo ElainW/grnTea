@@ -145,10 +145,11 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     if REP_TYPE_SVA in l_rep_type:
         sdisc_step += "--SVA-annotation ${SVA_ANNOTATION} --SVA-cns ${SVA_CNS} "
     # YW 2021/08/04 added to enable control bam file coordinate lifting
-    if b_ctrl:
-        sdisc_step += f"--ctrl --ref_bed {sf_ref_bed}\n"
-    else:
-        sdisc_step += "--ctrl_bed ${CTRL_BED}\n"
+    if args.train: # YW 2021/10/28 added args.train if statement
+        if b_ctrl:
+            sdisc_step += f"--ctrl --ref_bed {sf_ref_bed}\n"
+        else:
+            sdisc_step += "--ctrl_bed ${CTRL_BED}\n"
     
     sclip_locus_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -L --locus_file {sf_locus_file} -i ${{BAM_LIST}} --lc {iclip_c} --rc {iclip_c} --cr {iclip_rp} " \
                  f"-o ${{PREFIX}}\"candidate_list_from_clip_locus.txt\"  -n {ncores} --cp {s_cfolder_locus} {s_user} {s_clean} {s_resume} " \
@@ -170,10 +171,11 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     if REP_TYPE_SVA in l_rep_type:
         sdisc_locus_step += "--SVA-annotation ${SVA_ANNOTATION} --SVA-cns ${SVA_CNS} "
     # YW 2021/08/04 added to enable control bam file coordinate lifting
-    if b_ctrl:
-        sdisc_locus_step += f"--ctrl --ref_bed {sf_ref_bed}\n"
-    else:
-        sdisc_locus_step += "--ctrl_bed ${CTRL_BED}\n"
+    if args.train: # YW 2021/10/28 added args.train if statement
+        if b_ctrl:
+            sdisc_locus_step += f"--ctrl --ref_bed {sf_ref_bed}\n"
+        else:
+            sdisc_locus_step += "--ctrl_bed ${CTRL_BED}\n"
     # if b_SVA is True:
     #     sdisc_step = "python3 ${{XTEA_PATH}}\"x_TEA_main.py\"  -D --sva -i ${{PREFIX}}\"candidate_list_from_clip.txt\" --nd {0} " \
     #                  "--ref ${{REF}} -a ${{ANNOTATION}} -b ${{BAM_LIST}} -p ${{TMP}} " \
@@ -1315,12 +1317,17 @@ def parse_arguments():
                         help="The file with gold std set coordinate and insertion size, required only when --ctrl", metavar="FILE")
     parser.add_argument("--error_margin", dest="error_margin", type=str, default=15,
                         help="error margin to lift coordinate, required only when --ctrl")
-    parser.add_argument("--ctrl_bed", dest="ctrl_bed", default=None,
+    parser.add_argument("--ctrl_bed", dest="ctrl_bed", default="null",
                         help="File containing link to TEI coordinate from the control bam file, ancient only, required only when --ctrl==False", metavar="FILE")
     
     # YW 2021/10/12 added to enable extraction of features from predefined loci
-    parser.add_argument("--locus_file", dest="locus_file", default=None,
+    parser.add_argument("--locus_file", dest="locus_file", default="null",
                         help="The file with TEI loci to extract features, required only when -L/--locus_clip", metavar="FILE")
+    
+    # YW 2021/10/27 added to enable extraction of features without a matched reference control
+    parser.add_argument("--train",
+                        action="store_true", dest="train", default=False,
+                        help="Turn on training mode, where there is a matched reference control")
     
     args = parser.parse_args()
     return args
@@ -1350,15 +1357,17 @@ if __name__ == '__main__':
         b_resume = args.resume
         
         # new args added by YW 2021/08/04 to enable control bam file coordinate lifting
+        # YW 2021/10/28 added args.train if statement
         b_ctrl = args.ctrl
         sf_ctrl_bed = args.ctrl_bed
-        if not b_ctrl:
-            if not sf_ctrl_bed:
-                sys.exit("TE calling results from control bam file is required!")
-            if not os.path.isfile(sf_ctrl_bed):
-                sys.exit(f"{sf_ctrl_bed} doesn't exist. Exiting...")
-        else:
-            sf_ctrl_bed = "null"
+        if args.train:
+            if not b_ctrl:
+                if not sf_ctrl_bed:
+                    sys.exit("TE calling results from control bam file is required!")
+                if not os.path.isfile(sf_ctrl_bed):
+                    sys.exit(f"{sf_ctrl_bed} doesn't exist. Exiting...")
+            else:
+                sf_ctrl_bed = "null"
             
         # new args added by YW 2021/10/12 to enable TEI feature collection from predefined loci
         sf_locus_file = args.locus_file

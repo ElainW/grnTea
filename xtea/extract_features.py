@@ -27,13 +27,14 @@ def unwrap_extract_features_by_chr(arg, **kwarg):
 
 class Feature_Matrix():
     
-    def __init__(self, input, output, wfolder, bam_list, ref, n_jobs=8, margin=50, cMAPQ=12, low_MAPQ=5, err_margin=15, check_polyA_seq_max=20):
+    def __init__(self, input, output, wfolder, bam_list, ref, n_jobs=8, b_train=False, margin=50, cMAPQ=12, low_MAPQ=5, err_margin=15, check_polyA_seq_max=20): # YW 2021/11/2 added b_train
         self.input = input
         self.output = output
         self.wfolder = wfolder
         self.bam_list = bam_list
         self.ref = ref
         self.n_jobs = n_jobs
+        self.b_train = b_train
         self.margin = margin
         self.cMAPQ = cMAPQ
         self.low_MAPQ = low_MAPQ
@@ -145,8 +146,8 @@ class Feature_Matrix():
             if pos in chrm_original_sites:
                 l_pos.extend([pos] * (chrm_original_sites[pos][0] + chrm_original_sites[pos][1]))
         b = np.array(l_pos)
-        print(f"{chrm}:{start_pos}-{end_pos}")
-        print(b)
+        # print(f"{chrm}:{start_pos}-{end_pos}")
+        # print(b)
         f_std = round(np.std(b), 2)
         return f_std
     
@@ -287,7 +288,8 @@ class Feature_Matrix():
                 extra_features[insertion_pos] = list(map(str, [longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, clip_pos_std, n_low_MAPQ, n_total])) # YW 2021/09/24 added clip_pos_std
                 # self.disc_dict[chrm][insertion_pos].extend([int(longest_soft_clip_len), l_cov, r_cov, polyA, l_polyA, r_polyA])
             else:
-                sys.exit(f"The number of fields isn't correct. It is {len(disc_dict[chrm][insertion_pos])}!")
+                print(self.disc_dict[chrm][insertion_pos])
+                sys.exit(f"The number of fields isn't correct. It is {len(self.disc_dict[chrm][insertion_pos])}!")
                 
         samfile.close()
         
@@ -328,7 +330,10 @@ class Feature_Matrix():
                 if line[0] == "#": # skip the header line
                     continue
                 fields = line.split()
-                if len(fields) < 24: # YW 2021/09/24 change from 25
+                if len(fields) < 24 and self.b_train: # YW 2021/09/24 change from 25
+                    print(fields, " does not have enough fields")
+                    continue
+                if len(fields) < 23 and not self.b_train: # YW 2021/11/2 added this if statement
                     print(fields, " does not have enough fields")
                     continue
                 chrm = fields[0]
@@ -336,7 +341,11 @@ class Feature_Matrix():
                 if chrm not in self.disc_dict:
                     self.disc_dict[chrm] = {}
                 if pos not in self.disc_dict[chrm]:
-                    self.disc_dict[chrm][pos] = fields[3:]
+                    if self.b_train:
+                        self.disc_dict[chrm][pos] = fields[3:]
+                    else:
+                        self.disc_dict[chrm][pos] = fields[2:]
+                
     
     
     def output_sample_feature_matrix(self, cnt):
