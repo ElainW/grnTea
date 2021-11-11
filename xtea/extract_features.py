@@ -304,6 +304,7 @@ class Feature_Matrix():
     def extract_features_of_given_list(self, bam, swfolder, m_original_sites):
         '''
         operate on each bam file
+        2021/11/03 this function cannot handle very long lists of l_chrm_records
         '''
         l_chrm_records = []
     
@@ -325,6 +326,11 @@ class Feature_Matrix():
     
     
     def load_in_candidate_list(self):
+        '''
+        2021/11/03 this function can lead to large memory consumption by storing all chr in one dict
+        solution 1: can split the input file into several equal chunks (by line count); make sure to change open('w') to open('a')!!!
+        solution 2: can split each chromosome into several equal chunks (by bin_size); make sure to change open('w') to open('a')!!!
+        '''
         with open(self.input) as fin_candidate_sites:
             for line in fin_candidate_sites:
                 if line[0] == "#": # skip the header line
@@ -348,9 +354,9 @@ class Feature_Matrix():
                 
     
     
-    def output_sample_feature_matrix(self, cnt):
+    def output_sample_feature_matrix_multibam(self, cnt):
         '''
-        operate on all bam files in the bam list
+        operate on all bam files in the bam list, i.e., there can be more than 1 bam files
         '''
         # write the feature matrix header
         colnames = "\t".join(["#chr", "pos", "pos+1", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA", "longest_clip_len", "l_cov", "r_cov", "polyA", "cns_std_l_polyA", "cns_std_r_polyA", "clip_pos_std", "ratio_low_MAPQ"])
@@ -404,6 +410,46 @@ class Feature_Matrix():
                     except ZeroDivisionError:
                         low_MAPQ_ratio = '-1'
                     fout.write("\t".join(map(str, self.disc_dict[chrm][insertion_pos][:-2])) + "\t" + low_MAPQ_ratio + "\n")
+    
+    
+    def output_sample_feature_matrix(self, cnt=1):
+        '''
+        operate on all bam files in the bam list, assuming cnt=1
+        '''
+        # write the feature matrix header
+        colnames = "\t".join(["#chr", "pos", "pos+1", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA", "longest_clip_len", "l_cov", "r_cov", "polyA", "cns_std_l_polyA", "cns_std_r_polyA", "clip_pos_std", "ratio_low_MAPQ"])
+        swfolder = self.wfolder + "0/"
+        sample_feat_mat = swfolder + "feature_matrix.txt"
+        with open(self.output, 'w') as fout, open(sample_feat_mat, 'r') as fin:
+            fout.write(colnames + "\n")
+            for line in fin:
+                fields = line.rstrip().split("\t")
+                chrm = fields[0]
+                insertion_pos = int(fields[1])
+                longest_soft_clip_len = int(fields[2])
+                l_cov = float(fields[3])
+                r_cov = float(fields[4])
+                polyA = int(fields[5])
+                l_polyA = int(fields[6])
+                r_polyA = int(fields[7])
+                clip_pos_std = float(fields[8])
+                n_low_MAPQ = int(fields[9])
+                n_total = int(fields[10])
+                try:
+                    low_MAPQ_ratio = str(n_low_MAPQ/n_total)
+                except ZeroDivisionError:
+                    low_MAPQ_ratio = '-1'
+                
+                if chrm in self.disc_dict:
+                    if insertion_pos in self.disc_dict[chrm]:
+                        fout.write("\t".join([chrm, str(insertion_pos), str(insertion_pos + 1), ""]))
+                        fout.write("\t".join(self.disc_dict[chrm][insertion_pos]) + "\t")
+                        fout.write("\t".join([longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, clip_pos_std, low_MAPQ_ratio]) + "\n")
+                    else:
+                        sys.exit(f"{insertion_pos} does not exist in {chrm} of the disc input")
+                else:
+                    sys.exit(f"{chrm} does not exist in the disc input")
+        rmtree(swfolder)
 
     
     # YW 2021/09/24 added m_original_sites to calculate clip_pos_std (different definition as in x_intermediate_sites.py) here
@@ -421,4 +467,7 @@ class Feature_Matrix():
                 self.cmd_runner.run_cmd_small_output(scmd)
                 self.extract_features_of_given_list(bam, swfolder, m_original_sites)
                 cnt += 1
-        self.output_sample_feature_matrix(cnt)
+        if cnt == 1:
+            self.output_sample_feature_matrix()
+        else:
+            self.output_sample_feature_matrix_multibam(cnt)
