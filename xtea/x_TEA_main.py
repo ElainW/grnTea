@@ -586,9 +586,7 @@ if __name__ == '__main__':
                         coor_lift.sort_subtract_overlap(args.ctrl_bed)
                         feat_folder = s_working_folder + "features/"
                         feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
-                        xfilter = XIntermediateSites()
-                        m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
-                        feat_mat.run_feature_extraction(m_original_sites)
+                        feat_mat.run_feature_extraction()
                 else:
                     if b_resume and os.path.isfile(sf_out + ".sorted"):
                         if os.path.getsize(sf_out + ".sorted")>0:
@@ -603,9 +601,7 @@ if __name__ == '__main__':
                     # YW 2021/05/10 wrote the function below to extract extra features
                     feat_folder = s_working_folder + "features/"
                     feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
-                    xfilter = XIntermediateSites()
-                    m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
-                    feat_mat.run_feature_extraction(m_original_sites)
+                    feat_mat.run_feature_extraction()
             else: # YW 2021/07/27 perform coordinate lifting to gold std set deleted ref
                 if b_resume and os.path.isfile(sf_out + ".lifted"):
                     if os.path.getsize(sf_out + ".lifted")>0:
@@ -625,9 +621,8 @@ if __name__ == '__main__':
             cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {sf_out}", sf_out + ".sorted")
             feat_folder = s_working_folder + "features/"
             feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
-            xfilter = XIntermediateSites()
-            m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
-            feat_mat.run_feature_extraction(m_original_sites)
+            # db.read_text(sf_candidate_list), specify blocksize and number of processes
+            feat_mat.run_feature_extraction()
     
     # 2021/09/29 NEW OPTIONS FOR PRE-DEFINED LOCI
     elif args.locus_clip:

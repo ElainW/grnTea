@@ -144,7 +144,7 @@ class Feature_Matrix():
         l_pos = []
         for pos in range(start_pos, end_pos):
             if pos in chrm_original_sites:
-                l_pos.extend([pos] * (chrm_original_sites[pos][0] + chrm_original_sites[pos][1]))
+                l_pos.extend([pos] * (int(chrm_original_sites[pos][0]) + int(chrm_original_sites[pos][1])))
         b = np.array(l_pos)
         # print(f"{chrm}:{start_pos}-{end_pos}")
         # print(b)
@@ -156,7 +156,7 @@ class Feature_Matrix():
         bam = record[0]
         chrm = record[1]
         swfolder = record[2]
-        chrm_original_sites = record[3]
+        chrm_original_sites = self.disc_dict[chrm]
         
         extra_features = {}
     
@@ -284,12 +284,9 @@ class Feature_Matrix():
             clip_pos_std = self.calculate_clip_pos_std(chrm_original_sites, start_pos, end_pos, chrm)
             
             # add the output to the final dictionary
-            if len(self.disc_dict[chrm][insertion_pos]) == 21: # YW 2021/09/24 change from 22
-                extra_features[insertion_pos] = list(map(str, [longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, clip_pos_std, n_low_MAPQ, n_total])) # YW 2021/09/24 added clip_pos_std
-                # self.disc_dict[chrm][insertion_pos].extend([int(longest_soft_clip_len), l_cov, r_cov, polyA, l_polyA, r_polyA])
-            else:
-                print(self.disc_dict[chrm][insertion_pos])
-                sys.exit(f"The number of fields isn't correct. It is {len(self.disc_dict[chrm][insertion_pos])}!")
+            # YW 2021/11/12 got rid of the num_of_fields check since this has been checked in self.load_in_candidate_sites
+            extra_features[insertion_pos] = list(map(str, [longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, clip_pos_std, n_low_MAPQ, n_total])) # YW 2021/09/24 added clip_pos_std
+            # self.disc_dict[chrm][insertion_pos].extend([int(longest_soft_clip_len), l_cov, r_cov, polyA, l_polyA, r_polyA])
                 
         samfile.close()
         
@@ -301,7 +298,7 @@ class Feature_Matrix():
         extra_features.clear() # release memory
     
     
-    def extract_features_of_given_list(self, bam, swfolder, m_original_sites):
+    def extract_features_of_given_list(self, bam, swfolder):
         '''
         operate on each bam file
         2021/11/03 this function cannot handle very long lists of l_chrm_records
@@ -309,7 +306,7 @@ class Feature_Matrix():
         l_chrm_records = []
     
         for chrm in self.disc_dict:
-            l_chrm_records.append((bam, chrm, swfolder, m_original_sites[chrm]))
+            l_chrm_records.append((bam, chrm, swfolder))
     
         pool = Pool(self.n_jobs)
         pool.map(unwrap_extract_features_by_chr, list(zip([self] * len(l_chrm_records), l_chrm_records)), 1)
@@ -426,13 +423,13 @@ class Feature_Matrix():
                 fields = line.rstrip().split("\t")
                 chrm = fields[0]
                 insertion_pos = int(fields[1])
-                longest_soft_clip_len = int(fields[2])
-                l_cov = float(fields[3])
-                r_cov = float(fields[4])
-                polyA = int(fields[5])
-                l_polyA = int(fields[6])
-                r_polyA = int(fields[7])
-                clip_pos_std = float(fields[8])
+                longest_soft_clip_len = fields[2]
+                l_cov = fields[3]
+                r_cov = fields[4]
+                polyA = fields[5]
+                l_polyA = fields[6]
+                r_polyA = fields[7]
+                clip_pos_std = fields[8]
                 n_low_MAPQ = int(fields[9])
                 n_total = int(fields[10])
                 try:
@@ -453,7 +450,8 @@ class Feature_Matrix():
 
     
     # YW 2021/09/24 added m_original_sites to calculate clip_pos_std (different definition as in x_intermediate_sites.py) here
-    def run_feature_extraction(self, m_original_sites):
+    # YW 2021/11/12 got rid of m_original_sites as sf_candidate_list and sf_out.sorted share the first two columns, this could make parallelization much easier
+    def run_feature_extraction(self):
         print(f"With minimal MAPQ required for clipped reads inspection: {self.cMAPQ}; MAPQ < {self.low_MAPQ} for low MAPQ reads; maximum distance {self.err_margin} bp between clipping position and breakpoint allowed")
         self.load_in_candidate_list()
         cnt = 0
@@ -465,7 +463,7 @@ class Feature_Matrix():
                 swfolder = self.wfolder + str(cnt) + "/"
                 scmd = f"mkdir -p {swfolder}"
                 self.cmd_runner.run_cmd_small_output(scmd)
-                self.extract_features_of_given_list(bam, swfolder, m_original_sites)
+                self.extract_features_of_given_list(bam, swfolder)
                 cnt += 1
         if cnt == 1:
             self.output_sample_feature_matrix()
