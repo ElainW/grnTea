@@ -389,6 +389,7 @@ PEAK_WINDOW_MOS_SOM=30 #for mosaic events
 LRD_BRKPNT_FOCAL_REGIN=75 #search breakpoints in [-/+] of this range, and if 85% of breakpoints or > cutoff breakpoints then pass
 LRD_BRKPNT_FOCAL_CLIP_RATIO=1
 LRD_BRKPNT_MAXIMUM_STD=250
+MARGIN=50
 ####
 ####initially used at l_ghost_TE.py
 LRD_POLYMORPHIC_MIN_CLIP_LEN=1500
