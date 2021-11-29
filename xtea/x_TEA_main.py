@@ -126,7 +126,7 @@ from x_parameter import *
 # from x_joint_calling import *
 # from x_igv import *
 from x_genotype_classify import * # new
-from extract_features import * # YW 2021/05/10 added this
+from extract_features import * # YW 2021/05/10 added this (there are 2 versions, extract_features and extract_features_dask)
 from coor_lift import * # YW 2021/07/27 added this
 from cmd_runner import * # YW 2021/10/27 added this
 
@@ -380,12 +380,21 @@ def load_locus_file(locus_file):
             if len(fields)<2: # chrm pos TE (optional)
                 print(fields, " does not have enough fields")
                 continue
-            chrm = fields[0]
-            pos = int(fields[1])
-            if chrm not in m_list:
-                m_list[chrm] = [pos]
-            else:
-                m_list[chrm].append(pos)
+            elif len(fields) == 2:
+                chrm = fields[0]
+                pos = int(fields[1])
+                if chrm not in m_list:
+                    m_list[chrm] = [pos]
+                else:
+                    m_list[chrm].append(pos)
+            else: # 2021/11/29 added this to deal with input with both start and end positions
+                chrm = fields[0]
+                start = int(fields[1])
+                end = int(fields[2])
+                if chrm not in m_list:
+                    m_list[chrm] = [(start,end)]
+                else:
+                    m_list[chrm].append((start,end))
     return m_list
 
 ####
@@ -573,7 +582,7 @@ if __name__ == '__main__':
             # YW 2020/07/20 modified merge_clip_disc function to make sure locations without discordant read support will go through
             # xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
-            xfilter.merge_clip_disc_new(sf_candidate_list, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
+            xfilter.merge_clip_disc_new(sf_candidate_list, sf_raw_disc, sf_out, sf_out + "_clip_pos_std", n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
         
         b_train=args.train
         if args.train: # YW 2021/10/27 added this if statement
@@ -618,9 +627,11 @@ if __name__ == '__main__':
                     sys.exit(f"{feature_matrix} exists. Exiting...")
             # need to sort sf_out
             cmd_runner = CMD_RUNNER()
+            # cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {sf_out}_clip_pos_std", sf_out + "_clip_pos_std.sorted") # this is for DASK
             cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {sf_out}", sf_out + ".sorted")
             feat_folder = s_working_folder + "features/"
-            feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
+            # feat_mat = Feature_Matrix(sf_out + "_clip_pos_std.sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train) # this is for DASK
+            feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train) # this is for non-dask
             # db.read_text(sf_candidate_list), specify blocksize and number of processes
             feat_mat.run_feature_extraction()
     

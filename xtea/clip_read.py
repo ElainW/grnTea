@@ -497,10 +497,15 @@ class ClipReadInfo():
         m_clip_pos = {}
         m_chrm_id_name = self._get_chrm_id_name(samfile)
         for insertion_pos in pos_list:
-            start_pos = insertion_pos - global_values.NEARBY_REGION
+            try: # 2021/11/29 added this try except to deal with input with both start and end positions
+                int(insertion_pos)
+                start_pos = insertion_pos - global_values.NEARBY_REGION
+                end_pos = insertion_pos + global_values.NEARBY_REGION + 1
+            except TypeError:
+                start_pos, end_pos = insertion_pos
             if start_pos <= 0:
                 start_pos = 1
-            end_pos = insertion_pos + global_values.NEARBY_REGION + 1
+            
             for algnmt in samfile.fetch(chrm, start_pos, end_pos):  ##fetch reads mapped to "chrm"
                 ##here need to skip the secondary and supplementary alignments?
                 # YW 2021/10/02 uncomment the first if statement below
