@@ -26,9 +26,14 @@ from cmd_runner import *
 def preprocess(record):
     return [record[0], int(record[1]), float(record[2])]
 
+client=Client(
+)
+
+client.init(customfuction, libraries, bam)
+
 class Feature_Matrix():
     
-    def __init__(self, input, output, wfolder, bam_list, ref, n_jobs=8, b_train=False, margin=50, cMAPQ=12, low_MAPQ=5, err_margin=15, check_polyA_seq_max=20): # YW 2021/11/2 added b_train
+    def __init__(self, input, output, wfolder, bam_list, ref, n_jobs=8, b_train=False, margin=50, cMAPQ=12, low_MAPQ=5, err_margin=15, check_polyA_seq_max=20, client): # YW 2021/11/2 added b_train
         self.input = input
         self.output = output
         self.wfolder = wfolder
@@ -43,7 +48,7 @@ class Feature_Matrix():
         self.check_polyA_seq_max = check_polyA_seq_max
         self.cmd_runner = CMD_RUNNER() # to run command from the command line
         self.disc_db = None # stores information of chrm,pos,clip_pos_std
-        self.client = Client(n_workers=self.n_jobs) # change to dask_scheduler?
+        self.client = client # change to dask_scheduler?
     
     
     def is_poly_A_T(self, seq):  ###for a temp version here
