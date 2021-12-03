@@ -146,8 +146,6 @@ class Feature_Matrix():
             if pos in chrm_original_sites:
                 l_pos.extend([pos] * (int(chrm_original_sites[pos][0]) + int(chrm_original_sites[pos][1])))
         b = np.array(l_pos)
-        # print(f"{chrm}:{start_pos}-{end_pos}")
-        # print(b)
         f_std = round(np.std(b), 2)
         return f_std
     
