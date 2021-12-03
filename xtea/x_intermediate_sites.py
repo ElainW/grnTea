@@ -577,10 +577,8 @@ class XIntermediateSites():
     # YW 2021/04/21 wrote this new function to incorporate info from dict m_sites_clip_peak and sf_raw_disc
     # YW 2021/04/29 added cns_cutoff: clip cns + disc cns >= 1
     # YW 2021/09/24 removed all code related to m_sites_clip_peak
-    # YW 2021/11/16 moved calculate_clip_pos_std from feature extraction to here
-    def merge_clip_disc_new(self, sf_clip, sf_raw_disc, sf_out, sf_out2, cns_cutoff=1): # YW 2021/04/21 alternatively, add info from m_original_sites to m_sites_clip_peak
+    def merge_clip_disc_new(self, sf_clip, sf_raw_disc, sf_out, cns_cutoff=1): # YW 2021/04/21 alternatively, add info from m_original_sites to m_sites_clip_peak
         # YW 2021/11/16 added to calculate clip_pos_std
-        m_clip = dict()
         with open(sf_out, "w") as fout_list:
             # YW 2021/05/10 write the col names
             # YW 2021/09/24 remove "clip_pos_std"
@@ -602,13 +600,6 @@ class XIntermediateSites():
                 for line in fin_clip:
                     fields = line.split() # YW 2021/04/23: chrm, pos, lclip, rclip, cr_Alu, cr_L1, cr_SVA, cns_Alu, cns_L1, cns_SVA
                     chrm, pos = fields[:2]
-                    ###################################################################
-                    # YW added 2021/11/16 to calculate clip_pos_std
-                    # if chrm not in m_clip:
-                    #     m_clip[chrm] = dict()
-                    # if int(pos) not in m_clip[chrm]:
-                    #     m_clip[chrm][int(pos)] = [int(fields[2]), int(fields[3])]
-                    ###################################################################
                     d_fields = ['0', '0', '0', '0', '0', '0', '0', '0', '0.0', '0.0', '0', '0', '0']
                     # YW 2020/07/20 added this to avoid printing multiple times a chr doesn't exist message
                     if chrm not in m_disc:
@@ -635,23 +626,7 @@ class XIntermediateSites():
                     if int(fields[-3]) + int(d_fields[-3]) >= cns_cutoff or int(fields[-2]) + int(d_fields[-2]) >= cns_cutoff or int(fields[-1]) + int(d_fields[-1]) >= cns_cutoff:
                         fields.extend(d_fields)
                 ##########################################
-                        fout_list.write("\t".join(fields) + "\n")
-        # YW 2021/09/24 adapted from x_intermediate_sites.py function call_peak_candidate_sites_calc_std_deviation
-        # YW 2021/11/17 maybe add nearby_sites calculation here
-        # def calculate_clip_pos_std(m_clip, f_out): # need to write out a file
-        #     with open(f_out,'w') as fout:
-        #         for chrm in m_clip:
-        #             for pos in m_clip[chrm]:
-        #                 l_pos = []
-        #                 # print(f"{chrm}:{pos}")
-        #                 for i in range(pos-global_values.MARGIN, pos+global_values.MARGIN+1):
-        #                     if i in m_clip[chrm]:
-        #                         l_pos.extend([i] * (m_clip[chrm][i][0] + m_clip[chrm][i][1]))
-        #                 b = np.array(l_pos)
-        #                 # print(b)
-        #                 f_std = round(np.std(b), 2)
-        #                 fout.write(f"{chrm}\t{pos}\t{f_std}\n") # need to include chrm, pos for correcting sorting and indexing for future df merging
-        # calculate_clip_pos_std(m_clip, sf_out2)              
+                        fout_list.write("\t".join(fields) + "\n")           
 
                     
     ####This is to output all the candidates with all the clip, discord, barcode information in one single file
