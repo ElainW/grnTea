@@ -27,7 +27,7 @@ def unwrap_extract_features_by_chr(arg, **kwarg):
 
 class Feature_Matrix():
     
-    def __init__(self, input, output, wfolder, bam_list, ref, n_jobs=8, b_train=False, margin=50, cMAPQ=12, low_MAPQ=5, err_margin=15, check_polyA_seq_max=20): # YW 2021/11/2 added b_train
+    def __init__(self, input, output, wfolder, bam_list, ref, n_jobs=8, b_train=False, index=None, margin=50, cMAPQ=12, low_MAPQ=5, err_margin=15, check_polyA_seq_max=20): # YW 2021/11/2 added b_train
         self.input = input
         self.output = output
         self.wfolder = wfolder
@@ -35,6 +35,7 @@ class Feature_Matrix():
         self.ref = ref
         self.n_jobs = n_jobs
         self.b_train = b_train
+        self.index = index # 2021/12/03 added for chunked up disc read input
         self.margin = margin
         self.cMAPQ = cMAPQ
         self.low_MAPQ = low_MAPQ
@@ -356,7 +357,7 @@ class Feature_Matrix():
         # write the feature matrix header
         colnames = "\t".join(["#chr", "pos", "pos+1", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA", "longest_clip_len", "l_cov", "r_cov", "polyA", "cns_std_l_polyA", "cns_std_r_polyA", "clip_pos_std", "ratio_low_MAPQ"])
         with open(self.output, 'w') as fout:
-            fout.write(colnames + "\n")
+            # fout.write(colnames + "\n")
             # load extra features for each sample into self.disc_dict
             for i in range(cnt):
                 swfolder = self.wfolder + str(i) + "/"
@@ -414,9 +415,11 @@ class Feature_Matrix():
         # write the feature matrix header
         colnames = "\t".join(["#chr", "pos", "pos+1", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA", "longest_clip_len", "l_cov", "r_cov", "polyA", "cns_std_l_polyA", "cns_std_r_polyA", "clip_pos_std", "ratio_low_MAPQ"])
         swfolder = self.wfolder + "0/"
+        if self.index:
+            swfolder = self.wfolder + "0/" + self.index + "/"
         sample_feat_mat = swfolder + "feature_matrix.txt"
         with open(self.output, 'w') as fout, open(sample_feat_mat, 'r') as fin:
-            fout.write(colnames + "\n")
+            # fout.write(colnames + "\n")
             for line in fin:
                 fields = line.rstrip().split("\t")
                 chrm = fields[0]
@@ -458,7 +461,10 @@ class Feature_Matrix():
                 bam, read_type = lines.rstrip().split('\t')
                 if read_type != "illumina":
                     raise NotImplementedError
-                swfolder = self.wfolder + str(cnt) + "/"
+                if self.index != None: # 00 gives False, so has to explicitly write it out
+                    swfolder = self.wfolder + str(cnt) + "/" + self.index + "/" # 2021/12/03 added self.index
+                else:
+                    swfolder = self.wfolder + str(cnt) + "/"
                 scmd = f"mkdir -p {swfolder}"
                 self.cmd_runner.run_cmd_small_output(scmd)
                 self.extract_features_of_given_list(bam, swfolder)

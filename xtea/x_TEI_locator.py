@@ -20,7 +20,7 @@ from x_intermediate_sites import *
 from bwa_align import *
 import global_values
 from cmd_runner import *
-from cns_parallel import *  # YW 2021/05/26 added for parallel realignment of clip/disc reads
+from parallel import *  # YW 2021/05/26 added for parallel realignment of clip/disc reads
 
 
 # YW 2021/04/21 to write lists into final output

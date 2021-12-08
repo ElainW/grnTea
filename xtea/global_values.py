@@ -13,6 +13,7 @@ GLOBAL_MITCHONDRION_SWITCH='OFF'
 def turn_on_mit():
     global GLOBAL_MITCHONDRION_SWITCH
     GLOBAL_MITCHONDRION_SWITCH='ON'
+CHUNK_SIZE=5000000
 
 ##############################################################################
 ####originally used in clip_read.py
@@ -112,7 +113,7 @@ def set_initial_min_disc_cutoff(ndisc):
 INSERT_SIZE=500 # changed from 100000
 ##############################################################################
 ##############################################################################
-# YW 2021/05/26 added for cns remapping parallelization in cns_parallel.py
+# YW 2021/05/26 added for cns remapping parallelization in parallel.py
 C_REALIGN_PARTITION="short"
 def set_c_realign_partition(c_realign_partition):
     global C_REALIGN_PARTITION
@@ -143,6 +144,19 @@ CHECK_INTERVAL=60 # in seconds
 def set_check_interval(check_interval):
     global CHECK_INTERVAL
     CHECK_INTERVAL=check_interval
+
+FEAT_EXTRACT_PARTITION="short"
+def set_feat_extract_partition(feat_extract_partition):
+    global FEAT_EXTRACT_PARTITION
+    FEAT_EXTRACT_PARTITION=feat_extract_partition
+FEAT_EXTRACT_TIME="0-01:30"
+def set_feat_extract_time(feat_extract_time):
+    global FEAT_EXTRACT_TIME
+    FEAT_EXTRACT_TIME=feat_extract_time
+FEAT_EXTRACT_MEMORY=40
+def set_feat_extract_memory(feat_extract_memory):
+    global FEAT_EXTRACT_MEMORY
+    FEAT_EXTRACT_MEMORY=feat_extract_memory
 ###############################################################################
 ###############################################################################
 ####originally used in x_clip_disc_filter.py

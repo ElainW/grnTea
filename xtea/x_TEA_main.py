@@ -113,6 +113,9 @@ Also need to collect the: direction of the background ones !!!!!
 import os
 from shutil import copyfile
 import argparse
+import subprocess # to do line count of the disc read output
+from glob import glob # to get a list of all the tmp disc read output files
+
 import global_values
 from x_TEI_locator import *
 from x_local_assembly import *
@@ -126,7 +129,7 @@ from x_parameter import *
 # from x_joint_calling import *
 # from x_igv import *
 from x_genotype_classify import * # new
-from extract_features import * # YW 2021/05/10 added this (there are 2 versions, extract_features and extract_features_dask)
+from extract_features import * # YW 2021/05/10 added this
 from coor_lift import * # YW 2021/07/27 added this
 from cmd_runner import * # YW 2021/10/27 added this
 
@@ -397,6 +400,10 @@ def load_locus_file(locus_file):
                     m_list[chrm].append((start,end))
     return m_list
 
+# YW 2021/12/03 added for dividing the candidate_list_from_disc.txt into equally sized chunks for memory issues
+def count_lines(f_in):
+    return int(subprocess.check_output(['wc', '-l', f_in]).split()[0])
+    
 ####
 # def adjust_cutoff_tumor(ncutoff=-1, i_adjust=1):
 #     if ncutoff-i_adjust>1:
@@ -582,7 +589,7 @@ if __name__ == '__main__':
             # YW 2020/07/20 modified merge_clip_disc function to make sure locations without discordant read support will go through
             # xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
-            xfilter.merge_clip_disc_new(sf_candidate_list, sf_raw_disc, sf_out, sf_out + "_clip_pos_std", n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
+            xfilter.merge_clip_disc_new(sf_candidate_list, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
         
         b_train=args.train
         if args.train: # YW 2021/10/27 added this if statement
@@ -625,15 +632,68 @@ if __name__ == '__main__':
             if b_resume and os.path.isfile(feature_matrix):
                 if os.path.getsize(feature_matrix) > 0:
                     sys.exit(f"{feature_matrix} exists. Exiting...")
-            # need to sort sf_out
-            cmd_runner = CMD_RUNNER()
-            # cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {sf_out}_clip_pos_std", sf_out + "_clip_pos_std.sorted") # this is for DASK
-            cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {sf_out}", sf_out + ".sorted")
-            feat_folder = s_working_folder + "features/"
-            # feat_mat = Feature_Matrix(sf_out + "_clip_pos_std.sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train) # this is for DASK
-            feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train) # this is for non-dask
-            # db.read_text(sf_candidate_list), specify blocksize and number of processes
-            feat_mat.run_feature_extraction()
+            
+            # YW 2021/12/03 changed the following to break the sf_out into chunks (for potential parallelization)
+            line_cnt = count_lines(sf_out)
+            idx_lst = []
+            if line_cnt < global_values.CHUNK_SIZE: # no need to generate chunks for small input
+                # cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {sf_out}", sf_out + ".sorted")
+                feat_folder = s_working_folder + "features/"
+                feat_mat = Feature_Matrix(sf_out, feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train) 
+                feat_mat.run_feature_extraction()
+            else:
+                feat_prefix = sf_out + "_"
+                feat_suffix = ".tmp"
+                split_disc = f"shuf {sf_out} | split -l {global_values.CHUNK_SIZE} -d --additional-suffix=.tmp - {feat_prefix}"
+                cmd_runner = CMD_RUNNER()
+                cmd_runner.run_cmd_small_output(split_disc)
+                list_sf_out = glob(f"{feat_prefix}*{feat_suffix}")
+                #######################################
+                # YW 2021/12/07 to launch multiple sbatch jobs for all chunks of feature extraction
+                # currently, this hasn't been tested for when there is more than 1 bam file
+                feat_folder = s_working_folder + "features/"
+                feat_parallel = FEAT_PARALLEL(s_working_folder, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
+                sbatch_scr_list = []
+                for tmp_file in list_sf_out[1:]:
+                    f_name = os.path.basename(tmp_file)
+                    idx = f_name.lstrip(f"{os.path.basename(sf_out)}_").rstrip(feat_suffix)
+                    idx_lst.append(idx)
+                    py_script, done_f, fail_f = feat_parallel.gnrt_feat_py_scripts(tmp_file, feature_matrix, idx)
+                    sbatch_scr_list.append((py_script, done_f, fail_f))
+                
+                feat_parallel.run_sbatch_scripts(sbatch_scr_list, idx_lst)
+                
+                tmp_file = list_sf_out[0]
+                f_name = os.path.basename(tmp_file)
+                idx = f_name.lstrip(f"{os.path.basename(sf_out)}_").rstrip(feat_suffix)
+                idx_lst.append(idx)
+                feat_mat = Feature_Matrix(tmp_file, feature_matrix+idx, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train, idx)
+                feat_mat.run_feature_extraction()
+                print(f"{idx} feature extraction has finished")
+                
+                num_finished = 1 + len(glob(s_working_folder + "*_feat_extract.done"))
+                num_failed = len(glob(s_working_folder + "*_feat_extract.fail"))
+                if num_failed > 0:
+                    sys.exit("Exit... One of the feature extraction jobs failed!!!")
+                while num_finished < len(idx_lst):
+                    sleep(global_values.CHECK_INTERVAL)
+                    num_finished = 1 + len(glob(s_working_folder + "*_feat_extract.done"))
+                    num_failed = len(glob(s_working_folder + "*_feat_extract.fail"))
+                    if num_failed > 0:
+                        sys.exit("Exit... One of the feature extraction jobs failed!!!")
+                ########################################
+            # concatenate and sort the feature matrix output
+            cmd_runner.run_cmd_to_file(f"cat {feature_matrix}* | sort -V -k 1,2", feature_matrix)
+            # remove intermediate files if sf_out has been split
+            if idx_lst:
+                for idx in idx_lst:
+                    os.remove(f"{sf_out}_{idx}.tmp")
+                    os.remove(feature_matrix + idx)
+            # remove the .done files
+            sbatch_stat_list = glob(s_working_folder + "*_feat_extract.*")
+            if sbatch_stat_list:
+                for f in sbatch_stat_list:
+                    os.remove(f)
     
     # 2021/09/29 NEW OPTIONS FOR PRE-DEFINED LOCI
     elif args.locus_clip:
