@@ -141,21 +141,22 @@ class Feature_Matrix():
     
     
     # YW 2021/09/24 adapted from x_intermediate_sites.py function call_peak_candidate_sites_calc_std_deviation
-    def calculate_clip_pos_std(self, chrm_original_sites, start_pos, end_pos, chrm):
-        l_pos = []
-        for pos in range(start_pos, end_pos):
-            if pos in chrm_original_sites:
-                l_pos.extend([pos] * (int(chrm_original_sites[pos][0]) + int(chrm_original_sites[pos][1])))
-        b = np.array(l_pos)
-        f_std = round(np.std(b), 2)
-        return f_std
+    # YW 2021/12/08 commented out because parallel processing would not be able to calculate this accurately
+    # def calculate_clip_pos_std(self, chrm_original_sites, start_pos, end_pos, chrm):
+    #     l_pos = []
+    #     for pos in range(start_pos, end_pos):
+    #         if pos in chrm_original_sites:
+    #             l_pos.extend([pos] * (int(chrm_original_sites[pos][0]) + int(chrm_original_sites[pos][1])))
+    #     b = np.array(l_pos)
+    #     f_std = round(np.std(b), 2)
+    #     return f_std
     
         
     def extract_features_by_chr(self, record):
         bam = record[0]
         chrm = record[1]
         swfolder = record[2]
-        chrm_original_sites = self.disc_dict[chrm]
+        # chrm_original_sites = self.disc_dict[chrm]
         
         extra_features = {}
     
@@ -280,11 +281,11 @@ class Feature_Matrix():
                 # print(f"{longest_soft_clip_len}, type is {type(longest_soft_clip_len)}")
             
             # calculate clip_pos_std +/- margin with chrm_original_sites
-            clip_pos_std = self.calculate_clip_pos_std(chrm_original_sites, start_pos, end_pos, chrm)
+            # clip_pos_std = self.calculate_clip_pos_std(chrm_original_sites, start_pos, end_pos, chrm)
             
             # add the output to the final dictionary
             # YW 2021/11/12 got rid of the num_of_fields check since this has been checked in self.load_in_candidate_sites
-            extra_features[insertion_pos] = list(map(str, [longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, clip_pos_std, n_low_MAPQ, n_total])) # YW 2021/09/24 added clip_pos_std
+            extra_features[insertion_pos] = list(map(str, [longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, n_low_MAPQ, n_total])) # YW 2021/12/08 removed clip_pos_std
             # self.disc_dict[chrm][insertion_pos].extend([int(longest_soft_clip_len), l_cov, r_cov, polyA, l_polyA, r_polyA])
                 
         samfile.close()
@@ -322,20 +323,15 @@ class Feature_Matrix():
     
     
     def load_in_candidate_list(self):
-        '''
-        2021/11/03 this function can lead to large memory consumption by storing all chr in one dict
-        solution 1: can split the input file into several equal chunks (by line count); make sure to change open('w') to open('a')!!!
-        solution 2: can split each chromosome into several equal chunks (by bin_size); make sure to change open('w') to open('a')!!!
-        '''
         with open(self.input) as fin_candidate_sites:
             for line in fin_candidate_sites:
                 if line[0] == "#": # skip the header line
                     continue
                 fields = line.split()
-                if len(fields) < 24 and self.b_train: # YW 2021/09/24 change from 25
+                if len(fields) < 25 and self.b_train:
                     print(fields, " does not have enough fields")
                     continue
-                if len(fields) < 23 and not self.b_train: # YW 2021/11/2 added this if statement
+                if len(fields) < 24 and not self.b_train: # YW 2021/11/2 added this if statement
                     print(fields, " does not have enough fields")
                     continue
                 chrm = fields[0]
@@ -355,7 +351,7 @@ class Feature_Matrix():
         operate on all bam files in the bam list, i.e., there can be more than 1 bam files
         '''
         # write the feature matrix header
-        colnames = "\t".join(["#chr", "pos", "pos+1", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA", "longest_clip_len", "l_cov", "r_cov", "polyA", "cns_std_l_polyA", "cns_std_r_polyA", "clip_pos_std", "ratio_low_MAPQ"])
+        colnames = "\t".join(["#chr", "pos", "pos+1", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA", "clip_pos_std", "longest_clip_len", "l_cov", "r_cov", "polyA", "cns_std_l_polyA", "cns_std_r_polyA", "ratio_low_MAPQ"])
         with open(self.output, 'w') as fout:
             # fout.write(colnames + "\n")
             # load extra features for each sample into self.disc_dict
@@ -373,22 +369,21 @@ class Feature_Matrix():
                         polyA = int(fields[5])
                         l_polyA = int(fields[6])
                         r_polyA = int(fields[7])
-                        clip_pos_std = float(fields[8])
-                        n_low_MAPQ = int(fields[9])
-                        n_total = int(fields[10])
+                        n_low_MAPQ = int(fields[8])
+                        n_total = int(fields[9])
                         
                         if chrm in self.disc_dict:
                             if insertion_pos in self.disc_dict[chrm]:
-                                if len(self.disc_dict[chrm][insertion_pos]) == 21: # change from 22
-                                    self.disc_dict[chrm][insertion_pos].extend([longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, clip_pos_std, n_low_MAPQ, n_total])
-                                elif len(self.disc_dict[chrm][insertion_pos]) == 29: # change from 30
-                                    self.disc_dict[chrm][insertion_pos][-9] = max(longest_soft_clip_len, self.disc_dict[chrm][insertion_pos][-8])
-                                    self.disc_dict[chrm][insertion_pos][-8] += l_cov
-                                    self.disc_dict[chrm][insertion_pos][-7] += r_cov
-                                    self.disc_dict[chrm][insertion_pos][-6] += polyA
-                                    self.disc_dict[chrm][insertion_pos][-5] += l_polyA
-                                    self.disc_dict[chrm][insertion_pos][-4] += r_polyA
-                                    self.disc_dict[chrm][insertion_pos][-3] = max(clip_pos_std, self.disc_dict[chrm][insertion_pos][-3])
+                                if len(self.disc_dict[chrm][insertion_pos]) == 22:
+                                    self.disc_dict[chrm][insertion_pos].extend([longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, n_low_MAPQ, n_total])
+                                elif len(self.disc_dict[chrm][insertion_pos]) == 30:
+                                    self.disc_dict[chrm][insertion_pos][-8] = max(longest_soft_clip_len, self.disc_dict[chrm][insertion_pos][-8])
+                                    self.disc_dict[chrm][insertion_pos][-7] += l_cov
+                                    self.disc_dict[chrm][insertion_pos][-6] += r_cov
+                                    self.disc_dict[chrm][insertion_pos][-5] += polyA
+                                    self.disc_dict[chrm][insertion_pos][-4] += l_polyA
+                                    self.disc_dict[chrm][insertion_pos][-3] += r_polyA
+                                    # self.disc_dict[chrm][insertion_pos][-3] = max(clip_pos_std, self.disc_dict[chrm][insertion_pos][-3])
                                     self.disc_dict[chrm][insertion_pos][-2] += n_low_MAPQ
                                     self.disc_dict[chrm][insertion_pos][-1] += n_total
                             else:
@@ -413,7 +408,7 @@ class Feature_Matrix():
         operate on all bam files in the bam list, assuming cnt=1
         '''
         # write the feature matrix header
-        colnames = "\t".join(["#chr", "pos", "pos+1", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA", "longest_clip_len", "l_cov", "r_cov", "polyA", "cns_std_l_polyA", "cns_std_r_polyA", "clip_pos_std", "ratio_low_MAPQ"])
+        colnames = "\t".join(["#chr", "pos", "pos+1", "lclip", "rclip", "cr_Alu", "cr_L1", "cr_SVA", "cns_Alu", "cns_L1", "cns_SVA", "raw_ldisc", "raw_rdisc", "ldisc_Alu", "rdisc_Alu", "ldisc_L1", "rdisc_L1", "ldisc_SVA", "rdisc_SVA", "ratio_lcluster", "ratio_rcluster", "dr_Alu", "dr_L1", "dr_SVA", "clip_pos_std", "longest_clip_len", "l_cov", "r_cov", "polyA", "cns_std_l_polyA", "cns_std_r_polyA", "ratio_low_MAPQ"])
         swfolder = self.wfolder + "0/"
         if self.index:
             swfolder = self.wfolder + "0/" + self.index + "/"
@@ -430,9 +425,8 @@ class Feature_Matrix():
                 polyA = fields[5]
                 l_polyA = fields[6]
                 r_polyA = fields[7]
-                clip_pos_std = fields[8]
-                n_low_MAPQ = int(fields[9])
-                n_total = int(fields[10])
+                n_low_MAPQ = int(fields[8])
+                n_total = int(fields[9])
                 try:
                     low_MAPQ_ratio = str(n_low_MAPQ/n_total)
                 except ZeroDivisionError:
@@ -442,7 +436,7 @@ class Feature_Matrix():
                     if insertion_pos in self.disc_dict[chrm]:
                         fout.write("\t".join([chrm, str(insertion_pos), str(insertion_pos + 1), ""]))
                         fout.write("\t".join(self.disc_dict[chrm][insertion_pos]) + "\t")
-                        fout.write("\t".join([longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, clip_pos_std, low_MAPQ_ratio]) + "\n")
+                        fout.write("\t".join([longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, low_MAPQ_ratio]) + "\n")
                     else:
                         sys.exit(f"{insertion_pos} does not exist in {chrm} of the disc input")
                 else:

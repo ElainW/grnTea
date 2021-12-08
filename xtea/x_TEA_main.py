@@ -589,7 +589,9 @@ if __name__ == '__main__':
             # YW 2020/07/20 modified merge_clip_disc function to make sure locations without discordant read support will go through
             # xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
-            xfilter.merge_clip_disc_new(sf_candidate_list, sf_raw_disc, sf_out, n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
+            xfilter.merge_clip_disc_new(sf_candidate_list, sf_raw_disc, sf_out + ".tmp", sf_out + ".clip_std_pos", n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
+            # 2021/12/08 add clip_pos_std info to the sf_candidate_list output using bedtools intersect
+            xfilter.add_clip_pos_std(sf_out + ".tmp", sf_out + ".clip_std_pos", sf_out)
         
         b_train=args.train
         if args.train: # YW 2021/10/27 added this if statement
@@ -634,6 +636,7 @@ if __name__ == '__main__':
                     sys.exit(f"{feature_matrix} exists. Exiting...")
             
             # YW 2021/12/03 changed the following to break the sf_out into chunks (for potential parallelization)
+            cmd_runner = CMD_RUNNER()
             line_cnt = count_lines(sf_out)
             idx_lst = []
             if line_cnt < global_values.CHUNK_SIZE: # no need to generate chunks for small input
@@ -645,7 +648,6 @@ if __name__ == '__main__':
                 feat_prefix = sf_out + "_"
                 feat_suffix = ".tmp"
                 split_disc = f"shuf {sf_out} | split -l {global_values.CHUNK_SIZE} -d --additional-suffix=.tmp - {feat_prefix}"
-                cmd_runner = CMD_RUNNER()
                 cmd_runner.run_cmd_small_output(split_disc)
                 list_sf_out = glob(f"{feat_prefix}*{feat_suffix}")
                 #######################################

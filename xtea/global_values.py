@@ -13,7 +13,8 @@ GLOBAL_MITCHONDRION_SWITCH='OFF'
 def turn_on_mit():
     global GLOBAL_MITCHONDRION_SWITCH
     GLOBAL_MITCHONDRION_SWITCH='ON'
-CHUNK_SIZE=5000000
+# CHUNK_SIZE=5000000
+CHUNK_SIZE=40000
 
 ##############################################################################
 ####originally used in clip_read.py
@@ -149,11 +150,13 @@ FEAT_EXTRACT_PARTITION="short"
 def set_feat_extract_partition(feat_extract_partition):
     global FEAT_EXTRACT_PARTITION
     FEAT_EXTRACT_PARTITION=feat_extract_partition
-FEAT_EXTRACT_TIME="0-01:30"
+# FEAT_EXTRACT_TIME="0-01:30"
+FEAT_EXTRACT_TIME="0-00:30"
 def set_feat_extract_time(feat_extract_time):
     global FEAT_EXTRACT_TIME
     FEAT_EXTRACT_TIME=feat_extract_time
-FEAT_EXTRACT_MEMORY=40
+# FEAT_EXTRACT_MEMORY=40
+FEAT_EXTRACT_MEMORY=20
 def set_feat_extract_memory(feat_extract_memory):
     global FEAT_EXTRACT_MEMORY
     FEAT_EXTRACT_MEMORY=feat_extract_memory
@@ -403,6 +406,7 @@ PEAK_WINDOW_MOS_SOM=30 #for mosaic events
 LRD_BRKPNT_FOCAL_REGIN=75 #search breakpoints in [-/+] of this range, and if 85% of breakpoints or > cutoff breakpoints then pass
 LRD_BRKPNT_FOCAL_CLIP_RATIO=1
 LRD_BRKPNT_MAXIMUM_STD=250
+MARGIN=50
 ####
 ####initially used at l_ghost_TE.py
 LRD_POLYMORPHIC_MIN_CLIP_LEN=1500
