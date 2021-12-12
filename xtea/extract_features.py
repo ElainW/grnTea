@@ -15,6 +15,7 @@ from subprocess import *
 import numpy as np
 import re
 from shutil import rmtree
+# from glob import glob
 
 # import modules
 import global_values
@@ -156,6 +157,7 @@ class Feature_Matrix():
         bam = record[0]
         chrm = record[1]
         swfolder = record[2]
+        # pid = current_process().pid
         # chrm_original_sites = self.disc_dict[chrm]
         
         extra_features = {}
@@ -282,11 +284,11 @@ class Feature_Matrix():
             
             # calculate clip_pos_std +/- margin with chrm_original_sites
             # clip_pos_std = self.calculate_clip_pos_std(chrm_original_sites, start_pos, end_pos, chrm)
-            
+        
             # add the output to the final dictionary
             # YW 2021/11/12 got rid of the num_of_fields check since this has been checked in self.load_in_candidate_sites
             extra_features[insertion_pos] = list(map(str, [longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, n_low_MAPQ, n_total])) # YW 2021/12/08 removed clip_pos_std
-            # self.disc_dict[chrm][insertion_pos].extend([int(longest_soft_clip_len), l_cov, r_cov, polyA, l_polyA, r_polyA])
+            # self.disc_dict[chrm][insertion_pos].extend([int(longest_soft_clip_len), l_cov, r_cov, polyA, l_polyA, r_polyA, n_low_MAPQ/n_total])
                 
         samfile.close()
         
@@ -303,6 +305,11 @@ class Feature_Matrix():
         operate on each bam file
         2021/11/03 this function cannot handle very long lists of l_chrm_records
         '''
+        # remove existing *_feature_matrix.txt files
+        # list_prev_feat = glob(swfolder + "*_feature_matrix.txt")
+        # if list_prev_feat:
+        #     for f in list_prev_feat:
+        #         os.remove(f)
         l_chrm_records = []
     
         for chrm in self.disc_dict:
@@ -313,11 +320,17 @@ class Feature_Matrix():
         pool.close()
         pool.join()
         
+        # list_feat = glob(swfolder + "*_feature_matrix.txt")
         with open(swfolder + "feature_matrix.txt", 'w') as fout:
+            # for f in list_feat:
+            #     with open(f, 'r') as fin:
+            #         for line in fin:
+            #             fout.write(line)
+            #     os.remove(f)
             for chrm in self.disc_dict:
                 chrm_feat = swfolder + chrm + "_feature_matrix.txt"
-                with open(chrm_feat, 'r') as fin:
-                    for line in fin:
+                with open(chrm_feat, 'r') as f_in:
+                    for line in f_in:
                         fout.write(line)
                 os.remove(chrm_feat)
     
@@ -344,7 +357,6 @@ class Feature_Matrix():
                     else:
                         self.disc_dict[chrm][pos] = fields[2:]
                 
-    
     
     def output_sample_feature_matrix_multibam(self, cnt):
         '''
@@ -452,6 +464,8 @@ class Feature_Matrix():
         cnt = 0
         with open(self.bam_list, 'r') as b_list:
             for lines in b_list:
+                if cnt > 0:
+                    sys.exit("The current code doesn't work because there are no than 1 bam files")
                 bam, read_type = lines.rstrip().split('\t')
                 if read_type != "illumina":
                     raise NotImplementedError

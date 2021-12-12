@@ -13,8 +13,8 @@ GLOBAL_MITCHONDRION_SWITCH='OFF'
 def turn_on_mit():
     global GLOBAL_MITCHONDRION_SWITCH
     GLOBAL_MITCHONDRION_SWITCH='ON'
-# CHUNK_SIZE=5000000
-CHUNK_SIZE=40000
+CHUNK_SIZE=5000000
+# CHUNK_SIZE=40000
 
 ##############################################################################
 ####originally used in clip_read.py
@@ -150,13 +150,14 @@ FEAT_EXTRACT_PARTITION="short"
 def set_feat_extract_partition(feat_extract_partition):
     global FEAT_EXTRACT_PARTITION
     FEAT_EXTRACT_PARTITION=feat_extract_partition
-# FEAT_EXTRACT_TIME="0-01:30"
-FEAT_EXTRACT_TIME="0-00:30"
+# FEAT_EXTRACT_TIME="0-01:30" # for low cov
+FEAT_EXTRACT_TIME="0-03:00"
+# FEAT_EXTRACT_TIME="0-00:30"
 def set_feat_extract_time(feat_extract_time):
     global FEAT_EXTRACT_TIME
     FEAT_EXTRACT_TIME=feat_extract_time
-# FEAT_EXTRACT_MEMORY=40
-FEAT_EXTRACT_MEMORY=20
+FEAT_EXTRACT_MEMORY=40
+# FEAT_EXTRACT_MEMORY=20
 def set_feat_extract_memory(feat_extract_memory):
     global FEAT_EXTRACT_MEMORY
     FEAT_EXTRACT_MEMORY=feat_extract_memory
