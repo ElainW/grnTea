@@ -100,7 +100,7 @@ def gnrt_parameters(l_pars):
 def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, iflag,
                          b_user_par, b_force, b_resume, l_rep_type, s_cfolder, s_cfolder_locus,
                          c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval,
-                         b_ctrl, sf_ref_bed, error_margin, sf_locus_file):
+                         b_ctrl, sf_ref_bed, error_margin, sf_locus_file, feat_extract_time):
     s_user = ""
     if b_user_par == True:
         s_user = "--user"
@@ -147,9 +147,11 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     # YW 2021/08/04 added to enable control bam file coordinate lifting
     if args.train: # YW 2021/10/28 added args.train if statement
         if b_ctrl:
-            sdisc_step += f"--ctrl --ref_bed {sf_ref_bed}\n"
+            sdisc_step += f"--train --ctrl --ref_bed {sf_ref_bed}\n"
         else:
-            sdisc_step += "--ctrl_bed ${CTRL_BED}\n"
+            sdisc_step += "--train --ctrl_bed ${CTRL_BED}\n"
+    else:
+        sdisc_step += f"--feat_extract_time {feat_extract_time}\n"
     
     sclip_locus_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -L --locus_file {sf_locus_file} -i ${{BAM_LIST}} --lc {iclip_c} --rc {iclip_c} --cr {iclip_rp} " \
                  f"-o ${{PREFIX}}\"candidate_list_from_clip_locus.txt\"  -n {ncores} --cp {s_cfolder_locus} {s_user} {s_clean} {s_resume} " \
@@ -173,9 +175,9 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     # YW 2021/08/04 added to enable control bam file coordinate lifting
     if args.train: # YW 2021/10/28 added args.train if statement
         if b_ctrl:
-            sdisc_locus_step += f"--ctrl --ref_bed {sf_ref_bed}\n"
+            sdisc_locus_step += f"--trian --ctrl --ref_bed {sf_ref_bed}\n"
         else:
-            sdisc_locus_step += "--ctrl_bed ${CTRL_BED}\n"
+            sdisc_locus_step += "--train --ctrl_bed ${CTRL_BED}\n"
     # if b_SVA is True:
     #     sdisc_step = "python3 ${{XTEA_PATH}}\"x_TEA_main.py\"  -D --sva -i ${{PREFIX}}\"candidate_list_from_clip.txt\" --nd {0} " \
     #                  "--ref ${{REF}} -a ${{ANNOTATION}} -b ${{BAM_LIST}} -p ${{TMP}} " \
@@ -977,12 +979,13 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         # YW 2021/08/04 added to enable control bam file coordinate lifting
         sf_ref_bed = args.ref_bed
         error_margin = args.error_margin
+        feat_extract_time = args.feat_extract_time
         
         # YW 2021/05/20 removed b_mosaic, b_tumor, f_purity, i_rep_type, iflt_clip, iflt_disc, itei_len, added l_rep_type
         # YW 2021/08/04 added b_ctrl, sf_ref_bed, and error_margin
         s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len,
                                              iflag, b_user_par, b_force, b_resume, l_rep_type, sf_pub_clip, sf_pub_clip_locus,
-                                             c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval, b_ctrl, sf_ref_bed, error_margin, sf_locus_file)
+                                             c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval, b_ctrl, sf_ref_bed, error_margin, sf_locus_file, feat_extract_time)
         # if rep_type is REP_TYPE_SVA:
         #     s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, iflt_clip, iflt_disc, ncores, iflk_len,
         #                                          itei_len, iflag, b_mosaic, b_user_par, b_force, b_tumor, b_resume, f_purity, i_rep_type,sf_pub_clip, True, False)
@@ -1328,6 +1331,10 @@ def parse_arguments():
     parser.add_argument("--train",
                         action="store_true", dest="train", default=False,
                         help="Turn on training mode, where there is a matched reference control")
+    
+    # # YW 2021/12/10 added to enable changing time limit for feature extraction by chunk
+    parser.add_argument("--feat_extract_time", dest="feat_extract_time", default="0-01:30",
+                        help="runtime for running feature extraction on 5M TEI sites")
     
     args = parser.parse_args()
     return args

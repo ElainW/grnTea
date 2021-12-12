@@ -321,6 +321,10 @@ def parse_arguments():
                         action="store_true", dest="train", default=False,
                         help="Turn on training mode, where there is a matched reference control")
     
+    # YW 2021/12/10 added to enable changing time limit for feature extraction by chunk
+    parser.add_argument("--feat_extract_time", dest="feat_extract_time", default="0-01:30",
+                        help="runtime for running feature extraction on 5M TEI sites")
+    
     args = parser.parse_args()
     return args
 ####
@@ -593,6 +597,7 @@ if __name__ == '__main__':
             # 2021/12/08 add clip_pos_std info to the sf_candidate_list output using bedtools intersect
             xfilter.add_clip_pos_std(sf_out + ".tmp", sf_out + ".clip_std_pos", sf_out)
         
+        cmd_runner = CMD_RUNNER()
         b_train=args.train
         if args.train: # YW 2021/10/27 added this if statement
             if args.ctrl == False:
@@ -603,7 +608,7 @@ if __name__ == '__main__':
                         coor_lift = Coor_Lift(sf_out, sf_out + ".sorted", None, args.error_margin)
                         coor_lift.sort_subtract_overlap(args.ctrl_bed)
                         feat_folder = s_working_folder + "features/"
-                        feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
+                        feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix+".tmp", feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
                         feat_mat.run_feature_extraction()
                 else:
                     if b_resume and os.path.isfile(sf_out + ".sorted"):
@@ -618,8 +623,10 @@ if __name__ == '__main__':
                         coor_lift.sort_subtract_overlap(args.ctrl_bed)
                     # YW 2021/05/10 wrote the function below to extract extra features
                     feat_folder = s_working_folder + "features/"
-                    feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix, feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
+                    feat_mat = Feature_Matrix(sf_out + ".sorted", feature_matrix+".tmp", feat_folder, sf_bam_list, sf_ref, n_jobs, b_train)
                     feat_mat.run_feature_extraction()
+                cmd_runner.run_cmd_to_file(f"sort -V -k 1,2 {feature_matrix}.tmp", feature_matrix)
+                os.remove(feature_matrix + ".tmp")
             else: # YW 2021/07/27 perform coordinate lifting to gold std set deleted ref
                 if b_resume and os.path.isfile(sf_out + ".lifted"):
                     if os.path.getsize(sf_out + ".lifted")>0:
@@ -631,12 +638,12 @@ if __name__ == '__main__':
                     coor_lift = Coor_Lift(sf_out, sf_out + ".lifted", args.ref_bed, args.error_margin)
                     coor_lift.run_coor_lift("ctrl")
         else: # YW 2021/10/27 added the following
+            global_values.set_feat_extract_time(args.feat_extract_time)
             if b_resume and os.path.isfile(feature_matrix):
                 if os.path.getsize(feature_matrix) > 0:
                     sys.exit(f"{feature_matrix} exists. Exiting...")
             
             # YW 2021/12/03 changed the following to break the sf_out into chunks (for potential parallelization)
-            cmd_runner = CMD_RUNNER()
             line_cnt = count_lines(sf_out)
             idx_lst = []
             if line_cnt < global_values.CHUNK_SIZE: # no need to generate chunks for small input
