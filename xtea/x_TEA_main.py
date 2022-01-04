@@ -691,18 +691,18 @@ if __name__ == '__main__':
                     if num_failed > 0:
                         sys.exit("Exit... One of the feature extraction jobs failed!!!")
                 ########################################
-            # concatenate and sort the feature matrix output
-            cmd_runner.run_cmd_to_file(f"cat {feature_matrix}* | sort -V -k 1,2", feature_matrix)
-            # remove intermediate files if sf_out has been split
-            if idx_lst:
-                for idx in idx_lst:
-                    os.remove(f"{sf_out}_{idx}.tmp")
-                    os.remove(feature_matrix + idx)
-            # remove the .done files
-            sbatch_stat_list = glob(s_working_folder + "*_feat_extract.*")
-            if sbatch_stat_list:
-                for f in sbatch_stat_list:
-                    os.remove(f)
+                # concatenate and sort the feature matrix output
+                cmd_runner.run_cmd_to_file(f"cat {feature_matrix}* | sort -V -k 1,2", feature_matrix)
+                # remove intermediate files if sf_out has been split
+                if idx_lst:
+                    for idx in idx_lst:
+                        os.remove(f"{sf_out}_{idx}.tmp")
+                        os.remove(feature_matrix + idx)
+                # remove the .done files
+                sbatch_stat_list = glob(s_working_folder + "*_feat_extract.*")
+                if sbatch_stat_list:
+                    for f in sbatch_stat_list:
+                        os.remove(f)
     
     # 2021/09/29 NEW OPTIONS FOR PRE-DEFINED LOCI
     elif args.locus_clip:
