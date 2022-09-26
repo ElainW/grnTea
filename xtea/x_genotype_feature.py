@@ -570,7 +570,7 @@ class XGenotyper():
             n_disc_chrms=len(m_mate_chrms)
 
             sinfo="{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t".format(chr, ins_pos, n_af_clip, n_full_map, n_l_raw_clip, n_r_raw_clip)
-            sinfo1="{0}\t{1}\t{2}\t{3}\n".format(n_disc_pairs, n_concd_pairs, n_disc_large_indel, s_clip_lens, n_polyA, n_disc_chrms)
+            sinfo1="{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(n_disc_pairs, n_concd_pairs, n_disc_large_indel, s_clip_lens, n_polyA, n_disc_chrms)
             f_gntp_fetures.write(sinfo+sinfo1)
 
         f_gntp_fetures.close()
