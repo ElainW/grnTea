@@ -870,16 +870,19 @@ if __name__ == '__main__':
             sf_00_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_00.list"
             sf_01_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_01.list"
             sf_11_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_11.list"
-            sf_arff = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/merged_all_0_1_2.arff"
-            gc = GntpClassifier()
+            # sf_arff = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/merged_all_0_1_2.arff"
+            sf_arff=options.input
+            gc = GntpClassifier_sklearn()
+            b_balance=False
+            gc.gnrt_training_arff_from_xTEA_output(sf_00_list, sf_01_list, sf_11_list, sf_arff, b_balance)
             #pkl_filename = "./genotyping/trained_model_ssc_py2_random_forest_two_category.pkl"
             gc.train_model(sf_arff, sf_model, f_ratio=0.01)
         else:#predict the genotype
             #sf_model = "./genotyping/trained_model_ssc_py2_random_forest_two_category.pkl"
             sf_xTEA = args.input #input raw results before calling genotype
             sf_new = args.output
-            gc = GntpClassifier()
-            pkl_model = gc.load_model_from_file(sf_model)
-            sf_arff = sf_xTEA + ".arff"
-            gc.predict_for_site(pkl_model, sf_xTEA, sf_new)
+            gc = GntpClassifier_DF21()
+            # pkl_model = gc.load_model_from_file(sf_model)
+            # sf_arff = sf_xTEA + ".arff"
+            gc.predict_for_site(sf_model, sf_xTEA, sf_new)
 
