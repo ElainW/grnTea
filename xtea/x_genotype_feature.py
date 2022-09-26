@@ -124,8 +124,10 @@ class XGenotyper():
                             n_concd_pairs = int(m_info[ins_chrm][ins_pos][5]) + int(m_merged[ins_chrm][ins_pos][5])
                             n_disc_large_indel = int(m_info[ins_chrm][ins_pos][6]) + int(m_merged[ins_chrm][ins_pos][6])
                             s_clip_lens=m_info[ins_chrm][ins_pos][7]+":"+m_merged[ins_chrm][ins_pos][7]
+                            n_polyA=int(m_info[chrm][pos][8]) + int(m_merged[ins_chrm][ins_pos][8])
+                            n_disc_chrms=int(m_info[chrm][pos][9]) + int(m_merged[ins_chrm][ins_pos][9])
                             m_merged[ins_chrm][ins_pos]=(n_af_clip, n_full_map, n_l_raw_clip, n_r_raw_clip, n_disc_pairs,
-                                           n_concd_pairs, n_disc_large_indel, s_clip_lens)
+                                           n_concd_pairs, n_disc_large_indel, s_clip_lens, n_polyA, n_disc_chrms)
                         else:
                             if ins_chrm not in m_merged:
                                 m_merged[ins_chrm]={}
@@ -401,10 +403,13 @@ class XGenotyper():
             l_lclip_lens = []
             l_rclip_lens = []
             n_disc_large_indel = 0
+            n_polyA=0 #number of polyA reads
+            n_disc_chrms=0 #number of chromosomes the mate falls in
+            m_mate_chrms={}
             
-
             l_check_concord=[]
             m_clip_qname={}
+            xpolyA = PolyA()
             for algnmt in samfile.fetch(chrm_in_bam, start_pos, end_pos):  ##fetch reads mapped to "chrm:start_pos-end_pos"
                 ##here need to skip the secondary and supplementary alignments?
                 # if algnmt.is_secondary or algnmt.is_supplementary:
@@ -431,9 +436,9 @@ class XGenotyper():
                 map_pos = algnmt.reference_start
                 mate_chrm = '*'
                 mate_pos = 0
-                is_rc = 0
+                b_clip_part_rc = False
                 if algnmt.is_reverse == True:  # is reverse complementary
-                    is_rc = 1
+                    b_clip_part_rc = True
 
                 if (algnmt.next_reference_id in m_chrm_id) and (algnmt.mate_is_unmapped == False)\
                         and (algnmt.next_reference_id >= 0):
@@ -458,6 +463,7 @@ class XGenotyper():
                         elif abs(i_map_end-ins_pos)<global_values.BWA_HALF_READ_MIN_SCORE:
                             n_l_full_map += 1
 
+                s_clip_seq_ck = ""
                 if l_cigar[0][0] == 4:  #left clipped
                     if algnmt.is_supplementary or algnmt.is_secondary:###secondary and supplementary are not considered
                         continue
@@ -469,6 +475,17 @@ class XGenotyper():
                     if abs(map_pos-ins_pos)<global_values.TSD_CUTOFF:
                         n_l_raw_clip+=1
                         m_clip_qname[query_name] = 1
+                    if abs(map_pos - ins_pos) < global_values.CK_POLYA_CLIP_WIN:
+                        if b_clip_part_rc == False:  # not reverse complementary
+                            if len(clipped_seq) > global_values.CK_POLYA_SEQ_MAX:
+                                s_clip_seq_ck = clipped_seq[-1*global_values.CK_POLYA_SEQ_MAX:]
+                            else:
+                                s_clip_seq_ck = clipped_seq
+                        else:
+                            if len(clipped_seq) > global_values.CK_POLYA_SEQ_MAX:
+                                s_clip_seq_ck = clipped_seq[:global_values.CK_POLYA_SEQ_MAX]
+                            else:
+                                s_clip_seq_ck = clipped_seq
                     if abs(map_pos-ins_pos)<global_values.CLIP_EXACT_CLIP_SLACK:
                         n_l_af_clip+=1
                         l_lclip_lens.append(str(len_clip_seq))
@@ -491,9 +508,25 @@ class XGenotyper():
                     if abs(map_pos - ins_pos) < global_values.TSD_CUTOFF:
                         n_r_raw_clip += 1
                         m_clip_qname[query_name] = 1
+                    if abs(map_pos - ins_pos) <  global_values.CK_POLYA_CLIP_WIN:
+                        if b_clip_part_rc == False:  # not reverse complementary
+                            if len(clipped_seq) > global_values.CK_POLYA_SEQ_MAX:
+                                s_clip_seq_ck = clipped_seq[:global_values.CK_POLYA_SEQ_MAX]
+                            else:
+                                s_clip_seq_ck = clipped_seq
+                        else:
+                            if len(clipped_seq) > global_values.CK_POLYA_SEQ_MAX:
+                                s_clip_seq_ck = clipped_seq[-1 * global_values.CK_POLYA_SEQ_MAX:]
+                            else:
+                                s_clip_seq_ck = clipped_seq
+                    
                     if abs(map_pos - ins_pos) < global_values.CLIP_EXACT_CLIP_SLACK:
                         n_r_af_clip += 1
                         l_rclip_lens.append(str(len_clip_seq))
+                
+                b_polya = xpolyA.is_consecutive_polyA_T(s_clip_seq_ck)
+                if b_polya is True:
+                    n_polyA+=1
 
                 if mate_chrm == "*":  ##unmapped reads are not interested!
                     continue
@@ -501,6 +534,7 @@ class XGenotyper():
                 if xchrom.is_decoy_contig_chrms(mate_chrm) == True:
                     continue
 ####
+                m_mate_chrms[mate_chrm]=1
                 ## here only collect the read names for discordant reads, later will re-align the discordant reads
                 if self.is_discordant(chrm_in_bam, map_pos, mate_chrm, mate_pos, global_values.DISC_THRESHOLD) == True:
                     # check where the mate is mapped, if within a repeat copy, then get the position on consensus
@@ -532,9 +566,11 @@ class XGenotyper():
                 s_clip_lens = ":".join(l_rclip_lens)
             if len(s_clip_lens)<=0:
                 s_clip_lens="none"
+            
+            n_disc_chrms=len(m_mate_chrms)
 
             sinfo="{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t".format(chr, ins_pos, n_af_clip, n_full_map, n_l_raw_clip, n_r_raw_clip)
-            sinfo1="{0}\t{1}\t{2}\t{3}\n".format(n_disc_pairs, n_concd_pairs, n_disc_large_indel, s_clip_lens)
+            sinfo1="{0}\t{1}\t{2}\t{3}\n".format(n_disc_pairs, n_concd_pairs, n_disc_large_indel, s_clip_lens, n_polyA, n_disc_chrms)
             f_gntp_fetures.write(sinfo+sinfo1)
 
         f_gntp_fetures.close()
@@ -620,22 +656,22 @@ class XGenotyper():
                 n_concd_pairs=int(fields[7])
                 n_disc_large_indel=int(fields[8])
                 s_clip_lens=fields[9]
-                # n_polyA=int(fields[10])
-                # n_disc_chrms=int(fields[11])
+                n_polyA=int(fields[10])
+                n_disc_chrms=int(fields[11])
 
                 if chrm not in m_features:
                     m_features[chrm]={}
                 if pos not in m_features[chrm]:
-                    # m_features[chrm][pos]=(n_af_clip, n_full_map, n_l_raw_clip, n_r_raw_clip, n_disc_pairs,
-                                           # n_concd_pairs, n_disc_large_indel, s_clip_lens, n_polyA, n_disc_chrms)
                     m_features[chrm][pos]=(n_af_clip, n_full_map, n_l_raw_clip, n_r_raw_clip, n_disc_pairs,
-                                           n_concd_pairs, n_disc_large_indel, s_clip_lens)
+                                           n_concd_pairs, n_disc_large_indel, s_clip_lens, n_polyA, n_disc_chrms)
+                    # m_features[chrm][pos]=(n_af_clip, n_full_map, n_l_raw_clip, n_r_raw_clip, n_disc_pairs,
+                    #                        n_concd_pairs, n_disc_large_indel, s_clip_lens)
         return m_features
     # YW 2020/08/05 github update has problems (to email Simon), n_polyA and n_disc_chrms aren't extracted in the following steps (I fixed these)
     def load_in_features_from_file_with_cov_cutoff(self, sf_features, i_cov_cutoff):
         m_features = {}
         # YW 2020/08/18 added this
-        m_cov_filtered = {}
+        # m_cov_filtered = {}
         with open(sf_features) as fin_features:
             for line in fin_features:
                 fields = line.split()
@@ -653,22 +689,22 @@ class XGenotyper():
                 l_clip_len=s_clip_lens.split(":")
                 if len(l_clip_len)>i_cov_cutoff:#skip those with extremely large number of clipped reads
                     # YW 2020/08/18 added the following 2 if statements:
-                    if chrm not in m_cov_filtered:
-                        m_cov_filtered[chrm] = {}
-                    if pos not in m_cov_filtered[chrm]:
-                        m_cov_filtered[chrm][pos] = len(l_clip_len)
+                    # if chrm not in m_cov_filtered:
+                    #     m_cov_filtered[chrm] = {}
+                    # if pos not in m_cov_filtered[chrm]:
+                    #     m_cov_filtered[chrm][pos] = len(l_clip_len)
                     continue
-                # n_polyA = int(fields[10])
-                # n_disc_chrms = int(fields[11])
+                n_polyA = int(fields[10])
+                n_disc_chrms = int(fields[11])
 
                 if chrm not in m_features:
                     m_features[chrm] = {}
                 if pos not in m_features[chrm]:
-                    # m_features[chrm][pos] = (n_af_clip, n_full_map, n_l_raw_clip, n_r_raw_clip, n_disc_pairs,
-                    #                          n_concd_pairs, n_disc_large_indel, s_clip_lens, n_polyA, n_disc_chrms)
-                    m_features[chrm][pos]=(n_af_clip, n_full_map, n_l_raw_clip, n_r_raw_clip, n_disc_pairs,
-                                           n_concd_pairs, n_disc_large_indel, s_clip_lens)
-        return m_features, m_cov_filtered
+                    m_features[chrm][pos] = (n_af_clip, n_full_map, n_l_raw_clip, n_r_raw_clip, n_disc_pairs,
+                                             n_concd_pairs, n_disc_large_indel, s_clip_lens, n_polyA, n_disc_chrms)
+                    # m_features[chrm][pos]=(n_af_clip, n_full_map, n_l_raw_clip, n_r_raw_clip, n_disc_pairs,
+                    #                        n_concd_pairs, n_disc_large_indel, s_clip_lens)
+        return m_features
 
 ####
     def filter_by_af(self, m_features, f_af_min, f_af_max, sf_out):
