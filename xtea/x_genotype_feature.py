@@ -71,6 +71,8 @@ class XGenotyper():
             d_chrm_records = {}
             with open(sf_candidate_list) as fin_list:
                 for line in fin_list:
+                    if line[0] == "#": # handle headers
+                        continue
                     fields = line.split()
                     chrm = fields[0]
                     pos = int(fields[1])  # candidate insertion sites
