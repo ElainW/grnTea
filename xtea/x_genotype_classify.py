@@ -2,11 +2,12 @@
 ##@@author: Simon (Chong) Chu, DBMI, Harvard Medical School
 ##@@contact: chong.simon.chu@gmail.com
 
-#train a the classification model
+#train the classification model
 #predict based on the trained model
 
 #this is a stand alone module for model training/prediction
 import sys
+import os
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from scipy.io import arff
@@ -14,9 +15,9 @@ import pandas as pd
 import pickle
 from sklearn.metrics import accuracy_score
 
-#from sklearn import svm
+#from sklearn import svm ####
 
-class GntpClassifier():
+class GntpClassifier_sklearn():
     def __init__(self):
         self.n_feature = 15
         return
@@ -29,7 +30,7 @@ class GntpClassifier():
             fout_arff.write("@ATTRIBUTE\trclipcns\tNUMERIC\n")
             fout_arff.write("@ATTRIBUTE\tldisccns\tNUMERIC\n")
             fout_arff.write("@ATTRIBUTE\trdisccns\tNUMERIC\n")
-            fout_arff.write("@ATTRIBUTE\tpolyA\tNUMERIC\n")  # total polyA
+            fout_arff.write("@ATTRIBUTE\tpolyA\tNUMERIC\n")  #total polyA
 
             # fout_arff.write("@ATTRIBUTE\trpolyA\tNUMERIC\n")
             fout_arff.write("@ATTRIBUTE\tlcov\tNUMERIC\n")
@@ -47,7 +48,7 @@ class GntpClassifier():
             #fout_arff.write("@ATTRIBUTE\tclass\t{0,1,2}\n\n")
             fout_arff.write("@ATTRIBUTE\tclass\t{1,2}\n\n") #two category
             fout_arff.write("@DATA\n")
-
+####
             # with open(sf_00_list) as fin_00:
             #     for line in fin_00:
             #         sf_rslt = line.rstrip()
@@ -139,7 +140,7 @@ class GntpClassifier():
         # X_train, X_test, y_train, y_test = train_test_split(xVar, yVar, test_size=0.999999)
         # return X_test
         return xVar
-
+####
 
     ####clf is the trained model
     def predict_for_site(self, rf_model, sf_xTEA, sf_new):
@@ -164,7 +165,7 @@ class GntpClassifier():
                 sinfo += ("\t" + s_gntp + "\n")
                 fout_new.write(sinfo)
                 i_idx += 1
-
+#
 
     def save_model(self, clf, pkl_filename):
         # Save to file in the current working directory
@@ -180,15 +181,17 @@ class GntpClassifier():
             if (sys.version_info > (3, 0)):
                 #this is python3
                 pickle_model = pickle.load(file, encoding='latin1')
+                #pickle_model = pickle.load(file)
             else:
                 #python2
                 pickle_model = pickle.load(file)
         return pickle_model
 
-    #
     ####
     def load_in_feature_from_xTEA_output(self, sf_xtea, b_train=True):
         l_all_features = []
+        if os.path.isfile(sf_xtea)==False:
+            return l_all_features
         with open(sf_xtea) as fin_xtea:
             for line in fin_xtea:
                 fields = line.split()
@@ -209,8 +212,7 @@ class GntpClassifier():
                     l_feature2.append(str(tmp_rcd))
                 l_all_features.append(l_feature2)
         return l_all_features
-#
-
+####
     ####
     # parse out the features
     def _parser_features(self, l_fields):  #
