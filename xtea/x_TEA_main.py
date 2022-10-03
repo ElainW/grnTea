@@ -325,6 +325,10 @@ def parse_arguments():
     parser.add_argument("--feat_extract_time", dest="feat_extract_time", default="0-01:30",
                         help="runtime for running feature extraction on 5M TEI sites")
     
+    # YW 2022/10/03 added to enable merging features from the x_genotype_feature module
+    parser.add_argument("--genotype_ft_output", dest="genotype_ft_output", default=None,
+                        help="output from the x_genotype_feature module, input to the x_genotype_classify module when predicting")
+    
     args = parser.parse_args()
     return args
 ####
@@ -867,22 +871,26 @@ if __name__ == '__main__':
         b_train = args.train_gntp
         sf_model=args.model
         if b_train==True:#train a new model
-            sf_00_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_00.list"
-            sf_01_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_01.list"
-            sf_11_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_11.list"
+            print("training a new model")
+            # sf_00_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_00.list"
+            # sf_01_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_01.list"
+            # sf_11_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_11.list"
             # sf_arff = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/merged_all_0_1_2.arff"
-            sf_arff=options.input
-            gc = GntpClassifier_sklearn()
+            sf_01_list = "/n/data1/bch/genetics/lee/elain/hapROH/xTea_genotyper/train_files/all_01.list"
+            sf_11_list = "/n/data1/bch/genetics/lee/elain/hapROH/xTea_genotyper/train_files/all_11.list"
+            sf_arff = args.input
+            gc = GntpClassifier_DF21()
             b_balance=False
-            gc.gnrt_training_arff_from_xTEA_output(sf_00_list, sf_01_list, sf_11_list, sf_arff, b_balance)
+            gc.gnrt_training_arff_from_xTEA_output(sf_01_list, sf_11_list, sf_arff, b_balance)
             #pkl_filename = "./genotyping/trained_model_ssc_py2_random_forest_two_category.pkl"
-            gc.train_model(sf_arff, sf_model, f_ratio=0.01)
+            gc.train_model(sf_arff, sf_model)
         else:#predict the genotype
             #sf_model = "./genotyping/trained_model_ssc_py2_random_forest_two_category.pkl"
             sf_xTEA = args.input #input raw results before calling genotype
             sf_new = args.output
+            sf_genotype_ft = args.genotype_ft_output
             gc = GntpClassifier_DF21()
             # pkl_model = gc.load_model_from_file(sf_model)
             # sf_arff = sf_xTEA + ".arff"
-            gc.predict_for_site(sf_model, sf_xTEA, sf_new)
+            gc.predict_for_site(sf_model, sf_xTEA, sf_genotype_ft, sf_new)
 
