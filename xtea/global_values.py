@@ -374,7 +374,7 @@ def set_average_cov(icov):
 ####
 ####x_genotype.py#############################################################
 #MINIMUM_GNTP_MAPQ=0
-BWA_HALF_READ_MIN_SCORE=45 #This is half of read length (maybe a little bit smaller than that)
+BWA_HALF_READ_MIN_SCORE=25 #This is half of read length (maybe a little bit smaller than that) # YW changed from 45
 CLIP_EXACT_CLIP_SLACK=3#check number of exact clip
 LARGE_INDEL_IN_READ=3#if have 3D or 3I or larger indels within the read, then view as with large indels
 DFT_IS=550

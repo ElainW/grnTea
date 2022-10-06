@@ -338,13 +338,14 @@ class XGenotyper():
             if self.is_concrdant(rcd_tmp[1],rcd_tmp[2],rcd_tmp[3],rcd_tmp[4], ins_pos, global_values.DFT_IS) == True:
                 #print rcd_tmp[0], rcd_tmp[1],rcd_tmp[2],rcd_tmp[3],rcd_tmp[4]
                 n_concd_pairs += 1
-
-        n_af_clip=n_l_af_clip
-        n_full_map=n_full_map-n_l_full_map #if left-clip, then remove those "right dominant full map"
-        s_clip_lens=":".join(l_lclip_lens)
-        if n_l_af_clip<n_r_af_clip:
+        
+        if n_l_af_clip>n_r_af_clip:
+            n_af_clip=n_l_af_clip
+            n_full_map=n_full_map-n_l_full_map #if left-clip, then remove those "right dominant full map"
+            s_clip_lens=":".join(l_lclip_lens)
+        else:
             n_af_clip = n_r_af_clip
-            n_full_map=n_full_map-n_r_full_map #if right-clip, then remove those "left dominant full map"
+            n_full_map=n_full_map-n_r_full_map #if right-clip, then remove those "left dominant full map", the original xTea has a bug, both n_l_full_map and n_r_full_map can be subtracted from n_full_map
             s_clip_lens = ":".join(l_rclip_lens)
         if len(s_clip_lens)<=0:
             s_clip_lens="none"
@@ -559,10 +560,11 @@ class XGenotyper():
                     #print rcd_tmp[0], rcd_tmp[1],rcd_tmp[2],rcd_tmp[3],rcd_tmp[4]
                     n_concd_pairs += 1
 
-            n_af_clip=n_l_af_clip
-            n_full_map=n_full_map-n_l_full_map #if left-clip, then remove those "right dominant full map"
-            s_clip_lens=":".join(l_lclip_lens)
-            if n_l_af_clip<n_r_af_clip:
+            if n_l_af_clip > n_r_af_clip:
+                n_af_clip=n_l_af_clip
+                n_full_map=n_full_map-n_l_full_map #if left-clip, then remove those "right dominant full map"
+                s_clip_lens=":".join(l_lclip_lens)
+            else:
                 n_af_clip = n_r_af_clip
                 n_full_map=n_full_map-n_r_full_map #if right-clip, then remove those "left dominant full map"
                 s_clip_lens = ":".join(l_rclip_lens)

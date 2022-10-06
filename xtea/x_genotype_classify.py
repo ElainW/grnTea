@@ -95,8 +95,8 @@ class GntpClassifier_DF21():
         print("Confusion matrix:")
         print(mat)
         print("-------------------------------------------------------------------------------------------")
-        # tab = pd.crosstab(y_test, preds, rownames=['Actual Result'], colnames=['Predicted Result'])
-        # print(tab)
+        tab = pd.crosstab(y_test, preds, rownames=['Actual Result'], colnames=['Predicted Result'])
+        print(tab)
         
         clf = CascadeForestClassifier(n_jobs=-1, random_state=0, n_estimators=10)
         # clf = svm.SVC(kernel='linear')
@@ -113,8 +113,8 @@ class GntpClassifier_DF21():
         print("Confusion matrix:")
         print(mat)
         print("-------------------------------------------------------------------------------------------")
-        # tab = pd.crosstab(y_test, preds, rownames=['Actual Result'], colnames=['Predicted Result'])
-        # print(tab)
+        tab = pd.crosstab(y_test, preds, rownames=['Actual Result'], colnames=['Predicted Result'])
+        print(tab)
         
         clf = CascadeForestClassifier(n_jobs=-1, random_state=0, n_estimators=15)
         # clf = svm.SVC(kernel='linear')
@@ -131,8 +131,8 @@ class GntpClassifier_DF21():
         print("Confusion matrix:")
         print(mat)
         print("-------------------------------------------------------------------------------------------")
-        # tab = pd.crosstab(y_test, preds, rownames=['Actual Result'], colnames=['Predicted Result'])
-        # print(tab)
+        tab = pd.crosstab(y_test, preds, rownames=['Actual Result'], colnames=['Predicted Result'])
+        print(tab)
 
     ####
     ####
@@ -272,7 +272,7 @@ class GntpClassifier_DF21():
         f_lcov = float(l_fields[25])
         if f_lcov == 0:
             f_lcov = 0.0000000001
-        f_rcov = float(l_fields[16])
+        f_rcov = float(l_fields[26])
         if f_rcov == 0:
             f_rcov = 0.0000000001
         n_polyA = gt_ft[8]
