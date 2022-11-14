@@ -128,7 +128,7 @@ from x_parameter import *
 # from x_post_filter import *
 # from x_joint_calling import *
 # from x_igv import *
-from x_genotype_classify import * # new
+# from x_genotype_classify import * # new
 from extract_features import * # YW 2021/05/10 added this
 from coor_lift import * # YW 2021/07/27 added this
 from cmd_runner import * # YW 2021/10/27 added this
