@@ -28,10 +28,9 @@ def set_initial_min_clip_cutoff(nclip):
 # YW 2020/08/10 added this for polyA class contain_enough_A_T (also used in x_clip_disc_filter.py)
 MIN_AT_RATIO=0.75
 # YW 2020/06/20: BWA_REALIGN_CUTOFF is minimal clipped to consider, an alignment score cutoff and minimum seed length (Matches shorter than INT will be missed.)
-BWA_REALIGN_CUTOFF = 5 # YW 2020/06/20 this was originally 9
-#YW 2020/06/20 originally 7, 2020/06/30 this should be smaller than BWA_REALIGN_CUTOFF, changing this to 3/4?
-MINIMUM_POLYA_CLIP= 4 #if the clipped part is pure polyA/T, and length is large enough, then keep them
-MAX_CLIP_CLIP_LEN = 4 # YW 2020/06/20 this was originally 8
+BWA_REALIGN_CUTOFF = 9
+MINIMUM_POLYA_CLIP= 7 #if the clipped part is pure polyA/T, and length is large enough, then keep them
+MAX_CLIP_CLIP_LEN = 8
 CLIP_PHRED_SCORE_CUTOFF=15#cutoff phred score
 
 # YW 2020/08/16 set up TE specific MAPQ (12 is fine for Alu and SVA, 9 is fine for L1)
