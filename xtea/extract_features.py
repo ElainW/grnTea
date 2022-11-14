@@ -422,9 +422,8 @@ class Feature_Matrix():
                         if low_MAPQ_ratio > 0.3:
                             continue
                     except ZeroDivisionError:
-                        low_MAPQ_ratio = -1
                         continue
-                    fout.write("\t".join(map(str, self.disc_dict[chrm][insertion_pos][:-2])) + "\t" + low_MAPQ_ratio + "\n")
+                    fout.write("\t".join(map(str, self.disc_dict[chrm][insertion_pos][:-2])) + "\t" + str(low_MAPQ_ratio) + "\n")
     
     
     def output_sample_feature_matrix(self, cnt=1):
@@ -452,15 +451,17 @@ class Feature_Matrix():
                 n_low_MAPQ = int(fields[8])
                 n_total = int(fields[9])
                 try:
-                    low_MAPQ_ratio = str(n_low_MAPQ/n_total)
+                    low_MAPQ_ratio = n_low_MAPQ/n_total
+                    if low_MAPQ_ratio > 0.3:
+                            continue
                 except ZeroDivisionError:
-                    low_MAPQ_ratio = '-1'
+                    continue
                 
                 if chrm in self.disc_dict:
                     if insertion_pos in self.disc_dict[chrm]:
                         fout.write("\t".join([chrm, str(insertion_pos), str(insertion_pos + 1), ""]))
                         fout.write("\t".join(self.disc_dict[chrm][insertion_pos]) + "\t")
-                        fout.write("\t".join([longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, low_MAPQ_ratio]) + "\n")
+                        fout.write("\t".join([longest_soft_clip_len, l_cov, r_cov, polyA, l_polyA, r_polyA, str(low_MAPQ_ratio)]) + "\n")
                     else:
                         sys.exit(f"{insertion_pos} does not exist in {chrm} of the disc input")
                 else:
