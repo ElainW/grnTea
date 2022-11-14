@@ -367,7 +367,14 @@ class ClipReadInfo():
                 b_mate_in_rep_Alu, rep_start_pos_Alu = xannotation_Alu.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
                 b_mate_in_rep_L1, rep_start_pos_L1 = xannotation_L1.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
                 b_mate_in_rep_SVA, rep_start_pos_SVA = xannotation_SVA.is_within_repeat_region_interval_tree(mate_chrm, mate_pos)
-
+            
+            if len(l_cigar) > 2: # YW 2022/11/13: filter out multiple soft clipped alignments
+                num_clipped = 0
+                for entry in l_cigar:
+                    if entry[0] == 4 or entry[0] == 5:
+                        num_clipped += 1
+                if num_clipped > 1:
+                    continue
             # print b_mate_in_rep, rep_start_pos #######################################################################
             if l_cigar[0][0] == 4 or l_cigar[0][0] == 5:  # left clipped
                 if map_pos not in m_clip_pos:
@@ -748,7 +755,15 @@ class ClipReadInfo():
             if algnmt.mate_is_unmapped == False and algnmt.next_reference_id>=0:
                 mate_chrm = algnmt.next_reference_name
                 mate_pos = algnmt.next_reference_start
-
+            
+            if len(l_cigar) > 2: # 2022/11/13 YW: filter out multiple soft clipped alignments
+                num_soft_clipped = 0
+                for entry in l_cigar:
+                    if entry[0] == 4:
+                        num_soft_clipped += 1
+                if num_soft_clipped > 1:
+                    continue
+                
             if l_cigar[0][0] == 4:  # left soft clipped
                 if map_pos in m_pos:
                     clipped_seq = query_seq[:l_cigar[0][1]]
