@@ -180,7 +180,7 @@ class Feature_Matrix():
             lrclip = ""
             lcov = {}
             rcov = {}
-            uniq_map_start = set() # for clipped reads only
+            uniq_map = set() # for clipped reads only
             for algnmt in samfile.fetch(chrm, start_pos, end_pos):  ##fetch reads mapped to "chrm:start_pos-end_pos"
                 len_clip_seq = 0
                 clipped_seq = ""
@@ -197,6 +197,14 @@ class Feature_Matrix():
                     continue
                 elif algnmt.mapping_quality < self.cMAPQ:
                     continue
+                
+                if len(l_cigar) > 2: # YW 2022/11/17: filter out multiple soft/hard clipped alignments
+                    num_clipped = 0
+                    for entry in l_cigar:
+                        if entry[0] == 4 or entry[0] == 5:
+                            num_clipped += 1
+                    if num_clipped > 1:
+                        continue
                 
                 # avoid double count polyA
                 polyA_counted = False
@@ -226,8 +234,8 @@ class Feature_Matrix():
                         if ch=="N":
                             len_clip_seq -= 1
                     soft_clip_len.append(len_clip_seq)
-                    if soft_clip_len >= global_values.MINIMUM_POLYA_CLIP:
-                        uniq_map_start.add(map_pos)
+                    if len_clip_seq >= global_values.MINIMUM_POLYA_CLIP:
+                        uniq_map.add(algnmt.reference_end)
     
                 if l_cigar[-1][0] == 4:  # right soft clipped
                     ##calculate the exact clip position
@@ -245,8 +253,8 @@ class Feature_Matrix():
                         if ch=="N":
                             len_clip_seq -= 1
                     soft_clip_len.append(len_clip_seq)
-                    if soft_clip_len >= global_values.MINIMUM_POLYA_CLIP:
-                        uniq_map_start.add(map_pos)
+                    if len_clip_seq >= global_values.MINIMUM_POLYA_CLIP:
+                        uniq_map.add(map_pos)
                 
                 # 2020/08/20 added to look at polyA by cns filtering standards
                 # output is problematic... should check again
@@ -280,8 +288,8 @@ class Feature_Matrix():
                     elif lrclip == "R":
                         r_polyA += 1
             
-            num_uniq_map_start = len(uniq_map_start)
-            if num_uniq_map_start <= 1: # 2022/11/13 YW added this check (should think of how to adapt this to multibam)
+            num_uniq_map = len(uniq_map)
+            if num_uniq_map <= 1: # 2022/11/13 YW added this check (should think of how to adapt this to multibam)
                 continue
             l_cov = self.compute_coverage(lcov, self.margin)
             r_cov = self.compute_coverage(rcov, self.margin)
