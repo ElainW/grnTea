@@ -426,7 +426,7 @@ class Feature_Matrix():
                     fout.write("\t".join([chrm, str(insertion_pos), str(insertion_pos + 1), ""]))
                     try:
                         # YW 2022/11/13 add low_MAPQ_ratio filter
-                        low_MAPQ_ratio = self.disc_dict[chrm][insertion_pos][-2]/self.disc_dict[chrm][insertion_pos][-1]
+                        low_MAPQ_ratio = round(self.disc_dict[chrm][insertion_pos][-2]/self.disc_dict[chrm][insertion_pos][-1], 3)
                         if low_MAPQ_ratio > 0.3:
                             continue
                     except ZeroDivisionError:
@@ -459,7 +459,7 @@ class Feature_Matrix():
                 n_low_MAPQ = int(fields[8])
                 n_total = int(fields[9])
                 try:
-                    low_MAPQ_ratio = n_low_MAPQ/n_total
+                    low_MAPQ_ratio = round(n_low_MAPQ/n_total, 3)
                     if low_MAPQ_ratio > 0.3:
                             continue
                 except ZeroDivisionError:
