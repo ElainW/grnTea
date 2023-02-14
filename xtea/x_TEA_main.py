@@ -324,6 +324,8 @@ def parse_arguments():
     # YW 2021/12/10 added to enable changing time limit for feature extraction by chunk
     parser.add_argument("--feat_extract_time", dest="feat_extract_time", default="0-01:30",
                         help="runtime for running feature extraction on 5M TEI sites")
+    parser.add_argument("--feat_extract_partition", dest="feat_extract_partition", default="short",
+                        help="partition for running feature extraction on 5M TEI sites")
     
     # YW 2022/10/03 added to enable merging features from the x_genotype_feature module
     parser.add_argument("--genotype_ft_output", dest="genotype_ft_output", default=None,
@@ -643,6 +645,7 @@ if __name__ == '__main__':
                     coor_lift.run_coor_lift("ctrl")
         else: # YW 2021/10/27 added the following
             global_values.set_feat_extract_time(args.feat_extract_time)
+            global_values.set_feat_extract_partition(args.feat_extract_partition)
             if b_resume and os.path.isfile(feature_matrix):
                 if os.path.getsize(feature_matrix) > 0:
                     sys.exit(f"{feature_matrix} exists. Exiting...")
