@@ -45,7 +45,7 @@ def gnrt_script_head(spartition, ncores, stime, smemory, s_id, email_user, s_wfo
     s_head += f"#SBATCH -J {s_id}\n" # YW added 2021/05/24
     s_head += f"#SBATCH -o {s_wfolder}{s_id}/%j.out\n"
     s_head += "#SBATCH --mail-type=END,FAIL\n"
-    s_head += "#SBATCH --mail-user={email_user}\n"
+    s_head += f"#SBATCH --mail-user={email_user}\n"
     # if spartition == "park" or spartition == "priopark":
     #     s_head += "#SBATCH --account=park_contrib\n\n"
     return s_head
@@ -122,7 +122,7 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     setup_step += "ln -nsf ${XTEA_PATH} ${TMP}source_scripts\n" # YW 2021/05/26 added to import modules from working directory
     sclip_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -C -i ${{BAM_LIST}} --lc {iclip_c} --rc {iclip_c} --cr {iclip_rp} " \
                  f"-o ${{PREFIX}}\"candidate_list_from_clip.txt\"  -n {ncores} --cp {s_cfolder} {s_user} {s_clean} {s_resume} " \
-                 f"--ref ${{REF}} -p ${{TMP}} --c_realn_partition {c_realn_partition} --c_realn_time {c_realn_time} --c_realn_mem {c_realn_mem} --check_interval {check_interval} --email_user={email_user} --sample_id=${{SAMPLE_ID}} "
+                 f"--ref ${{REF}} -p ${{TMP}} --c_realn_partition {c_realn_partition} --c_realn_time {c_realn_time} --c_realn_mem {c_realn_mem} --check_interval {check_interval} --email_user {email_user} --sample_id ${{SAMPLE_ID}} "
     if REP_TYPE_ALU in l_rep_type:
         sclip_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-reference ${ALU_COPY_WITH_FLANK} --Alu-cns ${ALU_CNS} "
     if REP_TYPE_L1 in l_rep_type:
@@ -137,7 +137,7 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     #                                                                                                 s_cfolder, s_purity, s_user, s_clean, s_tumor, s_resume)
     sdisc_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -D -i ${{PREFIX}}\"candidate_list_from_clip.txt\" --nd {idisc_c} " \
                  f"--ncns {icns_c} --ref ${{REF}} -b ${{BAM_LIST}} -p ${{TMP}} -o ${{PREFIX}}\"candidate_list_from_disc.txt\" -n {ncores} -m ${{PREFIX}}\"feature_matrix.txt\" {s_user} {s_resume} " \
-                 f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} --error_margin {error_margin} --email_user={email_user} --sample_id=${{SAMPLE_ID}} " # YW 2021/08/04 added error_margin
+                 f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} --error_margin {error_margin} --email_user {email_user} --sample_id ${{SAMPLE_ID}} " # YW 2021/08/04 added error_margin
     if REP_TYPE_ALU in l_rep_type:
         sdisc_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-cns ${ALU_CNS} "
     if REP_TYPE_L1 in l_rep_type:
@@ -155,7 +155,7 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     
     sclip_locus_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -L --locus_file {sf_locus_file} -i ${{BAM_LIST}} --lc {iclip_c} --rc {iclip_c} --cr {iclip_rp} " \
                  f"-o ${{PREFIX}}\"candidate_list_from_clip_locus.txt\"  -n {ncores} --cp {s_cfolder_locus} {s_user} {s_clean} {s_resume} " \
-                 f"--ref ${{REF}} -p ${{TMP}} --c_realn_partition {c_realn_partition} --c_realn_time {c_realn_time} --c_realn_mem {c_realn_mem} --check_interval {check_interval} --email_user={email_user} --sample_id=${{SAMPLE_ID}} "
+                 f"--ref ${{REF}} -p ${{TMP}} --c_realn_partition {c_realn_partition} --c_realn_time {c_realn_time} --c_realn_mem {c_realn_mem} --check_interval {check_interval} --email_user {email_user} --sample_id ${{SAMPLE_ID}} "
     if REP_TYPE_ALU in l_rep_type:
         sclip_locus_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-reference ${ALU_COPY_WITH_FLANK} --Alu-cns ${ALU_CNS} "
     if REP_TYPE_L1 in l_rep_type:
@@ -165,7 +165,7 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     
     sdisc_locus_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -D -i ${{PREFIX}}\"candidate_list_from_clip_locus.txt\" --nd {idisc_c} " \
                        f"--ncns {icns_c} --ref ${{REF}} -b ${{BAM_LIST}} -p ${{TMP}} -o ${{PREFIX}}\"candidate_list_from_disc_locus.txt\" -n {ncores} -m ${{PREFIX}}\"feature_matrix_locus.txt\" {s_user} {s_resume} " \
-                       f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} --error_margin {error_margin} --email_user={email_user} --sample_id=${{SAMPLE_ID}} "
+                       f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} --error_margin {error_margin} --email_user {email_user} --sample_id ${{SAMPLE_ID}} "
     if REP_TYPE_ALU in l_rep_type:
         sdisc_locus_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-cns ${ALU_CNS} "
     if REP_TYPE_L1 in l_rep_type:
