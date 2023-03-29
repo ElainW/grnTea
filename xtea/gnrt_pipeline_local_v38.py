@@ -100,7 +100,7 @@ def gnrt_parameters(l_pars):
 def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, iflag,
                          b_user_par, b_force, b_resume, l_rep_type, s_cfolder, s_cfolder_locus,
                          c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval,
-                         b_ctrl, sf_ref_bed, error_margin, sf_locus_file, feat_extract_time, feat_extract_partition):
+                         b_ctrl, sf_ref_bed, error_margin, sf_locus_file, feat_extract_time, feat_extract_partition, email_user):
     s_user = ""
     if b_user_par == True:
         s_user = "--user"
@@ -122,7 +122,7 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     setup_step += "ln -nsf ${XTEA_PATH} ${TMP}source_scripts\n" # YW 2021/05/26 added to import modules from working directory
     sclip_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -C -i ${{BAM_LIST}} --lc {iclip_c} --rc {iclip_c} --cr {iclip_rp} " \
                  f"-o ${{PREFIX}}\"candidate_list_from_clip.txt\"  -n {ncores} --cp {s_cfolder} {s_user} {s_clean} {s_resume} " \
-                 f"--ref ${{REF}} -p ${{TMP}} --c_realn_partition {c_realn_partition} --c_realn_time {c_realn_time} --c_realn_mem {c_realn_mem} --check_interval {check_interval} "
+                 f"--ref ${{REF}} -p ${{TMP}} --c_realn_partition {c_realn_partition} --c_realn_time {c_realn_time} --c_realn_mem {c_realn_mem} --check_interval {check_interval} --email_user={email_user} "
     if REP_TYPE_ALU in l_rep_type:
         sclip_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-reference ${ALU_COPY_WITH_FLANK} --Alu-cns ${ALU_CNS} "
     if REP_TYPE_L1 in l_rep_type:
@@ -137,7 +137,7 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     #                                                                                                 s_cfolder, s_purity, s_user, s_clean, s_tumor, s_resume)
     sdisc_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -D -i ${{PREFIX}}\"candidate_list_from_clip.txt\" --nd {idisc_c} " \
                  f"--ncns {icns_c} --ref ${{REF}} -b ${{BAM_LIST}} -p ${{TMP}} -o ${{PREFIX}}\"candidate_list_from_disc.txt\" -n {ncores} -m ${{PREFIX}}\"feature_matrix.txt\" {s_user} {s_resume} " \
-                 f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} --error_margin {error_margin} " # YW 2021/08/04 added error_margin
+                 f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} --error_margin {error_margin} --email_user={email_user} " # YW 2021/08/04 added error_margin
     if REP_TYPE_ALU in l_rep_type:
         sdisc_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-cns ${ALU_CNS} "
     if REP_TYPE_L1 in l_rep_type:
@@ -155,7 +155,7 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     
     sclip_locus_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -L --locus_file {sf_locus_file} -i ${{BAM_LIST}} --lc {iclip_c} --rc {iclip_c} --cr {iclip_rp} " \
                  f"-o ${{PREFIX}}\"candidate_list_from_clip_locus.txt\"  -n {ncores} --cp {s_cfolder_locus} {s_user} {s_clean} {s_resume} " \
-                 f"--ref ${{REF}} -p ${{TMP}} --c_realn_partition {c_realn_partition} --c_realn_time {c_realn_time} --c_realn_mem {c_realn_mem} --check_interval {check_interval} "
+                 f"--ref ${{REF}} -p ${{TMP}} --c_realn_partition {c_realn_partition} --c_realn_time {c_realn_time} --c_realn_mem {c_realn_mem} --check_interval {check_interval} --email_user={email_user} "
     if REP_TYPE_ALU in l_rep_type:
         sclip_locus_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-reference ${ALU_COPY_WITH_FLANK} --Alu-cns ${ALU_CNS} "
     if REP_TYPE_L1 in l_rep_type:
@@ -165,7 +165,7 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     
     sdisc_locus_step = f"python3 ${{XTEA_PATH}}\"x_TEA_main.py\" -D -i ${{PREFIX}}\"candidate_list_from_clip_locus.txt\" --nd {idisc_c} " \
                        f"--ncns {icns_c} --ref ${{REF}} -b ${{BAM_LIST}} -p ${{TMP}} -o ${{PREFIX}}\"candidate_list_from_disc_locus.txt\" -n {ncores} -m ${{PREFIX}}\"feature_matrix_locus.txt\" {s_user} {s_resume} " \
-                       f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} --error_margin {error_margin} "
+                       f"--d_realn_partition {d_realn_partition} --d_realn_time {d_realn_time} --d_realn_mem {d_realn_mem} --check_interval {check_interval} --error_margin {error_margin} --email_user={email_user} "
     if REP_TYPE_ALU in l_rep_type:
         sdisc_locus_step += "--Alu-annotation ${ALU_ANNOTATION} --Alu-cns ${ALU_CNS} "
     if REP_TYPE_L1 in l_rep_type:
@@ -175,7 +175,7 @@ def gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len, i
     # YW 2021/08/04 added to enable control bam file coordinate lifting
     if args.train: # YW 2021/10/28 added args.train if statement
         if b_ctrl:
-            sdisc_locus_step += f"--trian --ctrl --ref_bed {sf_ref_bed}\n"
+            sdisc_locus_step += f"--train --ctrl --ref_bed {sf_ref_bed}\n"
         else:
             sdisc_locus_step += "--train --ctrl_bed ${CTRL_BED}\n"
     # if b_SVA is True:
@@ -828,7 +828,7 @@ def get_sample_id(sf_bam):
 # YW 2021/08/04 added b_ctrl=False, sf_ctrl_bed="null" to enable control bam file coordinate lifting
 def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_force, s_wfolder,
                        sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, spartition, stime, smemory,
-                       ncores, sf_submit_sh, sf_case_control_bam_list="null", b_lsf=False, b_slurm=True, b_resume=False,
+                       ncores, email_user, sf_submit_sh, sf_case_control_bam_list="null", b_lsf=False, b_slurm=True, b_resume=False,
                        b_ctrl=False, sf_ctrl_bed="null", sf_locus_file="null"):
     if s_wfolder[-1] != "/":
         s_wfolder += "/"
@@ -954,7 +954,7 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         if b_lsf==True:
             s_head = gnrt_script_head_lsf(spartition, ncores, stime, smemory, sid_tmp)
         elif b_slurm==True:
-            s_head = gnrt_script_head(spartition, ncores, stime, smemory, sid_tmp)
+            s_head = gnrt_script_head(spartition, ncores, stime, smemory, sid_tmp, email_user)
 
         l_libs = load_par_config(sf_config)
         s_libs = gnrt_parameters(l_libs)
@@ -976,6 +976,7 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         d_realn_time = args.d_realn_time
         d_realn_mem = args.d_realn_mem
         check_interval = args.check_interval
+        email_user = args.email_user
         # YW 2021/08/04 added to enable control bam file coordinate lifting
         sf_ref_bed = args.ref_bed
         error_margin = args.error_margin
@@ -986,7 +987,7 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         # YW 2021/08/04 added b_ctrl, sf_ref_bed, and error_margin
         s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, ncores, iflk_len,
                                              iflag, b_user_par, b_force, b_resume, l_rep_type, sf_pub_clip, sf_pub_clip_locus,
-                                             c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval, b_ctrl, sf_ref_bed, error_margin, sf_locus_file, feat_extract_time, feat_extract_partition)
+                                             c_realn_partition, c_realn_time, c_realn_mem, d_realn_partition, d_realn_time, d_realn_mem, check_interval, b_ctrl, sf_ref_bed, error_margin, sf_locus_file, feat_extract_time, feat_extract_partition, email_user)
         # if rep_type is REP_TYPE_SVA:
         #     s_calling_cmd = gnrt_calling_command(iclip_c, iclip_rp, idisc_c, icns_c, iflt_clip, iflt_disc, ncores, iflk_len,
         #                                          itei_len, iflag, b_mosaic, b_user_par, b_force, b_tumor, b_resume, f_purity, i_rep_type,sf_pub_clip, True, False)
@@ -1312,7 +1313,10 @@ def parse_arguments():
                         help="run memory (in GB) for running realignment of disc reads to repeat cns")
     parser.add_argument("--check_interval", dest="check_interval", type=int, default=60,
                         help="interval (in seconds) of checking whether the sbatch jobs of cns alignment of other repeat type have finished after finishing the main cns realignment job")
-    
+    # YW added 2023/03/29
+    parser.add_argument("--email_user", dest="email_user", type=str, required=True,
+                        help="specify the email address to notify SLURM job status")
+
     # YW 2021/08/04 added to enable control bam file coordinate lifting
     parser.add_argument("--ctrl", dest="ctrl",
                         action="store_true", default=False,
@@ -1365,6 +1369,7 @@ if __name__ == '__main__':
             raise NotImplementedError
         b_slurm=args.slurm ####
         b_resume = args.resume
+        email_user = args.email_user
         
         # new args added by YW 2021/08/04 to enable control bam file coordinate lifting
         # YW 2021/10/28 added args.train if statement
@@ -1445,7 +1450,7 @@ if __name__ == '__main__':
         #                        spartition, stime, smemory, ncores, sf_sbatch_sh, sf_bams, b_lsf, b_slurm, b_resume)
         gnrt_running_shell(sf_id, sf_bams, sf_bams_10X, l_rep_type, b_user_par, b_force,
                            s_wfolder, sf_folder_rep, sf_ref, sf_gene, sf_black_list, sf_folder_xtea, spartition, stime,
-                           smemory, ncores, sf_sbatch_sh, "null", b_lsf, b_slurm, b_resume, b_ctrl, sf_ctrl_bed, sf_locus_file)
+                           smemory, ncores, email_user, sf_sbatch_sh, "null", b_lsf, b_slurm, b_resume, b_ctrl, sf_ctrl_bed, sf_locus_file)
 
     #run_pipeline(l_rep_type, sample_id, s_wfolder)
     #cp_compress_results(s_wfolder, l_rep_type, sample_id)

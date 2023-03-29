@@ -160,6 +160,10 @@ FEAT_EXTRACT_MEMORY=40
 def set_feat_extract_memory(feat_extract_memory):
     global FEAT_EXTRACT_MEMORY
     FEAT_EXTRACT_MEMORY=feat_extract_memory
+# email_user SLURM specific
+def set_email_user(email_user):
+    global EMAIL_USER
+    EMAIL_USER = email_user
 ###############################################################################
 ###############################################################################
 ####originally used in x_clip_disc_filter.py

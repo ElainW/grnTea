@@ -296,6 +296,9 @@ def parse_arguments():
                         help="run memory (in GB) for running realignment of disc reads to repeat cns")
     parser.add_argument("--check_interval", dest="check_interval", type=int, default=60,
                         help="interval (in sec) of checking whether the sbatch jobs of cns alignment of other repeat type have finished after finishing the main cns realignment job")
+    # YW added 2023/03/29
+    parser.add_argument("--email_user", dest="email_user", type=str, required=True,
+                        help="specify the email address to notify SLURM job status")
     
     # YW 2021/07/27 added to enable control bam file coordinate lifting
     parser.add_argument("--ctrl", dest="ctrl",
@@ -486,6 +489,8 @@ if __name__ == '__main__':
         global_values.set_c_realign_time(args.c_realn_time)
         global_values.set_c_realign_memory(args.c_realn_mem)
         global_values.set_check_interval(args.check_interval)
+        # YW 2023/03/29 added to customize email user for status update
+        global_values.set_email_user(args.email_user)
         
         # YW 2020/08/01 github update: if statement and b_resume
         if b_resume == True and os.path.isfile(sf_out)==True:
@@ -542,6 +547,8 @@ if __name__ == '__main__':
         global_values.set_d_realign_time(args.d_realn_time)
         global_values.set_d_realign_memory(args.d_realn_mem)
         global_values.set_check_interval(args.check_interval)
+        # YW 2023/03/29 added to customize email user for status update
+        global_values.set_email_user(args.email_user)
         
         feature_matrix = args.final_matrix # YW 2021/05/21 added this to output the final feature matrix
         peak_window = global_values.PEAK_WINDOW_DEFAULT # YW 2020/07/03 note: max distance between two clipped positions for them to be considered as from one insertion/cluster
@@ -754,6 +761,8 @@ if __name__ == '__main__':
         global_values.set_c_realign_time(args.c_realn_time)
         global_values.set_c_realign_memory(args.c_realn_mem)
         global_values.set_check_interval(args.check_interval)
+        # YW 2023/03/29 added to customize email user for status update
+        global_values.set_email_user(args.email_user)
         
         # YW 2020/08/01 github update: if statement and b_resume
         if b_resume == True and os.path.isfile(sf_out)==True:
