@@ -28,7 +28,7 @@ CTRL_LIST_SUFFIX=".ctrl_list"
 
 # YW 2020/07/24 customized memory usage by rep_type
 # YW 2021/05/20 removed rep_type
-def gnrt_script_head(spartition, ncores, stime, smemory, s_id):
+def gnrt_script_head(spartition, ncores, stime, smemory, s_id, email_user, s_wfolder):
     s_head = "#!/bin/bash\n\n"
     s_head += f"#SBATCH -c {ncores}\n"
     s_head += f"#SBATCH -t {stime}\n"
@@ -43,9 +43,9 @@ def gnrt_script_head(spartition, ncores, stime, smemory, s_id):
     s_head += f"#SBATCH --mem={smemory}G\n"
     s_head += f"#SBATCH -p {spartition}\n"
     s_head += f"#SBATCH -J {s_id}\n" # YW added 2021/05/24
-    s_head += f"#SBATCH -o {s_id}/%j.out\n"
+    s_head += f"#SBATCH -o {s_wfolder}{s_id}/%j.out\n"
     s_head += "#SBATCH --mail-type=END,FAIL\n"
-    s_head += "#SBATCH --mail-user=yilanwang@g.harvard.edu\n"
+    s_head += "#SBATCH --mail-user={email_user}\n"
     if spartition == "park" or spartition == "priopark":
         s_head += "#SBATCH --account=park_contrib\n\n"
     return s_head
@@ -954,7 +954,7 @@ def gnrt_running_shell(sf_ids, sf_bams, sf_10X_bams, l_rep_type, b_user_par, b_f
         if b_lsf==True:
             s_head = gnrt_script_head_lsf(spartition, ncores, stime, smemory, sid_tmp)
         elif b_slurm==True:
-            s_head = gnrt_script_head(spartition, ncores, stime, smemory, sid_tmp, email_user)
+            s_head = gnrt_script_head(spartition, ncores, stime, smemory, sid_tmp, email_user, s_wfolder)
 
         l_libs = load_par_config(sf_config)
         s_libs = gnrt_parameters(l_libs)
