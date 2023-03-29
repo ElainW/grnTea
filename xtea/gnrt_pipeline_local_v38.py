@@ -46,8 +46,8 @@ def gnrt_script_head(spartition, ncores, stime, smemory, s_id, email_user, s_wfo
     s_head += f"#SBATCH -o {s_wfolder}{s_id}/%j.out\n"
     s_head += "#SBATCH --mail-type=END,FAIL\n"
     s_head += "#SBATCH --mail-user={email_user}\n"
-    if spartition == "park" or spartition == "priopark":
-        s_head += "#SBATCH --account=park_contrib\n\n"
+    # if spartition == "park" or spartition == "priopark":
+    #     s_head += "#SBATCH --account=park_contrib\n\n"
     return s_head
 
 ####
