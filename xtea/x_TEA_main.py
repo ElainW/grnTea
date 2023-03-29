@@ -299,6 +299,8 @@ def parse_arguments():
     # YW added 2023/03/29
     parser.add_argument("--email_user", dest="email_user", type=str, required=True,
                         help="specify the email address to notify SLURM job status")
+    parser.add_argument("--sample_id", dest="sample_id", type=str, required=True,
+                        help="specify sample id in job names for cns remapping and feature extraction, make it easy for job monitoring when running multiple samples")
     
     # YW 2021/07/27 added to enable control bam file coordinate lifting
     parser.add_argument("--ctrl", dest="ctrl",
@@ -449,6 +451,11 @@ if __name__ == '__main__':
     # f_purity=args.purity#tumor purity, by default 0.45
     b_resume=args.resume#resume the running, which will skip the step if output file already exist
 
+    # YW 2023/03/29 added to customize email user for status update
+    global_values.set_email_user(args.email_user)
+    # for easy job monitoring
+    global_values.set_sample_id(args.sample_id)
+
     
     if args.clip:  ###take in the normal illumina reads (10x will be viewed as normal illumina)
         print("Working on \"clip\" step!")
@@ -489,8 +496,6 @@ if __name__ == '__main__':
         global_values.set_c_realign_time(args.c_realn_time)
         global_values.set_c_realign_memory(args.c_realn_mem)
         global_values.set_check_interval(args.check_interval)
-        # YW 2023/03/29 added to customize email user for status update
-        global_values.set_email_user(args.email_user)
         
         # YW 2020/08/01 github update: if statement and b_resume
         if b_resume == True and os.path.isfile(sf_out)==True:
@@ -547,8 +552,6 @@ if __name__ == '__main__':
         global_values.set_d_realign_time(args.d_realn_time)
         global_values.set_d_realign_memory(args.d_realn_mem)
         global_values.set_check_interval(args.check_interval)
-        # YW 2023/03/29 added to customize email user for status update
-        global_values.set_email_user(args.email_user)
         
         feature_matrix = args.final_matrix # YW 2021/05/21 added this to output the final feature matrix
         peak_window = global_values.PEAK_WINDOW_DEFAULT # YW 2020/07/03 note: max distance between two clipped positions for them to be considered as from one insertion/cluster
@@ -761,8 +764,6 @@ if __name__ == '__main__':
         global_values.set_c_realign_time(args.c_realn_time)
         global_values.set_c_realign_memory(args.c_realn_mem)
         global_values.set_check_interval(args.check_interval)
-        # YW 2023/03/29 added to customize email user for status update
-        global_values.set_email_user(args.email_user)
         
         # YW 2020/08/01 github update: if statement and b_resume
         if b_resume == True and os.path.isfile(sf_out)==True:

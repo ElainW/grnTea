@@ -164,6 +164,9 @@ def set_feat_extract_memory(feat_extract_memory):
 def set_email_user(email_user):
     global EMAIL_USER
     EMAIL_USER = email_user
+def set_sample_id(sample_id):
+    global SAMPLE_ID
+    SAMPLE_ID = sample_id
 ###############################################################################
 ###############################################################################
 ####originally used in x_clip_disc_filter.py
