@@ -118,16 +118,11 @@ from glob import glob # to get a list of all the tmp disc read output files
 
 import global_values
 from x_TEI_locator import *
-from x_local_assembly import *
 from x_intermediate_sites import *
 from x_reference import *
-from x_clip_disc_filter import *
-from x_genotype_feature import *
+# from x_clip_disc_filter import *
+# from x_genotype_feature import *
 from x_basic_info import *
-from x_parameter import *
-# from x_post_filter import *
-# from x_joint_calling import *
-# from x_igv import *
 # from x_genotype_classify import * # new
 from extract_features import * # YW 2021/05/10 added this
 from coor_lift import * # YW 2021/07/27 added this
@@ -135,47 +130,47 @@ from cmd_runner import * # YW 2021/10/27 added this
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser("Main script of xTea_ML")
+    parser = argparse.ArgumentParser("Main script of grnTea")
     parser.add_argument("-C", "--clip",
                         action="store_true", dest="clip", default=False,
                         help="Call candidate TEI sites from clipped reads")
-    parser.add_argument("-S", "--single",
-                        action="store_true", dest="single", default=False,
-                        help="Call clip positions from single-end reads")
+    # parser.add_argument("-S", "--single",
+    #                     action="store_true", dest="single", default=False,
+    #                     help="Call clip positions from single-end reads")
     parser.add_argument("-D", "--discordant",
                         action="store_true", dest="discordant", default=False,
                         help="Filter with discordant paired end reads")
-    parser.add_argument("-N", "--filter_csn",
-                        action="store_true", dest="filter_csn", default=False,
-                        help="Filter out candidate sites from map position on consensus")
+    # parser.add_argument("-N", "--filter_csn",
+    #                     action="store_true", dest="filter_csn", default=False,
+    #                     help="Filter out candidate sites from map position on consensus")
     parser.add_argument("--resume",
                         action="store_true", dest="resume", default=False,
                         help="Resume the running, which will skip the step if output file already exists!")
-    parser.add_argument("--mit",
-                        action="store_true", dest="mit", default=False,
-                        help="Indicate call mitochondrion insertion")
-    parser.add_argument("--dna",
-                        action="store_true", dest="dna", default=False,
-                        help="Not RNA mediated insertion (no polyA)")
-    parser.add_argument("--cbs",
-                        action="store_true", dest="cbs", default=False,
-                        help="check by sample")#whether check by sample
-    parser.add_argument("--sva",
-                        action="store_true", dest="sva", default=False,
-                        help="For SVA insertion calling")
+    # parser.add_argument("--mit",
+    #                     action="store_true", dest="mit", default=False,
+    #                     help="Indicate call mitochondrion insertion")
+    # parser.add_argument("--dna",
+    #                     action="store_true", dest="dna", default=False,
+    #                     help="Not RNA mediated insertion (no polyA)")
+    # parser.add_argument("--cbs",
+    #                     action="store_true", dest="cbs", default=False,
+    #                     help="check by sample")#whether check by sample
+    # parser.add_argument("--sva",
+    #                     action="store_true", dest="sva", default=False,
+    #                     help="For SVA insertion calling")
     # YW 2020/08/16 added this option
-    parser.add_argument("--l1",
-                        action="store_true", dest="l1", default=False,
-                        help="For L1 insertion calling, L1 specific function in clip-disc filtering")
-    parser.add_argument("--gntp_feature",
-                        action="store_true", dest="gntp_feature", default=False,
-                        help="Collect genotyping features from bam")
-    parser.add_argument("--gntp_classify",
-                        action="store_true", dest="gntp_classify", default=False,
-                        help="Train/predict genotpe classifier")
-    parser.add_argument("--train_gntp",
-                        action="store_true", dest="train_gntp", default=False,
-                        help="Train the genotype classifer")
+    # parser.add_argument("--l1",
+    #                     action="store_true", dest="l1", default=False,
+    #                     help="For L1 insertion calling, L1 specific function in clip-disc filtering")
+    # parser.add_argument("--gntp_feature",
+    #                     action="store_true", dest="gntp_feature", default=False,
+    #                     help="Collect genotyping features from bam")
+    # parser.add_argument("--gntp_classify",
+    #                     action="store_true", dest="gntp_classify", default=False,
+    #                     help="Train/predict genotpe classifier")
+    # parser.add_argument("--train_gntp",
+    #                     action="store_true", dest="train_gntp", default=False,
+    #                     help="Train the genotype classifer")
     parser.add_argument("--force",
                         action="store_true", dest="force", default=False,
                         help="Force to start from the very beginning")
@@ -188,15 +183,15 @@ def parse_arguments():
                         help="Input annotation in bed format")
     parser.add_argument("--flank", dest="flank", default=False,
                         help="flank regions")
-    parser.add_argument("--gene",
-                        action="store_true", dest="gene", default=False,
-                        help="Check whether the insertion falls in genes")
+    # parser.add_argument("--gene",
+    #                     action="store_true", dest="gene", default=False,
+    #                     help="Check whether the insertion falls in genes")
     parser.add_argument("--user",
                         action="store_true", dest="user_specific", default=False,
                         help="User specific parameters, by default automatically calc the parameters")
-    parser.add_argument("--single_sample",
-                        action="store_true", dest="single_sample", default=False,
-                        help="For single sample (like igv screenshot)")
+    # parser.add_argument("--single_sample",
+    #                     action="store_true", dest="single_sample", default=False,
+    #                     help="For single sample (like igv screenshot)")
     parser.add_argument("-i", "--input", dest="input", default="",
                         help="input file ", metavar="FILE")
     parser.add_argument("--input2", dest="input2", default="",
@@ -276,10 +271,10 @@ def parse_arguments():
                         help="Length of the left extended region when loading the repeatmasker output")
     parser.add_argument("--rtype", dest="rep_type", type=int, default=1,
                         help="type of repeats: 1-L1, 2-Alu, 4-SVA, 8-HERV, 16-MIT, 32-MSTA")
-    parser.add_argument("--blacklist", dest="blacklist", default="null",
-                        help="Reference panel database for filtering, or a blacklist region", metavar="FILE")
-    parser.add_argument("--model", dest="model", default="null",
-                        help="Already trained model (.pkl file) for genotype classification", metavar="FILE")
+    # parser.add_argument("--blacklist", dest="blacklist", default="null",
+    #                     help="Reference panel database for filtering, or a blacklist region", metavar="FILE")
+    # parser.add_argument("--model", dest="model", default="null",
+    #                     help="Already trained model (.pkl file) for genotype classification", metavar="FILE")
     
     # YW 2021/05/26 added to parallelize cns remapping
     parser.add_argument("--c_realn_partition", dest="c_realn_partition", type=str, default="short", # medium for highcov
@@ -340,51 +335,27 @@ def parse_arguments():
     return args
 ####
 ####
-# YW 2020/08/01 github update: add the last 2 arguments
-# def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False, b_tumor=False, f_purity=0.45):
-def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False):
-    ####1. collect the basic information
-    search_win = 500
-    x_basic_info = X_BasicInfo(s_working_folder, n_jobs, sf_ref)
-    rcd=x_basic_info.get_cov_is_rlth(sf_bam_list, sf_ref, search_win, b_force)
-    f_cov=rcd[0]
-    rlth=rcd[1]
-    mean_is=rcd[2]
-    std_var=rcd[3]
+# # YW 2020/08/01 github update: add the last 2 arguments
+# # def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False, b_tumor=False, f_purity=0.45):
+# def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False):
+#     ####1. collect the basic information
+#     search_win = 500
+#     x_basic_info = X_BasicInfo(s_working_folder, n_jobs, sf_ref)
+#     rcd=x_basic_info.get_cov_is_rlth(sf_bam_list, sf_ref, search_win, b_force)
+#     f_cov=rcd[0]
+#     rlth=rcd[1]
+#     mean_is=rcd[2]
+#     std_var=rcd[3]
 
-    ####2. based on the coverage, set the parameters
-    xpar=Parameters()
-    # if b_tumor==True:
-    #     f_cov=f_cov*f_purity
-    par_rcd=xpar.get_par_by_cov(f_cov) #in format (iclip, idisc, i_clip-disc)
-    print("Ave coverage is {0}: automatic parameters (clip, disc, clip-disc) with value ({1}, {2} ,{3})\n".format(f_cov, par_rcd[0], par_rcd[1], par_rcd[2]))
-    return par_rcd, rcd
+#     ####2. based on the coverage, set the parameters
+#     xpar=Parameters()
+#     # if b_tumor==True:
+#     #     f_cov=f_cov*f_purity
+#     par_rcd=xpar.get_par_by_cov(f_cov) #in format (iclip, idisc, i_clip-disc)
+#     print("Ave coverage is {0}: automatic parameters (clip, disc, clip-disc) with value ({1}, {2} ,{3})\n".format(f_cov, par_rcd[0], par_rcd[1], par_rcd[2]))
+#     return par_rcd, rcd
 
 ####
-def automatic_set_molecule_cutoff_for_10X_bam(sf_bam, sf_ref, s_working_folder, n_jobs):
-    x_basic_info = X_BasicInfo(s_working_folder, n_jobs, sf_ref)
-    search_win = 500
-    f_cov=x_basic_info.calc_cov_from_bam(sf_bam, sf_ref, search_win)
-    xpar=XParameters()
-    f_molecule_cutoff=xpar.get_barcode_cov_cutoff(f_cov)
-    return f_molecule_cutoff
-
-
-def automatic_gnrt_parameters_case_control(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False):
-    ####1. collect the basic information
-    search_win = 500
-    x_basic_info = X_BasicInfo(s_working_folder, n_jobs, sf_ref)
-    rcd=x_basic_info.get_cov_is_rlth(sf_bam_list, sf_ref, search_win, b_force)
-    f_cov=rcd[0]
-    rlth=rcd[1]
-    mean_is=rcd[2]
-    std_var=rcd[3]
-    ####2. based on the coverage, set the parameters
-    xpar=CaseControlFilterPars()
-    par_rcd=xpar.get_par_by_cov(f_cov) #in format (iclip, idisc, i_clip-disc)
-    print("Ave coverage is {0}: automatic parameters (clip, disc, clip-disc) with value ({1}, {2} ,{3})\n".format(f_cov, par_rcd[0], par_rcd[1], par_rcd[2]))
-    return par_rcd, rcd
-
 
 # YW 2021/09/29 added for locus_clip option
 # potentially add process_chrm_name
@@ -419,24 +390,10 @@ def load_locus_file(locus_file):
 def count_lines(f_in):
     return int(subprocess.check_output(['wc', '-l', f_in]).split()[0])
     
-####
-# def adjust_cutoff_tumor(ncutoff=-1, i_adjust=1):
-#     if ncutoff-i_adjust>1:
-#         ncutoff=ncutoff-i_adjust
-#     return ncutoff
-
-####
 ##main function
 if __name__ == '__main__':
     args = parse_arguments()
 
-    if args.mit:#if this to call mitochondrial insertion, then will not filter out chrM in "x_intermediate_sites.py"
-        global_values.turn_on_mit()
-
-    if args.dna:
-        global_values.turn_off_rna_mediated()
-    if args.cbs:
-        global_values.turn_on_check_by_sample()
     # if args.sva:
     #     global_values.turn_on_sva()
     # YW 2020/08/16 added this
@@ -503,12 +460,12 @@ if __name__ == '__main__':
         else:
             if os.path.isfile(sf_out)==True:
                 print("User doesn't specify skipping, although {0} exists. Rerun the \"clip\" step.".format(sf_out))
-            if b_automatic==True:
-                # YW 2020/08/01 github update, 2 more arguments b_tumor, f_purity --> 2021/05/19 removed both
-                rcd, basic_rcd=automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force)
-                cutoff_left_clip=rcd[0]
-                cutoff_right_clip=rcd[0]
-                cutoff_clip_mate_in_rep=rcd[2]
+            # if b_automatic==True:
+            #     # YW 2020/08/01 github update, 2 more arguments b_tumor, f_purity --> 2021/05/19 removed both
+            #     rcd, basic_rcd=automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force)
+            #     cutoff_left_clip=rcd[0]
+            #     cutoff_right_clip=rcd[0]
+            #     cutoff_clip_mate_in_rep=rcd[2]
             # YW 2020/06/28 added more annotations for the print message
             print("Clip cutoff: lclip: {0}, rclip: {1}, clip_mate_in_rep: {2}, clip_mate_in_cns: {3} are used!!!".format(cutoff_left_clip, cutoff_right_clip, cutoff_clip_mate_in_rep, cutoff_clip_mate_in_cns))
             tem_locator = TE_Multi_Locator(sf_bam_list, s_working_folder, n_jobs, sf_ref)
@@ -802,108 +759,108 @@ if __name__ == '__main__':
                                                                    wfolder_pub_clip, b_force, max_cov_cutoff, sf_out)
 ####
 ####
-    ####
-    elif args.filter_csn:  #filter out the FP by the pattern in the consensus repeat
-        print("Working on \"clip-disc-filtering\" step!")
-        sf_bam_list = args.bam  ###read in a bam list file
-        s_working_folder = args.wfolder
-        if s_working_folder[-1] != "/":
-            s_working_folder += "/"
-        print("Current working folder is: {0}\n".format(s_working_folder))
-        n_jobs = args.cores
-        sf_ref = args.ref  ###reference genome, some cram file require this file to open
+    # ####
+    # elif args.filter_csn:  #filter out the FP by the pattern in the consensus repeat
+    #     print("Working on \"clip-disc-filtering\" step!")
+    #     sf_bam_list = args.bam  ###read in a bam list file
+    #     s_working_folder = args.wfolder
+    #     if s_working_folder[-1] != "/":
+    #         s_working_folder += "/"
+    #     print("Current working folder is: {0}\n".format(s_working_folder))
+    #     n_jobs = args.cores
+    #     sf_ref = args.ref  ###reference genome, some cram file require this file to open
 
-        sf_candidate_list = args.input
-        sf_raw_disc=args.input2#this is the raw disc file
-        # YW 2020/07/05 changed the following from 400 to 200 (shorter read length in ancient samples)
-        iextnd = global_values.F_CNS_EXTEND ###for each site, re-collect reads in range [-iextnd, iextnd], this around ins +- 3*deviation
-        bin_size = global_values.BIN_SIZE  # block size for parallelization
-        sf_rep_cns_Alu =args.Alu_cns
-        sf_rep_cns_L1 =args.L1_cns
-        sf_rep_cns_SVA =args.SVA_cns
-        bmapped_cutoff = global_values.MIN_CLIP_MAPPED_RATIO # minimal ratio of aligned bases in clipped part to be qualified (in both alignment of clipped part in clipped and in discordant to repeat cns)
-        i_concord_dist = 550  # this should be the mean_is+3*is_std_deviation, used to cluster disc reads on the consensus YW: --> global_values? (too large?) YW 2020/07/19 clarified this comment
-        f_concord_ratio = global_values.DISC_CONCORD_RATIO # YW 2020/07/21: to check whether discordant reads are clustered on cns, currently disabled
-        sf_output = args.output
-        sf_flank=args.fflank
-        i_flank_lenth = args.flklen
+    #     sf_candidate_list = args.input
+    #     sf_raw_disc=args.input2#this is the raw disc file
+    #     # YW 2020/07/05 changed the following from 400 to 200 (shorter read length in ancient samples)
+    #     iextnd = global_values.F_CNS_EXTEND ###for each site, re-collect reads in range [-iextnd, iextnd], this around ins +- 3*deviation
+    #     bin_size = global_values.BIN_SIZE  # block size for parallelization
+    #     sf_rep_cns_Alu =args.Alu_cns
+    #     sf_rep_cns_L1 =args.L1_cns
+    #     sf_rep_cns_SVA =args.SVA_cns
+    #     bmapped_cutoff = global_values.MIN_CLIP_MAPPED_RATIO # minimal ratio of aligned bases in clipped part to be qualified (in both alignment of clipped part in clipped and in discordant to repeat cns)
+    #     i_concord_dist = 550  # this should be the mean_is+3*is_std_deviation, used to cluster disc reads on the consensus YW: --> global_values? (too large?) YW 2020/07/19 clarified this comment
+    #     f_concord_ratio = global_values.DISC_CONCORD_RATIO # YW 2020/07/21: to check whether discordant reads are clustered on cns, currently disabled
+    #     sf_output = args.output
+    #     sf_flank=args.fflank
+    #     i_flank_lenth = args.flklen
         
-        # YW 2020/08/04 modified github update: originally will rerun if b_resume==False, now added extra if/elif cases
-        if b_resume == True and os.path.isfile(sf_output)==True:
-            print("{0} exists, skipping \"clip-disc-filtering\" step.\n".format(sf_output))
-        else:
-            if os.path.isfile(sf_output)==True:
-                print("User doesn't specify skipping, although {0} exists. Rerun the \"clip-disc-filtering\" step.\n".format(sf_output))
-            b_force=True
-            rcd, basic_rcd = automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force)
-            ave_cov = basic_rcd[0]  # ave coverage
-            rlth = basic_rcd[1]  # read length
-            mean_is = basic_rcd[2]  # mean insert size
-            std_var = basic_rcd[3]  # standard deviation
-            print("Mean insert size is: {0}\n".format(mean_is))
-            print("Standard deviation is: {0}\n".format(std_var))
+    #     # YW 2020/08/04 modified github update: originally will rerun if b_resume==False, now added extra if/elif cases
+    #     if b_resume == True and os.path.isfile(sf_output)==True:
+    #         print("{0} exists, skipping \"clip-disc-filtering\" step.\n".format(sf_output))
+    #     else:
+    #         if os.path.isfile(sf_output)==True:
+    #             print("User doesn't specify skipping, although {0} exists. Rerun the \"clip-disc-filtering\" step.\n".format(sf_output))
+    #         b_force=True
+    #         rcd, basic_rcd = automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force)
+    #         ave_cov = basic_rcd[0]  # ave coverage
+    #         rlth = basic_rcd[1]  # read length
+    #         mean_is = basic_rcd[2]  # mean insert size
+    #         std_var = basic_rcd[3]  # standard deviation
+    #         print("Mean insert size is: {0}\n".format(mean_is))
+    #         print("Standard deviation is: {0}\n".format(std_var))
             
-            max_is = int(mean_is + 3 * std_var)
-            if iextnd < max_is: #correct the bias
-                iextnd = max_is
-            if i_concord_dist < max_is: #correct the bias
-                i_concord_dist = max_is
-            global_values.set_read_length(rlth)
-            global_values.set_insert_size(max_is)
-            global_values.set_average_cov(ave_cov)
-            print("Read length is: {0}\n".format(rlth))
-            print("Maximum insert size is: {0}\n".format(max_is))
-            print("Average coverage is: {0}\n".format(ave_cov))
+    #         max_is = int(mean_is + 3 * std_var)
+    #         if iextnd < max_is: #correct the bias
+    #             iextnd = max_is
+    #         if i_concord_dist < max_is: #correct the bias
+    #             i_concord_dist = max_is
+    #         global_values.set_read_length(rlth)
+    #         global_values.set_insert_size(max_is)
+    #         global_values.set_average_cov(ave_cov)
+    #         print("Read length is: {0}\n".format(rlth))
+    #         print("Maximum insert size is: {0}\n".format(max_is))
+    #         print("Average coverage is: {0}\n".format(ave_cov))
 
-            n_clip_cutoff = args.cliprep #this is the sum of left and right clipped reads
-            n_disc_cutoff = args.ndisc  #each sample should have at least this number of discordant reads
-            if b_automatic==True:
-                n_clip_cutoff=rcd[0]
-                n_disc_cutoff=rcd[1]
-            print("Filter (on cns) cutoff: number of clipped: {0} and number of discordant reads: {1} are used!!!\n".format(n_clip_cutoff, n_disc_cutoff))
+    #         n_clip_cutoff = args.cliprep #this is the sum of left and right clipped reads
+    #         n_disc_cutoff = args.ndisc  #each sample should have at least this number of discordant reads
+    #         if b_automatic==True:
+    #             n_clip_cutoff=rcd[0]
+    #             n_disc_cutoff=rcd[1]
+    #         print("Filter (on cns) cutoff: number of clipped: {0} and number of discordant reads: {1} are used!!!\n".format(n_clip_cutoff, n_disc_cutoff))
 
-            x_cd_filter = XClipDiscFilter(sf_bam_list, s_working_folder, n_jobs, sf_ref)
-            x_cd_filter.call_MEIs_consensus(sf_candidate_list, iextnd, bin_size,
-                                            sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
-                                            sf_flank, i_flank_lenth,
-                                            bmapped_cutoff, i_concord_dist, f_concord_ratio, n_clip_cutoff, n_disc_cutoff,
-                                            sf_output)
-    elif args.gntp_feature:#generate the genotype features
-        sf_bam_list = args.bam
-        sf_ref = args.ref
-        sf_candidate_list = args.input
-        n_jobs = args.cores
-        s_working_folder = args.wfolder
-        sf_output = args.output
+    #         x_cd_filter = XClipDiscFilter(sf_bam_list, s_working_folder, n_jobs, sf_ref)
+    #         x_cd_filter.call_MEIs_consensus(sf_candidate_list, iextnd, bin_size,
+    #                                         sf_rep_cns_Alu, sf_rep_cns_L1, sf_rep_cns_SVA,
+    #                                         sf_flank, i_flank_lenth,
+    #                                         bmapped_cutoff, i_concord_dist, f_concord_ratio, n_clip_cutoff, n_disc_cutoff,
+    #                                         sf_output)
+    # elif args.gntp_feature:#generate the genotype features
+    #     sf_bam_list = args.bam
+    #     sf_ref = args.ref
+    #     sf_candidate_list = args.input
+    #     n_jobs = args.cores
+    #     s_working_folder = args.wfolder
+    #     sf_output = args.output
 
-        x_gntper = XGenotyper(sf_ref, s_working_folder, n_jobs)
-        extnd = 450
-        x_gntper.call_genotype(sf_bam_list, sf_candidate_list, extnd, sf_output)
+    #     x_gntper = XGenotyper(sf_ref, s_working_folder, n_jobs)
+    #     extnd = 450
+    #     x_gntper.call_genotype(sf_bam_list, sf_candidate_list, extnd, sf_output)
 
-    elif args.gntp_classify:
-        b_train = args.train_gntp
-        sf_model=args.model
-        if b_train==True:#train a new model
-            print("training a new model")
-            # sf_00_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_00.list"
-            # sf_01_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_01.list"
-            # sf_11_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_11.list"
-            # sf_arff = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/merged_all_0_1_2.arff"
-            sf_01_list = "/n/data1/bch/genetics/lee/elain/hapROH/xTea_genotyper/train_files/all_01.list"
-            sf_11_list = "/n/data1/bch/genetics/lee/elain/hapROH/xTea_genotyper/train_files/all_11.list"
-            sf_arff = args.input
-            gc = GntpClassifier_DF21()
-            b_balance=False
-            gc.gnrt_training_arff_from_xTEA_output(sf_01_list, sf_11_list, sf_arff, b_balance)
-            #pkl_filename = "./genotyping/trained_model_ssc_py2_random_forest_two_category.pkl"
-            gc.train_model(sf_arff, sf_model)
-        else:#predict the genotype
-            #sf_model = "./genotyping/trained_model_ssc_py2_random_forest_two_category.pkl"
-            sf_xTEA = args.input #input raw results before calling genotype
-            sf_new = args.output
-            sf_genotype_ft = args.genotype_ft_output
-            gc = GntpClassifier_DF21()
-            # pkl_model = gc.load_model_from_file(sf_model)
-            # sf_arff = sf_xTEA + ".arff"
-            gc.predict_for_site(sf_model, sf_xTEA, sf_genotype_ft, sf_new)
+    # elif args.gntp_classify:
+    #     b_train = args.train_gntp
+    #     sf_model=args.model
+    #     if b_train==True:#train a new model
+    #         print("training a new model")
+    #         # sf_00_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_00.list"
+    #         # sf_01_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_01.list"
+    #         # sf_11_list = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/rslt_list/all_11.list"
+    #         # sf_arff = "/n/data1/hms/dbmi/park/simon_chu/projects/XTEA/genotyping/training_set_SSC/Genotyping/merged_all_0_1_2.arff"
+    #         sf_01_list = "/n/data1/bch/genetics/lee/elain/hapROH/xTea_genotyper/train_files/all_01.list"
+    #         sf_11_list = "/n/data1/bch/genetics/lee/elain/hapROH/xTea_genotyper/train_files/all_11.list"
+    #         sf_arff = args.input
+    #         gc = GntpClassifier_DF21()
+    #         b_balance=False
+    #         gc.gnrt_training_arff_from_xTEA_output(sf_01_list, sf_11_list, sf_arff, b_balance)
+    #         #pkl_filename = "./genotyping/trained_model_ssc_py2_random_forest_two_category.pkl"
+    #         gc.train_model(sf_arff, sf_model)
+    #     else:#predict the genotype
+    #         #sf_model = "./genotyping/trained_model_ssc_py2_random_forest_two_category.pkl"
+    #         sf_xTEA = args.input #input raw results before calling genotype
+    #         sf_new = args.output
+    #         sf_genotype_ft = args.genotype_ft_output
+    #         gc = GntpClassifier_DF21()
+    #         # pkl_model = gc.load_model_from_file(sf_model)
+    #         # sf_arff = sf_xTEA + ".arff"
+    #         gc.predict_for_site(sf_model, sf_xTEA, sf_genotype_ft, sf_new)
 
