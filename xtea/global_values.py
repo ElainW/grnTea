@@ -19,7 +19,6 @@ CHUNK_SIZE=5000000
 ##############################################################################
 ####originally used in clip_read.py
 INITIAL_MIN_CLIP_CUTOFF_ILLUMINA=2
-INITIAL_MIN_CLIP_CUTOFF_X10=3
 INITIAL_MIN_CLIP_CUTOFF=2
 def set_initial_min_clip_cutoff(nclip):
     global INITIAL_MIN_CLIP_CUTOFF
@@ -77,8 +76,6 @@ BARCODE_COV_CUTOFF = 600
 MIN_RAW_DISC_CLUSTER_RATIO=0.3
 ##############################################################################
 ILLUMINA="illumina"
-X10="10X"
-LONG_READ="long_read"
 ##############################################################################
 ####originally used x_TEI_locator.py
 MIN_CLIP_FOR_CANDIDATE=2# if a site has left-right clipped reads like (1,1), (1,0), or (0,1), these will be filtered out
