@@ -134,9 +134,9 @@ def parse_arguments():
     parser.add_argument("-C", "--clip",
                         action="store_true", dest="clip", default=False,
                         help="Call candidate TEI sites from clipped reads")
-    # parser.add_argument("-S", "--single",
-    #                     action="store_true", dest="single", default=False,
-    #                     help="Call clip positions from single-end reads")
+    parser.add_argument("-S", "--single",
+                        action="store_true", dest="single", default=False,
+                        help="Call clip positions from single-end reads")
     parser.add_argument("-D", "--discordant",
                         action="store_true", dest="discordant", default=False,
                         help="Filter with discordant paired end reads")
@@ -302,12 +302,12 @@ def parse_arguments():
                         action="store_true", default=False,
                         help="indicate running of aDNA ctrl bam input, skip feature extraction in -D step")
     parser.add_argument("--ref_bed", dest="ref_bed", default="/n/data1/bch/genetics/lee/elain/xTEA_benchmarking/alt_reference/gold_std_hg38_v4_int.temp",
-                        help="The file with gold std set coordinate and insertion size, required only when --ctrl", metavar="FILE")
+                        help="The file with gold std set coordinate and insertion size, required only when --train --ctrl", metavar="FILE")
     parser.add_argument("--error_margin", dest="error_margin", type=int, default=15,
-                        help="error margin to lift coordinate, required only when --ctrl")
+                        help="error margin to lift coordinate, required only when --train --ctrl")
     # YW 2021/07/30 added to enable input of ctrl bed file for coordinate subtraction
     parser.add_argument("--ctrl_bed", dest="ctrl_bed", default=None,
-                        help="TEI coordinate from the control bam file, ancient only, required only when --ctrl==False", metavar="FILE")
+                        help="TEI coordinate from the control bam file, ancient only, required only when --train --ctrl==False", metavar="FILE")
     
     # YW 2021/09/29 added to enable extraction of clip info from pre-defined loci
     parser.add_argument("-L", "--locus_clip",
@@ -328,8 +328,8 @@ def parse_arguments():
                         help="partition for running feature extraction on 5M TEI sites")
     
     # YW 2022/10/03 added to enable merging features from the x_genotype_feature module
-    parser.add_argument("--genotype_ft_output", dest="genotype_ft_output", default=None,
-                        help="output from the x_genotype_feature module, input to the x_genotype_classify module when predicting")
+    # parser.add_argument("--genotype_ft_output", dest="genotype_ft_output", default=None,
+    #                     help="output from the x_genotype_feature module, input to the x_genotype_classify module when predicting")
     
     args = parser.parse_args()
     return args
