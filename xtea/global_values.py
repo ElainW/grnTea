@@ -24,6 +24,8 @@ def set_initial_min_clip_cutoff(nclip):
     global INITIAL_MIN_CLIP_CUTOFF
     INITIAL_MIN_CLIP_CUTOFF=nclip
 
+SVA_ANNOTATION_EXTND=200
+
 # YW 2020/08/10 added this for polyA class contain_enough_A_T (also used in x_clip_disc_filter.py)
 MIN_AT_RATIO=0.75
 # YW 2020/06/20: BWA_REALIGN_CUTOFF is minimal clipped to consider, an alignment score cutoff and minimum seed length (Matches shorter than INT will be missed.)
@@ -91,6 +93,7 @@ CLIP_LOCUS_FOLDER = "clip_locus"
 DISC_FOLDER = "disc"
 DISC_SUFFIX = '.discord_pos.txt'
 DISC_SUFFIX_FILTER = '.discdt'
+DISC_POS_SUFFIX = ".disc_pos"
 # YW 2020/08/02 github update: the following line
 RAW_DISC_SUFFIX_FILTER = '.raw.discdt'
 CLIP_TMP = "clip_reads_tmp"
@@ -99,6 +102,7 @@ DISC_TMP = "discordant_reads_tmp"
 RAW_DISC_TMP = "raw_discordant_reads_tmp"#this is for any kind of discordant
 RAW_DISC_TMP_SUFFIX=".clip_sites_raw_disc.txt"
 BMAPPED_CUTOFF = 0.65 # YW 2021/05/07 added after moving parse_disc_algnmt_consensus over
+BIN_SIZE=50000000 # block size for parallelization
 
 # YW 2020/07/04 added
 INITIAL_MIN_DISC_CUTOFF=1
@@ -176,7 +180,6 @@ def set_sample_id(sample_id):
 # def turn_on_sva():
 #     global IS_CALL_SVA
 #     IS_CALL_SVA=True
-# SVA_ANNOTATION_EXTND=200
 
 # IS_CALL_L1=False
 # def turn_on_l1():
@@ -185,7 +188,6 @@ def set_sample_id(sample_id):
 
 # # YW 2020/07/21 added the following:
 # F_CNS_EXTEND=200 ###for each site, re-collect reads in range [-iextnd, iextnd], this around ins +- 3*deviation
-# BIN_SIZE=50000000 # block size for parallelization
 # MIN_CLIP_MAPPED_RATIO=0.65 # minimal ratio of aligned bases in clipped part to be qualified (in both alignment of clipped part in clipped and in discordant to repeat cns)
 # DISC_CONCORD_RATIO=0.45 # to check whether discordant reads are clustered on cns
 # DEPTH_RATIO=0.35 ##left-right read depth ratio, YW 2020/07/21: to see if there is deletion near TEI
@@ -210,7 +212,6 @@ def set_sample_id(sample_id):
 # TWO_SIDE_CLIP_MIN_LEN=4 #to define a two side clip, then clip length should be longer than 4bp, YW changed from 8 to 4
 # ####
 # DISC_NAME_SUFFIX = ".disc_names"
-# DISC_POS_SUFFIX = ".disc_pos"
 # GNTP_FEATURE_SUFFIX=".gntp_features"
 # ALLELE_FREQUENCY_SUFFIX = '.af'
 # NOT_TRANSDUCTION = "not_transduction"

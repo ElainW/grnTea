@@ -18,56 +18,6 @@ class BWAlign():
         self.BWA_SEED_MEDIUM_FREQ = 70 #by default, this value is 500 in bwa mem, discard a MEM if it has more than INT occurence in the genome
         self.cmd_runner=CMD_RUNNER()
 
-    # re-align the collected clipped and discordant reads
-    def realign_clipped_reads(self, sf_ref, sf_reads, sf_out_sam):
-        cmd = "{0} mem -t {1} -T {2} -k {3} -o {4} {5} {6}" \
-              "".format(self.BWA_PATH, self.n_jobs, self.BWA_REALIGN_CUTOFF, self.BWA_REALIGN_CUTOFF, sf_out_sam,
-                        sf_ref, sf_reads)
-        #Popen(cmd, shell=True, stdout=PIPE).communicate()
-        self.cmd_runner.run_cmd_small_output(cmd)
-
-    # this assumes the clipped parts including the short polyA
-    # So we need to split the original "sf_reads" to polyA-reads and non-polyA reads,
-    # then, align them seperately
-    # Note, input "sf_reads" is in "fastq" format
-    def realign_clipped_read_with_polyA(self, sf_ref, sf_reads, sf_out_sam):
-        sf_reads1=sf_reads+".non_polyA.fq"
-        sf_reads2=sf_reads+".polyA.fq"
-
-        with pysam.FastxFile(sf_reads) as fh, open(sf_reads1,"w") as fout_non, open(sf_reads2, "w") as fout_polya:
-            for entry in fh:
-                len_seq=len(entry.sequence)
-                # YW 2020/08/14 added this to account for mask 2
-                for ch in entry.sequence:
-                    if ch == "N":
-                        len_seq -= 1
-                if len_seq<global_values.BWA_REALIGN_CUTOFF:
-                    fout_polya.write(str(entry)+"\n")
-                else:
-                    fout_non.write(str(entry)+"\n")
-        sf_sam1=sf_out_sam+".non_polyA.sam"
-        self.realign_clipped_reads(sf_ref, sf_reads1, sf_sam1)
-        sf_sam2 = sf_out_sam + ".polyA.sam"
-        self.realign_clipped_polyA(sf_ref, sf_reads2, sf_sam2)
-
-        #merge the alignment
-        with open(sf_out_sam,"w") as fout_sam:
-            with open(sf_sam1) as fin_sam1:
-                for line in fin_sam1:
-                    fout_sam.write(line)
-            with open(sf_sam2) as fin_sam2:
-                for line in fin_sam2:
-                    if line[0]=="@":
-                        continue
-                    fout_sam.write(line)
-        os.remove(sf_reads1)
-        os.remove(sf_reads2)
-        os.remove(sf_sam1)
-        os.remove(sf_sam2)
-####
-    def index_ref_file(self, sf_fa):
-        cmd="%s index %s" % (self.BWA_PATH, sf_fa)
-        self.cmd_runner.run_cmd_small_output(cmd)
 
     # re-align the collected clipped and discordant reads
     def realign_clipped_polyA(self, sf_ref, sf_reads, sf_out_sam):
@@ -79,18 +29,6 @@ class BWAlign():
         #self.cmd_runner.run_cmd_to_file(cmd, sf_out_sam)
         self.cmd_runner.run_cmd_small_output(cmd)
 
-    # re-align the collected clipped and discordant reads
-    def realign_clipped_reads_low_mem(self, sf_ref, sf_reads, sf_out_sam):
-        n_cores = self.n_jobs - 1
-        if n_cores <= 0:
-            n_cores = 1
-        cmd = "{0} mem -t {1} -T {2} -k {3} -c {4} -o {5} {6} {7}".format(self.BWA_PATH, n_cores,
-                                                                  self.BWA_REALIGN_CUTOFF,
-                                                                  self.BWA_REALIGN_CUTOFF, self.BWA_SEED_FREQ,
-                                                                  sf_out_sam, sf_ref, sf_reads)
-        #Popen(cmd, shell=True, stdout=PIPE).communicate()
-        #self.cmd_runner.run_cmd_small_output(cmd)
-        self.cmd_runner.run_cmd_to_file(cmd, sf_out_sam + ".std_out")
 
     # re-align the collected clipped and discordant reads
     # YW 2020/07/21 pay attention to -D
@@ -117,40 +55,12 @@ class BWAlign():
 #####For test only now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         #self.cmd_runner.run_cmd2(cmd, sf_out_sam)
 
-    def align_exon_to_contig(self, sf_ref, sf_reads, sf_out_bam):
-        cmd = "{0} mem -t {1} {2} {3} | samtools view -hSb - | {4} sort -o {5} - && samtools index {5}"\
-            .format(self.BWA_PATH, self.n_jobs,  sf_ref, sf_reads, global_values.SAMTOOLS_PATH, sf_out_bam)
-        print(("Run command: {0}".format(cmd)))
-        self.cmd_runner.run_cmd_small_output(cmd)
-
     # re-align the collected clipped and discordant reads
     def realign_disc_reads(self, sf_ref, sf_reads, sf_out_sam):
         cmd = "{0} mem -t {1} -o {2} {3} {4}".format(self.BWA_PATH, self.n_jobs, sf_out_sam, sf_ref, sf_reads)
         #Popen(cmd, shell=True, stdout=PIPE).communicate()
         self.cmd_runner.run_cmd_small_output(cmd)
 
-    # re-align the collected clipped and discordant reads
-    def realign_disc_reads_low_mem(self, sf_ref, sf_reads, sf_out_sam):
-        cmd = "{0} mem -t {1} -c {2} -o {3} {4} {5}".format(self.BWA_PATH, self.n_jobs, self.BWA_SEED_FREQ, sf_out_sam,
-                                                            sf_ref, sf_reads)
-        # Popen(cmd, shell=True, stdout=PIPE).communicate()
-        self.cmd_runner.run_cmd_small_output(cmd)
-
-
-####need to test this one
-    # re-align the collected reads
-    # re-align the collected reads
-    def realign_reads_to_bam(self, SAMTOOLS, sf_ref, sf_reads, sf_out_bam):
-        cmd = "{0} mem -t {1} {2} {3} | {4} view -hSb - | {5} sort - ".format(
-            self.BWA_PATH, self.n_jobs, sf_ref, sf_reads, SAMTOOLS, SAMTOOLS)
-        print(("Run command: {0}".format(cmd)))
-        str_err=self.cmd_runner.run_cmd_to_file(cmd, sf_out_bam)
-
-        cmd2 = "{0} index {1}".format(SAMTOOLS, sf_out_bam)
-        # Popen(cmd, shell=True, stdout=PIPE).communicate()
-        str_err = self.cmd_runner.run_cmd_small_output(cmd2)
-
-####
     ####
     # in this version, to reduce the memory consuming, we
     # 1) First, align to consensus, to collect those can be fully aligned to repeat copies
@@ -205,44 +115,6 @@ class BWAlign():
             for line in fin_sam:
                 if line[0]!="@":
                     fout.write(line)
-####
-
-    ##may potentially have trouble for the @PG fields, as this is not merged, but just use the one from sf_copy_sam
-    def merge_all_sam(self, sf_cns_sam, sf_polyA_sam, sf_copy_sam, sf_merged_sam):
-        # then merge the two sam files
-        #first collect the @SN fields from sf_cns_sam
-        l_cns_SN=[]
-        with open(sf_cns_sam) as fin_cns:
-            for line in fin_cns:
-                if line[0]=="@":
-                    fields=line.split()
-                    if fields[0]=="@SQ":
-                        l_cns_SN.append(line)
-                else:
-                    break
-
-        #then merge the two sam file
-        with open(sf_merged_sam, "w") as fout_merged, open(sf_cns_sam) as fin_cns_sam, \
-                open(sf_polyA_sam) as fin_polyA_sam, open(sf_copy_sam) as fin_copy_sam:
-            b_head_merged=False
-            for line in fin_copy_sam:
-                if line[0]=="@":
-                    fields=line.split()
-                    if fields[0]=="@SQ":
-                        if b_head_merged==False:
-                            for s_rcd in l_cns_SN:
-                                fout_merged.write(s_rcd)
-                            b_head_merged=True
-                fout_merged.write(line)
-
-            for line in fin_polyA_sam:
-                if line[0]!="@":
-                    fout_merged.write(line)
-
-            for line in fin_cns_sam:
-                if line[0]!="@":
-                    fout_merged.write(line)
-####
 ####
     def _gnrt_SQ_from_fa(self, sf_fa, sf_sq):
         s_sq=""
@@ -311,12 +183,6 @@ class BWAlign():
         os.remove(sf_polyA_fa)
         os.remove(sf_polyA_sam)
         
-    ####
-    def calmd_from_algnmt(self, sf_sam, sf_ref, sf_calmd_sam):
-        cmd = "{0} calmd -e {1} {2}".format(global_values.SAMTOOLS_PATH, sf_sam, sf_ref)
-        self.cmd_runner.run_cmd_to_file(cmd, sf_calmd_sam)
-    ####
-#
 # ####
 # ## for test only
 # ##main function
