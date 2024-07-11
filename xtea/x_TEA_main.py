@@ -120,6 +120,7 @@ import global_values
 from x_TEI_locator import *
 from x_intermediate_sites import *
 from x_reference import *
+from x_parameter import *
 # from x_clip_disc_filter import *
 # from x_genotype_feature import *
 from x_basic_info import *
@@ -335,25 +336,25 @@ def parse_arguments():
     return args
 ####
 ####
-# # YW 2020/08/01 github update: add the last 2 arguments
-# # def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False, b_tumor=False, f_purity=0.45):
-# def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False):
-#     ####1. collect the basic information
-#     search_win = 500
-#     x_basic_info = X_BasicInfo(s_working_folder, n_jobs, sf_ref)
-#     rcd=x_basic_info.get_cov_is_rlth(sf_bam_list, sf_ref, search_win, b_force)
-#     f_cov=rcd[0]
-#     rlth=rcd[1]
-#     mean_is=rcd[2]
-#     std_var=rcd[3]
+# YW 2020/08/01 github update: add the last 2 arguments
+# def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False, b_tumor=False, f_purity=0.45):
+def automatic_gnrt_parameters(sf_bam_list, sf_ref, s_working_folder, n_jobs, b_force=False):
+    ####1. collect the basic information
+    search_win = 500
+    x_basic_info = X_BasicInfo(s_working_folder, n_jobs, sf_ref)
+    rcd=x_basic_info.get_cov_is_rlth(sf_bam_list, sf_ref, search_win, b_force)
+    f_cov=rcd[0]
+    rlth=rcd[1]
+    mean_is=rcd[2]
+    std_var=rcd[3]
 
-#     ####2. based on the coverage, set the parameters
-#     xpar=Parameters()
-#     # if b_tumor==True:
-#     #     f_cov=f_cov*f_purity
-#     par_rcd=xpar.get_par_by_cov(f_cov) #in format (iclip, idisc, i_clip-disc)
-#     print("Ave coverage is {0}: automatic parameters (clip, disc, clip-disc) with value ({1}, {2} ,{3})\n".format(f_cov, par_rcd[0], par_rcd[1], par_rcd[2]))
-#     return par_rcd, rcd
+    ####2. based on the coverage, set the parameters
+    xpar=Parameters()
+    # if b_tumor==True:
+    #     f_cov=f_cov*f_purity
+    par_rcd=xpar.get_par_by_cov(f_cov) #in format (iclip, idisc, i_clip-disc)
+    print("Ave coverage is {0}: automatic parameters (clip, disc, clip-disc) with value ({1}, {2} ,{3})\n".format(f_cov, par_rcd[0], par_rcd[1], par_rcd[2]))
+    return par_rcd, rcd
 
 ####
 
@@ -701,7 +702,6 @@ if __name__ == '__main__':
         sf_ref=args.ref ###reference genome "-ref"
         b_force=args.force #force to run from the very beginning
         # YW 2020/08/01 github update b_mosaic
-        # b_mosaic=False #this is for mosaic calling from normal tissue # YW 2021/03/18 set this to False
         #i_iniclip=args.iniclip#
         if b_force == True:
             global_values.set_force_clean()
