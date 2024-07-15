@@ -501,4 +501,5 @@ class Feature_Matrix():
         if cnt == 1:
             self.output_sample_feature_matrix()
         else:
-            self.output_sample_feature_matrix_multibam(cnt)
+            sys.exit("The current code doesn't work because there are no than 1 bam files")
+           
