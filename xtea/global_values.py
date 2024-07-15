@@ -4,11 +4,6 @@
 
 ##############################################################################
 ####originally used in x_TEA_main.py
-# GLOBAL_RNA_MEDIATED=True #non-rna mediated cases will not have the polyA (so will not require polyA support at the filtering step)
-# def turn_off_rna_mediated():
-#     global GLOBAL_RNA_MEDIATED
-#     GLOBAL_RNA_MEDIATED=False
-
 GLOBAL_MITCHONDRION_SWITCH='OFF'
 def turn_on_mit():
     global GLOBAL_MITCHONDRION_SWITCH
