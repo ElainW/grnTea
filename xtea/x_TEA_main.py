@@ -434,9 +434,6 @@ if __name__ == '__main__':
         b_se = args.single  ##single end reads or not, default is not
         sf_ref=args.ref ###reference genome "-ref"
         b_force=args.force #force to run from the very beginning
-        # YW 2020/08/01 github update b_mosaic
-        # b_mosaic=False #this is for mosaic calling from normal tissue # YW 2021/03/18 set this to False
-        #i_iniclip=args.iniclip#
         if b_force == True:
             global_values.set_force_clean()
         site_clip_cutoff=args.siteclip #this is the cutoff for the exact position, use larger value for 10X
@@ -513,8 +510,6 @@ if __name__ == '__main__':
         
         feature_matrix = args.final_matrix # YW 2021/05/21 added this to output the final feature matrix
         peak_window = global_values.PEAK_WINDOW_DEFAULT # YW 2020/07/03 note: max distance between two clipped positions for them to be considered as from one insertion/cluster
-        # if args.postFmosaic or args.somatic:#for mosaic events
-        #     peak_window = global_values.PEAK_WINDOW_MOS_SOM
         # YW 2020/08/04 modified github update: originally will rerun if b_resume==False, now added extra if/elif cases
         if b_resume == True and os.path.isfile(sf_out)==True:
             print("{0} exists, skipping \"disc\" step".format(sf_out))
@@ -523,8 +518,6 @@ if __name__ == '__main__':
                 print("User doesn't specify skipping, although {0} exists. Rerun the \"disc\" step.".format(sf_out))
             xfilter = XIntermediateSites()
             m_original_sites = xfilter.load_in_candidate_list(sf_candidate_list)
-            # YW CHANGED THE FUNCTION NAME from call_peak_candidate_sites_with_std_derivation
-            # m_sites_clip_peak = xfilter.call_peak_candidate_sites_calc_std_deviation(m_original_sites, peak_window)
             m_sites_clip_peak = xfilter.call_peak_candidate_sites(m_original_sites, peak_window) # YW 2021/09/24 no longer need clip_pos_std here, so switch to a shorter function
             m_original_sites.clear()  #release the memory
             # YW added the following message
@@ -564,8 +557,6 @@ if __name__ == '__main__':
                                                                                   sf_raw_disc)
             m_sites_clip_peak.clear() # YW 2021/09/24 added to save memory
             
-            # YW 2020/07/20 modified merge_clip_disc function to make sure locations without discordant read support will go through
-            # xfilter.merge_clip_disc(sf_tmp, sf_candidate_list, sf_out)
             # YW 2021/04/21 wrote the function below to merge features from clip and disc
             xfilter.merge_clip_disc_new(sf_candidate_list, sf_raw_disc, sf_out + ".tmp", sf_out + ".clip_std_pos", n_cns_cutoff) # YW 2021/04/29 added the default cutoff of read count mapping to repeat cns
             # 2021/12/08 add clip_pos_std info to the sf_candidate_list output using bedtools intersect
@@ -701,8 +692,6 @@ if __name__ == '__main__':
         b_se = args.single  ##single end reads or not, default is not
         sf_ref=args.ref ###reference genome "-ref"
         b_force=args.force #force to run from the very beginning
-        # YW 2020/08/01 github update b_mosaic
-        #i_iniclip=args.iniclip#
         if b_force == True:
             global_values.set_force_clean()
         site_clip_cutoff=args.siteclip #this is the cutoff for the exact position, use larger value for 10X
