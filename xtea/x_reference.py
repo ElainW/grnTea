@@ -10,7 +10,6 @@ import sys
 import pysam
 from subprocess import *
 from multiprocessing import Pool
-from x_sites import *
 import global_values
 from cmd_runner import *
 
