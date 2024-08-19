@@ -57,6 +57,11 @@ def gnrt_parameters(l_pars):
         s_pars += sline
     return s_pars
 ####
+
+def run_cmd(cmd):
+    print(cmd)
+    Popen(cmd, shell=True, stdout=PIPE).communicate()
+    
 ####
 # grnt calling steps
 # YW 2021/05/20 added icns_c, took out b_tumor, f_purity, b_mosaic, changed i_rep_type to l_rep_type
